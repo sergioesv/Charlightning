@@ -8,18 +8,6 @@ from fpdf import FPDF
 
 def crear(a):
     a = a
-    
-    ancho_celda1 = 55
-    alto_celda1 = 4
-    ancho_celda2 = 35
-    alto_celda2 = 4
-  # refrernce : https://pyfpdf.readthedocs.io/en/latest/Tutorial/index.html
-# Created by Sowmya.R
-
-
-
-def crear(a):
-    a = a
     print(type(a))
     print('hola aqui voy')
     print(a)
@@ -365,13 +353,13 @@ def crear(a):
     pdf.cell(ancho_celda1,alto_celda1,'Pérdidas de patrimonio: ',0,0)
     pdf.cell(31.5, alto_celda1,'1.00e-3',0,0,'C')
     pdf.cell(31.5,alto_celda1,str(a['R_d3']),0,0,'C')
-    pdf.cell(31.5, alto_celda1,str(a['R_d3']),0,0,'C')
+    pdf.cell(31.5, alto_celda1,str(a['R_i3']),0,0,'C')
     pdf.cell(31.5, alto_celda1,str(a['R_3']),0,0,'C')
     pdf.ln(alto_celda1)
     pdf.cell(ancho_celda1,alto_celda1,'Pérdidas económicas: ',0,0)
     pdf.cell(31.5, alto_celda1,'1.00e-3',0,0,'C')
     pdf.cell(31.5,alto_celda1,str(a['R_d4']),0,0,'C')
-    pdf.cell(31.5, alto_celda1,str(a['R_d4']),0,0,'C')
+    pdf.cell(31.5, alto_celda1,str(a['R_i4']),0,0,'C')
     pdf.cell(31.5, alto_celda1,str(a['R_4']),0,0,'C')
     
     
