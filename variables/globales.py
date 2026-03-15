@@ -1,4 +1,7 @@
 papo = {
-    "proyecto": "aqui y ahora",
-    "disenador": ""
+    "proyecto":    "",
+    "disenador":   "",
+    "direccion":   "",
+    "telefono":    "",
+    "descripcion": "",
 }
