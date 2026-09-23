@@ -1,0 +1,11 @@
+# Archivos temporales que Python crea solo
+__pycache__/
+*.pyc
+
+# Entornos virtuales (carpetas con librerías instaladas)
+venv/
+.venv/
+
+# Archivos basura del sistema operativo
+Thumbs.db
+.DS_Store
