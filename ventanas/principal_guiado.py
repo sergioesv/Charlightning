@@ -26,6 +26,7 @@ from variables.globales import papo
 from variables.variable_generales import VAR
 from calculate_risk.collect_entry_data_risk import DataEntryRiskTable
 from calculate_risk.calculo import calcular_riesgo
+from calculate_risk.opciones import VALORES_OPCIONES
 
 from pathlib import Path
 
@@ -408,7 +409,7 @@ class Principal_guiado(Panel):
                     "Nivel bajo de pánico",
                     "Nivel medio de pánico",
                     "Nivel alto de pánico",
-                    "Problemas de evacuación"
+                    "Problemas de evacuación",
                     "Peligro por ambiente alrededor",
                     "Contaminación del ambiente alrededor"],
             width=ancho_combobox_labelframe3)
@@ -824,31 +825,9 @@ class Principal_guiado(Panel):
     def calcular_funciones(self):
         self.calcular_DDT()
         self.calcular_L_W_H_H_H_p()
-
-
-
-        self.calcular_K_s3()
-        self.calcular_pl()
-        self.calcular_P_LD0()
-        self.calcular_C_t0()
         self.calcular_n_oh()
         self.calcular_n_ug()
-        self.calcular_P_LD1()
-        self.calcular_P_LD2()
-        self.calcular_h_1()
-        self.calcular_L_f1()
-        self.calcular_L_o1()
-        self.calcular_L_f2()
-        self.calcular_L_o2()
-        self.calcular_L_f3()
-        self.calcular_h4()
-        self.calcular_L_f4()
-        self.calcular_L_o4()
-        self.calcular_L_t4()
-        self.calcular_R_T4()
-        self.calcular_E()
-        self.calcular_r()
-        self.calcular_SP()
+        self.leer_combos()
         VAR.update(calcular_riesgo(VAR))
         self.mostrar_resultados()
 
@@ -945,266 +924,50 @@ class Principal_guiado(Panel):
 
 
 
-
 # =============================================================================
-# FUNCIONES BUILDING WIRING
+# LECTURA DE LOS COMBOS Y SPINBOX
 # =============================================================================
-    '''Factor de características del cableado interno véase la Tabla 17'''
-    def calcular_K_s3(self, *args):
-        if self.Combobox3.current() == 0:
-            VAR["Ks3"] = 0.1
-        elif self.Combobox3.current() == 1:
-            VAR["Ks3"] = 1
-
-
-# =============================================================================
-# FUNCIONES CONDUCTIVE SERVICE LINES
-# =============================================================================
-        '''Power Lines'''
-
-    def calcular_pl(self, *args):
-        if self.Combobox6.current() == 0:
-            VAR["pl"] = 1
-        elif self.Combobox6.current() == 1:
-            VAR["pl"] = 2
-        elif self.Combobox6.current() == 2:
-            VAR["pl"] = 0
-
-
-    def calcular_P_LD0(self, *args):
-        if self.Combobox22.current() == 0:
-            VAR["P_LD0"] = 1
-        elif self.Combobox22.current() == 1:
-            VAR["P_LD0"] = 0.4
-
-#Tabla 11. Factor de corrección por presencia de transformador'''
-    def calcular_C_t0(self, *args):
-        if self.Combobox23.current() == 0:
-            VAR["C_t0"] = 0.2
-
-        elif self.Combobox23.current() == 1:
-            VAR["C_t0"] = 1
-
-
-        '''Other Overhead Service Lines:'''
 
     def calcular_n_oh(self, *args):
         try:
             VAR["n_oh"] = float(self.Spinbox1.get())
-
         except ValueError:
             VAR["n_oh"] = 0
 
     def calcular_n_ug(self, *args):
         try:
             VAR["n_ug"] = float(self.Spinbox2.get())
-
         except ValueError:
             VAR["n_ug"] = 0
 
-
-    def calcular_P_LD1(self, *args):
-        if self.Combobox7.current() == 0:
-            VAR["P_LD1"] = 1
-        elif self.Combobox7.current() == 1:
-            VAR["P_LD1"] = 0.4
-
-
-        '''Conductive Underground Services - Electrical Services e.g.
-        Communication Lines'''
-
-
-
-    def calcular_P_LD2(self, *args):
-        if self.Combobox8.current() == 0:
-            VAR["P_LD2"] = 1
-        elif self.Combobox8.current() == 1:
-            VAR["P_LD2"] = 0.4
-
-
-# =============================================================================
-# FUNCIONES ACCEPTABLE RISK & LOSS CATEGORIES
-# =============================================================================
-        '''Loss Category 1 - Loss of Human Life'''
-    def calcular_h_1(self, *args):
-        if self.Combobox12.current() == 0:
-            VAR["h_1"] = 1
-        elif self.Combobox12.current() == 1:
-            VAR["h_1"] = 2
-        elif self.Combobox12.current() == 2:
-            VAR["h_1"] = 5
-        elif self.Combobox12.current() == 3:
-            VAR["h_1"] = 10
-        elif self.Combobox12.current() == 4:
-            VAR["h_1"] = 5
-        elif self.Combobox12.current() == 5:
-            VAR["h_1"] = 20
-        elif self.Combobox12.current() == 6:
-            VAR["h_1"] = 50
-
-    def calcular_L_f1(self, *args):
-        if self.Combobox13.current() == 0:
-            VAR["L_f1"] = 0.01
-        if self.Combobox13.current() == 1:
-            VAR["L_f1"] = 0.02
-        if self.Combobox13.current() == 2:
-            VAR["L_f1"] = 0.05
-        elif self.Combobox13.current() == 3:
-            VAR["L_f1"] = 0.1
-
-    def calcular_L_o1(self, *args):
-        if self.Combobox14.current() == 0:
-            VAR["L_o1"] = 0
-        if self.Combobox14.current() == 1:
-            VAR["L_o1"] = 0.1
-        elif self.Combobox14.current() == 2:
-            VAR["L_o1"] = 0.001
-        elif self.Combobox14.current() == 3:
-            VAR["L_o1"] = 0.00001
-        elif self.Combobox14.current() == 4:
-            VAR["L_o1"] = 10 **(-4)
+    def leer_combos(self):
+        """Guarda en VAR el valor de la opción elegida en cada combo."""
+        combos = {
+            "Ks3": self.Combobox3,
+            "pl": self.Combobox6,
+            "P_LD0": self.Combobox22,
+            "C_t0": self.Combobox23,
+            "P_LD1": self.Combobox7,
+            "P_LD2": self.Combobox8,
+            "h_1": self.Combobox12,
+            "L_f1": self.Combobox13,
+            "L_o1": self.Combobox14,
+            "L_f2": self.Combobox15,
+            "L_o2": self.Combobox16,
+            "L_f3": self.Combobox21,
+            "h4": self.Combobox17,
+            "L_f4": self.Combobox18,
+            "L_o4": self.Combobox19,
+            "L_t4": self.Combobox20,
+            "R_T4": self.Combobox24,
+            "E": self.Combobox9,
+            "r": self.Combobox10,
+            "SP": self.Combobox11,
+        }
+        for clave, combo in combos.items():
+            VAR[clave] = VALORES_OPCIONES[clave][combo.current()]
 
 
-        '''Loss Category 2 - Loss of Essential Service to the Public'''
-    def calcular_L_f2(self, *args):
-        if self.Combobox15.current() == 0:
-            VAR["L_f2"] = 0
-        if self.Combobox15.current() == 1:
-            VAR["L_f2"] = 0.01
-        elif self.Combobox15.current() == 2:
-            VAR["L_f2"] = 0.01
-        elif self.Combobox15.current() == 3:
-            VAR["L_f2"] = 0.01
-        elif self.Combobox15.current() == 4:
-            VAR["L_f2"] = 0.01
-        elif self.Combobox15.current() == 5:
-            VAR["L_f2"] = 0.1
-        elif self.Combobox15.current() == 6:
-            VAR["L_f2"] = 0.1
-
-    def calcular_L_o2(self, *args):
-        if self.Combobox16.current() == 0:
-            VAR["L_o2"] = 0
-        if self.Combobox16.current() == 1:
-            VAR["L_o2"] = 0.001
-        elif self.Combobox16.current() == 2:
-            VAR["L_o2"] = 0.001
-        elif self.Combobox16.current() == 3:
-            VAR["L_o2"] = 0.001
-        elif self.Combobox16.current() == 4:
-            VAR["L_o2"] = 0.001
-        elif self.Combobox16.current() == 5:
-            VAR["L_o2"] = 0.01
-        elif self.Combobox16.current() == 6:
-            VAR["L_o2"] = 0.01
-
-        '''Loss Category 3 - Loss of Cultural Heritage'''
-    def calcular_L_f3(self, *args):
-        if self.Combobox21.current() == 0:
-            VAR["L_f3"] = 0
-        elif self.Combobox21.current() == 1:
-            VAR["L_f3"] = 0.1
-
-        '''Loss Category 4 - Economic Loss'''
-
-    def calcular_h4(self, *args):
-        if self.Combobox17.current() == 0:
-            VAR["h4"] = 1
-        elif self.Combobox17.current() == 1:
-            VAR["h4"] = 20
-        elif self.Combobox17.current() == 2:
-            VAR["h4"] = 50
-
-    def calcular_L_f4(self, *args):
-        if self.Combobox18.current() == 0:
-            VAR["L_f4"]    = 0
-        elif self.Combobox18.current() == 1:
-            VAR["L_f4"] = 0.1
-        elif self.Combobox18.current() == 2:
-            VAR["L_f4"] = 0.2
-        elif self.Combobox18.current() == 3:
-            VAR["L_f4"] = 0.2
-        elif self.Combobox18.current() == 4:
-            VAR["L_f4"] = 0.2
-        elif self.Combobox18.current() == 5:
-            VAR["L_f4"] = 0.2
-        elif self.Combobox18.current() == 6:
-            VAR["L_f4"] = 0.5
-        elif self.Combobox18.current() == 7:
-            VAR["L_f4"] = 0.5
-        elif self.Combobox18.current() == 8:
-            VAR["L_f4"] = 0.5
-
-    def calcular_L_o4(self, *args):
-        if self.Combobox19.current() == 0:
-            VAR["L_o4"] = 0
-        elif self.Combobox19.current() == 1:
-            VAR["L_o4"] = 0.0001
-        elif self.Combobox19.current() == 2:
-            VAR["L_o4"] = 0.001
-        elif self.Combobox19.current() == 3:
-            VAR["L_o4"] = 0.001
-        elif self.Combobox19.current() == 4:
-            VAR["L_o4"] = 0.001
-        elif self.Combobox19.current() == 5:
-            VAR["L_o4"] = 0.01
-        elif self.Combobox19.current() == 6:
-            VAR["L_o4"] = 0.01
-        elif self.Combobox19.current() == 7:
-            VAR["L_o4"] = 0.1
-
-    def calcular_L_t4(self, *args):
-        if self.Combobox20.current() == 0:
-            VAR["L_t4"] = 0
-        elif self.Combobox20.current() == 1:
-            VAR["L_t4"] = 1 * 10**(-2)
-        elif self.Combobox20.current() == 2:
-            VAR["L_t4"] = 1 * 10**(-2)
-
-    def calcular_R_T4(self, *args):
-        if self.Combobox24.current() == 0:
-            VAR["R_T4"] = 0.1
-        elif self.Combobox24.current() == 1:
-            VAR["R_T4"] = 1 * 10**(-2)
-        elif self.Combobox24.current() == 2:
-            VAR["R_T4"] = 1 * 10**(-3)
-        elif self.Combobox24.current() == 3:
-            VAR["R_T4"] = 1 * 10**(-5)
-        elif self.Combobox24.current() == 4:
-            VAR["R_T4"] = 1 * 10**(-5)
-
-
-# =============================================================================
-# FUNCIONESPROTECTION MEASURES IMPLEMENTED
-# =============================================================================
-
-    def calcular_E(self, *args):
-        if self.Combobox9.current() == 0:
-            VAR["E"] = 0
-        elif self.Combobox9.current() == 1:
-            VAR["E"] = 0.8
-        elif self.Combobox9.current() == 2:
-            VAR["E"] = 0.9
-        elif self.Combobox9.current() == 3:
-            VAR["E"] = 0.95
-        elif self.Combobox9.current() == 4:
-            VAR["E"] = 0.98
-
-    def calcular_r(self, *args):
-        if self.Combobox10.current() == 0:
-            VAR["r"] = 1
-        elif self.Combobox10.current() == 1:
-            VAR["r"] = 0.5
-        elif self.Combobox10.current() == 2:
-            VAR["r"] = 0.2
-
-    def calcular_SP(self, *args):
-        if self.Combobox11.current() == 0:
-            VAR["SP"] = 0
-        elif self.Combobox11.current() == 1:
-            VAR["SP"] = 1
-        elif self.Combobox11.current() == 2:
-            VAR["SP"] = 2
 
 
     def mostrar_resultados(self):
