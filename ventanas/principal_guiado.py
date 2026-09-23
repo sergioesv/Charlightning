@@ -27,6 +27,7 @@ from variables.globales import papo
 from variables.variable_generales import VAR
 from calculate_risk.collect_entry_data_risk import DataEntryRiskTable
 from calculate_risk.areas import calcular_A_d, calcular_N_D, calcular_A_m, calcular_N_M
+from calculate_risk.lineas import calcular_A_l_aerea, calcular_A_i_aerea, calcular_N_L, calcular_N_I
 from pathlib import Path
 
 #Carpeta principal del proyecto: dos niveles arriba de este archivo
@@ -1278,76 +1279,30 @@ class Principal_guiado(Panel):
 # =============================================================================
 # 4. OVERHEAD SERVICE LINES
 # =============================================================================
-
-    # def calcular_4(self, *args):
-    #     if self.C_e > 0.5:
-    #         self.L_1 = 1000
-    #     elif self.C_e > 0:
-    #         self.L_1 = 500
-    #     else:
-    #         self.L_1 = 75
-
     def calcular_4(self, *args):
-        if VAR["C_e"] > 0.5:
-            VAR["L_1"] = 1000
-            VAR["L_2"] = 1000
-        elif VAR["C_e"] > 0:
-            VAR["L_1"] = 1000
-            VAR["L_2"] = 1000
-        else:
-            VAR["L_1"] = 1000
-            VAR["L_2"] = 1000            
-        if VAR["pl"] == 1:
-            VAR["n_ohp"] = 1
-        else:
-            VAR["n_ohp"] = 0
+        # Longitud de las líneas de servicio: 1000 m en todos los casos
+        VAR["L_1"] = 1000
+        VAR["L_2"] = 1000
+        VAR["n_ohp"] = 1 if VAR["pl"] == 1 else 0
 
-#==============================================================================
+
+# ========================================================================
 # 4.1. Direct Strikes to Overhead Lines
 # =============================================================================
     def calcular_4_1(self, *args):
-        VAR["D_c1"] = 3 * VAR["H_c1"]    
-        
-        VAR["L_c1"] = VAR["L_1"] - 3 * VAR["H"] - 3 * VAR["h_a1"]
-        if VAR["L_c1"] == 0:
-            VAR["L_c1"] = 0
-            '''cambio el signo
-            elif self.L_c1 > 0:'''
-        elif VAR["L_c1"] < 0:
-            VAR["L_c1"] = 0
-        
-        #Tabla 12 AI, pag. 37
-        VAR["A_c1"] =  2 * VAR["D_c1"] * VAR["L_c1"] 
-
-        VAR["a1"] = (VAR["l_a1"] * VAR["w_a1"] 
-                       + 6 * VAR["h_a1"] * (VAR["l_a1"] + VAR["w_a1"]) 
-                       + 9 * math.pi * VAR["h_a1"]**2)
-        
-        VAR["N_L1p"] = VAR["N_g"] * VAR["A_c1"] * VAR["C_t0"] * VAR["C_d"] *10**(-6)   # ct = 0,2
-
-        VAR["N_L1"] = VAR["N_g"] * VAR["A_c1"] * VAR["C_t1"] * VAR["C_d"] *10**(-6) # ct1 = 1
-
-
+        # Impactos directos a las líneas aéreas (fórmulas en calculate_risk/lineas.py)
+        VAR["A_c1"] = calcular_A_l_aerea(VAR["L_1"], VAR["H"], VAR["h_a1"], VAR["H_c1"])
+        VAR["N_L1p"] = calcular_N_L(VAR["N_g"], VAR["A_c1"], VAR["C_t0"], VAR["C_d"])
+        VAR["N_L1"] = calcular_N_L(VAR["N_g"], VAR["A_c1"], VAR["C_t1"], VAR["C_d"])
 
 # =============================================================================
 # 4.2. Indirect Strikes to Overhead Lines
 # =============================================================================
-
-    def calcular_4_2 (self, *args):
-        #es igual a L_c, pag. 37
-        #Tabla 12 Ai, pag. 38
-        VAR["A_l1"] = 2 * VAR["D_L1"] * VAR["L_1"]
-        VAR["N_I1p"] = (VAR["N_g"]
-                          * VAR["A_l1"] 
-                          * VAR["C_t0"] 
-                          * VAR["C_e"] 
-                          * 10**(-6))
-
-        VAR["N_I1"] =  (VAR["N_g"]
-                          * VAR["A_l1"] 
-                          * VAR["C_t1"] 
-                          * VAR["C_e"]
-                          * 10**(-6))
+    def calcular_4_2(self, *args):
+        # Impactos cerca de las líneas aéreas (fórmulas en calculate_risk/lineas.py)
+        VAR["A_l1"] = calcular_A_i_aerea(VAR["L_1"], VAR["D_L1"])
+        VAR["N_I1p"] = calcular_N_I(VAR["N_g"], VAR["A_l1"], VAR["C_t0"], VAR["C_e"])
+        VAR["N_I1"] = calcular_N_I(VAR["N_g"], VAR["A_l1"], VAR["C_t1"], VAR["C_e"])
 
 
 # =============================================================================
