@@ -836,7 +836,6 @@ class Principal_guiado(Panel):
 
 
     def regresar_modo(self):
-        print(papo)
 
         self.anterior_modo()
 
@@ -907,8 +906,7 @@ class Principal_guiado(Panel):
         self.calcular_9_8()
         self.calcular_9_9()
         self.mostrar_resultados()
-        #self.changeText()
-        self.valores()
+
 
 
     def informe(self):
@@ -990,11 +988,6 @@ class Principal_guiado(Panel):
                                         self.Combobox_factor_line_density_C_e.current()
                                         )
         # Se calcual DDT en calcular_DDT
-
-
-
-        print(VAR["C_e"])
-        print(VAR["C_e"])
 
 
 
@@ -1675,12 +1668,4 @@ class Principal_guiado(Panel):
 
         PDF_Creator.crear(datos)
 
-    def valores(self, *args):
-        print("LA DDT ES:")
-        print(VAR["DDT"])
-    
-    def changeText(self):
-        a = VAR["DDT"]
-        self.text_ddt.set(a)
-        VAR["DDT"] = a
-        #print(str(a))
+

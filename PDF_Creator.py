@@ -7,10 +7,7 @@ from fpdf import FPDF
 
 
 def crear(a):
-    a = a
-    print(type(a))
-    print('hola aqui voy')
-    print(a)
+
 #   print (a.get('L_2'))
     #creating a pdf 
     # A4 portrait and the measure unit is millimeter ==> this is default even if the parameter is not given
