@@ -33,10 +33,18 @@ from calculate_risk.lineas import (
     calcular_A_i_subterranea,
     calcular_N_L,
     calcular_N_I,
+    calcular_delta_N,
 )
-from calculate_risk.probabilidades import calcular_P_B, calcular_P_SPD_y_P_EB
+
+from calculate_risk.probabilidades import (
+    calcular_P_B,
+    calcular_P_SPD_y_P_EB,
+    calcular_K_MS,
+    calcular_P_MS,
+)
+
 from calculate_risk.perdidas import calcular_L_A, calcular_L_B
-from calculate_risk.riesgos import calcular_componente
+from calculate_risk.riesgos import calcular_componente, calcular_X
 
 from pathlib import Path
 
@@ -1384,166 +1392,83 @@ class Principal_guiado(Panel):
 # overvoltages from indirect strikes to the structure
 # =============================================================================
     def calcular_6_5(self, *args):
-        VAR["K_MS1"] = (VAR["Ks1"]                         
-                                * VAR["Ks2"]
-                                * VAR["Ks3"] 
-                                * VAR["Ks4"])        
-        if VAR["K_MS1"] == 0.013:
-            VAR["P_MS1"] = 0.0001
-        elif VAR["K_MS1"] < 0.013:
-            VAR["P_MS1"] = 0.0001         
-        elif VAR["K_MS1"] == 0.014:
-            VAR["P_MS1"] = 0.001
-        elif VAR["K_MS1"] < 0.014:
-            VAR["P_MS1"] = 0.001       
-        elif VAR["K_MS1"] == 0.015:
-            VAR["P_MS1"] = 0.003
-        elif VAR["K_MS1"] < 0.015:
-            VAR["P_MS1"] = 0.003          
-        elif VAR["K_MS1"] == 0.016:
-            VAR["P_MS1"] = 0.005
-        elif VAR["K_MS1"] < 0.016:
-            VAR["P_MS1"] = 0.005        
-        elif VAR["K_MS1"] == 0.021:
-            VAR["P_MS1"] = 0.01
-        elif VAR["K_MS1"] < 0.021:
-            VAR["P_MS1"] = 0.01
-        elif VAR["K_MS1"] == 0.035:
-            VAR["P_MS1"] = 0.1            
-        elif VAR["K_MS1"] < 0.035:
-            VAR["P_MS1"] = 0.1              
-        elif VAR["K_MS1"] == 0.07:
-            VAR["P_MS1"] = 0.5            
-        elif VAR["K_MS1"] < 0.07:
-            VAR["P_MS1"] = 0.5              
-        elif VAR["K_MS1"] == 0.15:
-            VAR["P_MS1"] = 0.9            
-        elif VAR["K_MS1"] < 0.15:
-            VAR["P_MS1"] = 0.9
-        else:
-            VAR["P_MS1"] = 1
-        
-        if VAR["P_SPD"] < VAR["P_MS1"]:
-            VAR["P_M1"] = VAR["P_SPD"]
-        else:
-            VAR["P_M1"] = VAR["P_MS1"]
-            
+        # R_M: falla de equipos por impactos CERCA de la estructura
+        VAR["K_MS1"] = calcular_K_MS(VAR["Ks1"], VAR["Ks2"], VAR["Ks3"], VAR["Ks4"])
+        VAR["P_MS1"] = calcular_P_MS(VAR["K_MS1"])
+        VAR["P_M1"] = min(VAR["P_SPD"], VAR["P_MS1"])
         VAR["L_M1"] = VAR["L_o1"]
-        VAR["R_M1"] = (VAR["N_M"]
-                                * VAR["P_M1"]
-                                * VAR["L_M1"])
-        
-        
+        VAR["R_M1"] = calcular_componente(VAR["N_M"], VAR["P_M1"], VAR["L_M1"])
 
 # =============================================================================
-# 6.6. Risk of dangerous step & touch potential inside & outside structure due 
+# 6.6. Risk of dangerous step & touch potential inside & outside structure due
 # to direct strikes to service lines
 # =============================================================================
     def calcular_6_6(self, *args):
-        
-        if VAR["P_LD0"] < VAR["P_EB"]:
-            VAR["P_U1p"] = VAR["P_LD0"]
-        else:
-            VAR["P_U1p"] = VAR["P_EB"]            
-        if VAR["P_LD1"] < VAR["P_EB"]:
-            VAR["P_U1oh"] = VAR["P_LD1"]
-        else:
-            VAR["P_U1oh"] = VAR["P_EB"]        
-        if VAR["P_LD2"] < VAR["P_EB"]:
-            VAR["P_U1ug"] = VAR["P_LD2"]
-        else:
-            VAR["P_U1ug"] = VAR["P_EB"]      
-    
-
-        VAR["X_U1"] = (VAR["n_ohp"] * VAR["N_L1p"] * VAR["P_U1p"]      # 1 * 0.025 * 0.02   peb=0.2
-                         + VAR["n_oh"] * VAR["N_L1"] * VAR["P_U1oh"]     # 2 * 0.12 *  0.02   pld1 = 1
-                         + VAR["n_ugp"] * VAR["N_L2p"] * VAR["P_U1p"]    # 0 *
-                         + VAR["n_ug"] * VAR["N_L2"] * VAR["P_U1ug"])    # 2*
-        
-        VAR["L_U1"] = VAR["R_a"] * VAR["L_t1"] # ok
-        
+        # R_U: lesiones por impactos directos a las líneas
+        VAR["P_U1p"] = min(VAR["P_LD0"], VAR["P_EB"])
+        VAR["P_U1oh"] = min(VAR["P_LD1"], VAR["P_EB"])
+        VAR["P_U1ug"] = min(VAR["P_LD2"], VAR["P_EB"])
+        VAR["X_U1"] = calcular_X([
+            (VAR["n_ohp"], VAR["N_L1p"], VAR["P_U1p"]),
+            (VAR["n_oh"], VAR["N_L1"], VAR["P_U1oh"]),
+            (VAR["n_ugp"], VAR["N_L2p"], VAR["P_U1p"]),
+            (VAR["n_ug"], VAR["N_L2"], VAR["P_U1ug"]),
+        ])
+        VAR["L_U1"] = calcular_L_A(VAR["R_a"], VAR["L_t1"])
         VAR["R_U1"] = VAR["X_U1"] * VAR["L_U1"]
 
-
-
 # =============================================================================
-# 6.7. Risk of physical destruction due to fire,  explosion, mechanical damage 
+# 6.7. Risk of physical destruction due to fire, explosion, mechanical damage
 # and chemical discharge due to direct strikes to service lines
 # =============================================================================
     def calcular_6_7(self, *args):
-        VAR["P_V1p"] = VAR["P_U1p"]
-        VAR["P_V1oh1"] = VAR["P_U1oh"]
-        VAR["P_V1ug"] = VAR["P_U1ug"]
-        VAR["X_V1"] = VAR["X_U1"]        
-        VAR["L_V1"] = VAR["L_B1"]        
+        # R_V: daño físico por impactos directos a las líneas
+        # PENDIENTE: verificar si P_V debe calcularse aparte (IEC 62305-2:2024)
+        VAR["X_V1"] = VAR["X_U1"]
+        VAR["L_V1"] = VAR["L_B1"]
         VAR["R_V1"] = VAR["X_V1"] * VAR["L_V1"]
 
-
 # =============================================================================
-# 6.8. Risk of electrical/electronic equipment malfunction or failure due to 
+# 6.8. Risk of electrical/electronic equipment malfunction or failure due to
 # overvoltages from direct strikes to service lines
 # =============================================================================
-
     def calcular_6_8(self, *args):
-        if VAR["P_LD0"] < VAR["P_SPD"]:
-            VAR["P_W1p"] = VAR["P_LD0"]
-        else:
-            VAR["P_W1p"] = VAR["P_SPD"]
-           
-        if VAR["P_LD1"] < VAR["P_SPD"]:
-            VAR["P_W1oh"] = VAR["P_LD1"]
-        else:
-            VAR["P_W1oh"] = VAR["P_SPD"]        
-               
-        if VAR["P_LD2"] < VAR["P_SPD"]:
-            VAR["P_W1g"] = VAR["P_LD2"]
-        else:
-            VAR["P_W1ug"] = VAR["P_SPD"]
-
-
-        VAR["X_W1"] = (VAR["n_ohp"] * VAR["N_L1p"] * VAR["P_W1p"] # 1 * 0.0127674 * 0.4
-                        + VAR["n_oh"] * VAR["N_L1"] * VAR["P_W1oh"] # 2 * 0.063837 * 1
-                        + VAR["n_ugp"] * VAR["N_L2p"] * VAR["P_W1p"] # 0
-                        + VAR["n_ug"] * VAR["N_L2"] * VAR["P_W1ug"]) # 0* * 0.4
-
+        # R_W: falla de equipos por impactos directos a las líneas
+        VAR["P_W1p"] = min(VAR["P_LD0"], VAR["P_SPD"])
+        VAR["P_W1oh"] = min(VAR["P_LD1"], VAR["P_SPD"])
+        VAR["P_W1ug"] = min(VAR["P_LD2"], VAR["P_SPD"])
+        VAR["X_W1"] = calcular_X([
+            (VAR["n_ohp"], VAR["N_L1p"], VAR["P_W1p"]),
+            (VAR["n_oh"], VAR["N_L1"], VAR["P_W1oh"]),
+            (VAR["n_ugp"], VAR["N_L2p"], VAR["P_W1p"]),
+            (VAR["n_ug"], VAR["N_L2"], VAR["P_W1ug"]),
+        ])
         VAR["L_W1"] = VAR["L_o1"]
         VAR["R_W1"] = VAR["X_W1"] * VAR["L_W1"]
 
-
 # =============================================================================
-# 6.9. Risk of electrical/electronic equipment malfunction or failure due to 
+# 6.9. Risk of electrical/electronic equipment malfunction or failure due to
 # overvoltages from indirect strikes to service lines
 # =============================================================================
-
     def calcular_6_9(self, *args):
-        VAR["P_Z1p"] = VAR["P_W1p"]        
+        # R_Z: falla de equipos por impactos CERCA de las líneas
+        # PENDIENTE: verificar si P_Z debe calcularse aparte (IEC 62305-2:2024)
+        VAR["P_Z1p"] = VAR["P_W1p"]
         VAR["P_Z1oh"] = VAR["P_W1oh"]
         VAR["P_Z1ug"] = VAR["P_W1ug"]
+        VAR["DELTA_N_1p"] = calcular_delta_N(VAR["N_I1p"], VAR["N_L1p"])
+        VAR["DELTA_N_1"] = calcular_delta_N(VAR["N_I1"], VAR["N_L1"])
+        VAR["DELTA_N_2p"] = calcular_delta_N(VAR["N_I2p"], VAR["N_L2p"])
+        VAR["DELTA_N_2"] = calcular_delta_N(VAR["N_I2"], VAR["N_L2"])
+        VAR["X_Z1"] = calcular_X([
+            (VAR["n_ohp"], VAR["DELTA_N_1p"], VAR["P_Z1p"]),
+            (VAR["n_oh"], VAR["DELTA_N_1"], VAR["P_Z1oh"]),
+            (VAR["n_ugp"], VAR["DELTA_N_2p"], VAR["P_Z1p"]),
+            (VAR["n_ug"], VAR["DELTA_N_2"], VAR["P_Z1ug"]),
+        ])
+        VAR["L_Z1"] = VAR["L_o1"]
+        VAR["R_Z1"] = VAR["X_Z1"] * VAR["L_Z1"]
 
-        if (VAR["N_I1p"] - VAR["N_L1p"]) < 0:
-            VAR["DELTA_N_1p"] = 0
-        else:
-            VAR["DELTA_N_1p"] = VAR["N_I1p"] - VAR["N_L1p"]
-        if (VAR["N_I1"] - VAR["N_L1"]) < 0:
-            VAR["DELTA_N_1"] = 0
-        else:
-            VAR["DELTA_N_1"] = VAR["N_I1"] - VAR["N_L1"]        
-        if (VAR["N_I2p"] - VAR["N_L2p"]) < 0:
-            VAR["DELTA_N_2p"] = 0
-        else:
-            VAR["DELTA_N_2p"] = VAR["N_I2p"] - VAR["N_L2p"]
-        if (VAR["N_I2"]  - VAR["N_L2"]) < 0:
-            VAR["DELTA_N_2"] = 0
-        else:
-            VAR["DELTA_N_2"] = VAR["N_I2"] - VAR["N_L2"]
-
-        VAR["X_Z1"] = (VAR["n_ohp"] * VAR["DELTA_N_1p"] * VAR["P_Z1p"]
-                                 + VAR["n_oh"] * VAR["DELTA_N_1"] * VAR["P_Z1oh"]
-                                 + VAR["n_ugp"] * VAR["DELTA_N_2p"] * VAR["P_Z1p"]                       
-                                 + VAR["n_ug"] * VAR["DELTA_N_2"] * VAR["P_Z1ug"])
-
-        VAR["L_Z1"] = VAR["L_o1"]       
-        VAR["R_Z1"] = VAR["X_Z1"]  * VAR["L_Z1"]
 # =============================================================================
 # 6.10. Total Risk of Electric Shock to animals and people (R1)
 # =============================================================================

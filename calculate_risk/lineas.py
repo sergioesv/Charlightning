@@ -70,3 +70,11 @@ def calcular_A_i_subterranea(L_c, rho):
     PENDIENTE: verificar con IEC 62305-2:2024.
     """
     return 25 * L_c * math.sqrt(rho)
+
+
+def calcular_delta_N(N_I, N_L):
+    """Impactos cerca de la línea que NO son impactos directos a ella.
+
+    Se resta N_L de N_I; si el resultado es negativo, se toma 0.
+    """
+    return max(0.0, N_I - N_L)

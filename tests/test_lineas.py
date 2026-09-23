@@ -48,3 +48,11 @@ def test_A_i_subterranea():
 def test_raiz_cuadrada_no_se_redondea():
     # Error corregido: antes se usaba math.isqrt, que daba √500 = 22 en vez de 22,36
     assert calcular_A_i_subterranea(L_c=1, rho=500) != 25 * 22
+
+
+def test_delta_N():
+    assert calcular_delta_N(N_I=1.0, N_L=0.2) == approx(0.8)
+
+
+def test_delta_N_nunca_es_negativo():
+    assert calcular_delta_N(N_I=0.1, N_L=0.2) == 0
