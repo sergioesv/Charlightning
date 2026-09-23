@@ -34,6 +34,9 @@ from calculate_risk.lineas import (
     calcular_N_L,
     calcular_N_I,
 )
+from calculate_risk.probabilidades import calcular_P_B, calcular_P_SPD_y_P_EB
+from calculate_risk.perdidas import calcular_L_A, calcular_L_B
+from calculate_risk.riesgos import calcular_componente
 
 from pathlib import Path
 
@@ -1344,66 +1347,36 @@ class Principal_guiado(Panel):
 # to direct strikes to the structure
 # =============================================================================
 
-    def calcular_6_1 (self, *args):
-        #(16) pag.49
-        VAR["L_a1"] = VAR["R_a"] * VAR["L_t1"]
-        # Tabla 8
-        VAR["R_A1"] = VAR["N_D"] * VAR["P_A"] * VAR["L_a1"]
-
+    def calcular_6_1(self, *args):
+        # R_A: lesiones por tensiones de paso y contacto (impacto directo)
+        VAR["L_a1"] = calcular_L_A(VAR["R_a"], VAR["L_t1"])
+        VAR["R_A1"] = calcular_componente(VAR["N_D"], VAR["P_A"], VAR["L_a1"])
 
 # =============================================================================
 # 6.2. Risk of physical destruction due to fire, explosion, mechanical damage
-# and chemical
-# discharge due to direct strikes to the structure
+# and chemical discharge due to direct strikes to the structure
 # =============================================================================
-
-    def calcular_6_2 (self, *args):
-        VAR["L_B1"] = (VAR["r"]                       
-                        * VAR["h_1"]
-                        * VAR["r_f"]
-                        * VAR["L_f1"])
-
-        VAR["P_B1"] = 1 - VAR["E"]
-        VAR["R_B1"] = VAR["N_D"] * VAR["P_B1"] * VAR["L_B1"]
+    def calcular_6_2(self, *args):
+        # R_B: daño físico (incendio, explosión...) por impacto directo
+        VAR["L_B1"] = calcular_L_B(VAR["r"], VAR["h_1"], VAR["r_f"], VAR["L_f1"])
+        VAR["P_B1"] = calcular_P_B(VAR["E"])
+        VAR["R_B1"] = calcular_componente(VAR["N_D"], VAR["P_B1"], VAR["L_B1"])
 
 # =============================================================================
 # 6.3. Surge Protection Considerations
 # =============================================================================
-    def calcular_6_3 (self, *args):
-        VAR["P_SPD"] = 0
-        VAR["P_EB"] = 0 
-        
-        if VAR["P_B1"] > 0.3:
-            VAR["P_SPD"] = 1
-        elif VAR["P_B1"] > 0.06:
-            VAR["P_SPD"] = 0.03
-        elif VAR["P_B1"] > 0.03:            
-            VAR["P_SPD"] = 0.02
-        else:
-            VAR["P_SPD"] = 0.01   
-            
-        VAR["P_EB"] = VAR["P_SPD"]
-        '''cambio
-        if VAR["SP >"] 0:'''
-        if VAR["SP"] == 0:
-            VAR["P_EB"] = 1
-        else:
-            pass
-        
-        if VAR["SP"] < 2:
-            VAR["P_SPD"] = 1
-        else:
-            pass
+    def calcular_6_3(self, *args):
+        VAR["P_SPD"], VAR["P_EB"] = calcular_P_SPD_y_P_EB(VAR["P_B1"], VAR["SP"])
 
 # =============================================================================
-# 6.4. Risk of electrical/electronic equipment malfunction or failure due to 
+# 6.4. Risk of electrical/electronic equipment malfunction or failure due to
 # overvoltages from direct strikes to the structure
 # =============================================================================
-
-    def calcular_6_4 (self, *args):
+    def calcular_6_4(self, *args):
+        # R_C: falla de equipos por sobretensiones (impacto directo)
         VAR["P_C1"] = VAR["P_SPD"]
         VAR["L_C1"] = VAR["L_o1"]
-        VAR["R_C1"] = VAR["N_D"] * VAR["P_C1"] * VAR["L_C1"]     
+        VAR["R_C1"] = calcular_componente(VAR["N_D"], VAR["P_C1"], VAR["L_C1"])  
 
 
 # =============================================================================
