@@ -906,7 +906,8 @@ class Principal_guiado(Panel):
         self.calcular_9_7()
         self.calcular_9_8()
         self.calcular_9_9()
-        #self.changeText()       
+        self.mostrar_resultados()
+        #self.changeText()
         self.valores()
 
 
@@ -1603,89 +1604,27 @@ class Principal_guiado(Panel):
         VAR["R_F4"] = VAR["R_B4"] + VAR["R_V4"]
         VAR["R_o4"] = VAR["R_C4"] + VAR["R_M4"] + VAR["R_W4"] + VAR["R_Z4"]
 
-        _text_ = "{:.2e}".format(VAR["R_d1"])
-        self.Entry16['state'] = 'normal'
-        self.Entry16.delete('0', 'end')
-        self.Entry16.insert('0', _text_)
-        self.Entry16['state'] = 'readonly'
-        self.Entry16.grid(column='3', row='1')
-
-        _text_ = "{:.2e}".format(VAR["R_d2"])
-        self.Entry17['state'] = 'normal'
-        self.Entry17.delete('0', 'end')
-        self.Entry17.insert('0', _text_)
-        self.Entry17['state'] = 'readonly'
-        self.Entry17.grid(column='3', row='2')
-
-        _text_ = "{:.2e}".format(VAR["R_d3"])
-        self.Entry18['state'] = 'normal'
-        self.Entry18.delete('0', 'end')
-        self.Entry18.insert('0', _text_)
-        self.Entry18['state'] = 'readonly'
-        self.Entry18.grid(column='3', row='3')
-
-        _text_ = "{:.2e}".format(VAR["R_d4"])
-        self.Entry19['state'] = 'normal'
-        self.Entry19.delete('0', 'end')
-        self.Entry19.insert('0', _text_)
-        self.Entry19['state'] = 'readonly'
-        self.Entry19.grid(column='3', row='4')
-
-        _text_ = "{:.2e}".format(VAR["R_i1"])
-        self.Entry20['state'] = 'normal'
-        self.Entry20.delete('0', 'end')
-        self.Entry20.insert('0', _text_)
-        self.Entry20['state'] = 'readonly'
-        self.Entry20.grid(column='5', row='1')
-
-        _text_ = "{:.2e}".format(VAR["R_i2"])
-        self.Entry21['state'] = 'normal'
-        self.Entry21.delete('0', 'end')
-        self.Entry21.insert('0', _text_)
-        self.Entry21['state'] = 'readonly'
-        self.Entry21.grid(column='5', row='2')
-
-        _text_ = "{:.2e}".format(VAR["R_i3"])
-        self.Entry22['state'] = 'normal'
-        self.Entry22.delete('0', 'end')
-        self.Entry22.insert('0', _text_)
-        self.Entry22['state'] = 'readonly'
-        self.Entry22.grid(column='5', row='3')
-
-        _text_ = "{:.2e}".format(VAR["R_i4"])
-        self.Entry23['state'] = 'normal'
-        self.Entry23.delete('0', 'end')
-        self.Entry23.insert('0', _text_)
-        self.Entry23['state'] = 'readonly'
-        self.Entry23.grid(column='5', row='4')
-
-        _text_ = "{:.2e}".format(VAR["R_1"])
-        self.Entry24['state'] = 'normal'
-        self.Entry24.delete('0', 'end')
-        self.Entry24.insert('0', _text_)
-        self.Entry24['state'] = 'readonly'
-        self.Entry24.grid(column='7', row='1')
-
-        _text_ = "{:.2e}".format(VAR["R_2"])
-        self.Entry25['state'] = 'normal'
-        self.Entry25.delete('0', 'end')
-        self.Entry25.insert('0', _text_)
-        self.Entry25['state'] = 'readonly'
-        self.Entry25.grid(column='7', row='2')
-
-        _text_ = "{:.2e}".format(VAR["R_3"])
-        self.Entry26['state'] = 'normal'
-        self.Entry26.delete('0', 'end')
-        self.Entry26.insert('0', _text_)
-        self.Entry26['state'] = 'readonly'
-        self.Entry26.grid(column='7', row='3')
-
-        _text_ = "{:.2e}".format(VAR["R_4"])
-        self.Entry27['state'] = 'normal'
-        self.Entry27.delete('0', 'end')
-        self.Entry27.insert('0', _text_)
-        self.Entry27['state'] = 'readonly'
-        self.Entry27.grid(column='7', row='4')
+    def mostrar_resultados(self):
+        """Escribe los riesgos calculados en las casillas de la pantalla."""
+        casillas = [
+            (self.Entry16, "R_d1"),
+            (self.Entry17, "R_d2"),
+            (self.Entry18, "R_d3"),
+            (self.Entry19, "R_d4"),
+            (self.Entry20, "R_i1"),
+            (self.Entry21, "R_i2"),
+            (self.Entry22, "R_i3"),
+            (self.Entry23, "R_i4"),
+            (self.Entry24, "R_1"),
+            (self.Entry25, "R_2"),
+            (self.Entry26, "R_3"),
+            (self.Entry27, "R_4"),
+        ]
+        for casilla, clave in casillas:
+            casilla['state'] = 'normal'
+            casilla.delete('0', 'end')
+            casilla.insert('0', "{:.2e}".format(VAR[clave]))
+            casilla['state'] = 'readonly'
 
     def calcular_informe(self):
         # Combina VAR (resultados numéricos) + papo (datos del proyecto)
