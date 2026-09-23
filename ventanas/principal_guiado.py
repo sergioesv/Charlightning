@@ -1209,8 +1209,10 @@ class Principal_guiado(Panel):
 
     def mostrar_resultados(self):
         """Escribe los resultados calculados en las casillas de la pantalla."""
+        
         self.Entry5.delete('0', 'end')
         self.Entry5.insert('0', round(VAR["A_d"], 3))
+        
         casillas = [
             (self.Entry16, "R_d1"),
             (self.Entry17, "R_d2"),
