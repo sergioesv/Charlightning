@@ -26,6 +26,7 @@ from calculo_ddt_plot.ventana_calculo_ddt import Calculo_DDT
 from variables.globales import papo
 from variables.variable_generales import VAR
 from calculate_risk.collect_entry_data_risk import DataEntryRiskTable
+from calculate_risk.areas import calcular_A_d, calcular_N_D
 from pathlib import Path
 
 #Carpeta principal del proyecto: dos niveles arriba de este archivo
@@ -1253,23 +1254,15 @@ class Principal_guiado(Panel):
 # =============================================================================
 
     def calcular_3_1(self, *args):
-        #ecu (6) pag. 35
-        if VAR["H"]> VAR["H_P"] or VAR["H"] == VAR["H_P"]:
-            VAR["A_d"] = ((VAR["L"]  * VAR["W"]) 
-                            + (6 * VAR["H"] * (VAR["L"] + VAR["W"])) 
-                            + (9 * math.pi * VAR["H"] ** 2))
-        elif VAR["H"] < VAR["H_P"]:
-            VAR["A_d"] = (9 * math.pi * VAR["H_P"] ** 2 )
-
+        # Área colectora e impactos directos (fórmulas en calculate_risk/areas.py)
+        VAR["A_d"] = calcular_A_d(VAR["L"], VAR["W"], VAR["H"], VAR["H_P"])
 
         _text_ = round(VAR["A_d"], 3)
         self.Entry5.delete('0', 'end')
         self.Entry5.insert('0', _text_)
 
-
         VAR["N_g"] = VAR["DDT"]
-        #ecu 5 pag. 34
-        VAR["N_D"] = (VAR["N_g"] * VAR["A_d"] * VAR["C_d"] *10**(-6))
+        VAR["N_D"] = calcular_N_D(VAR["N_g"], VAR["A_d"], VAR["C_d"])
 
 
 # =============================================================================
