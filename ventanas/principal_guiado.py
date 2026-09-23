@@ -25,26 +25,7 @@ from calculo_ddt_plot.ventana_calculo_ddt import Calculo_DDT
 from variables.globales import papo
 from variables.variable_generales import VAR
 from calculate_risk.collect_entry_data_risk import DataEntryRiskTable
-from calculate_risk.areas import calcular_A_d, calcular_N_D, calcular_A_m, calcular_N_M
-from calculate_risk.lineas import (
-    calcular_A_l_aerea,
-    calcular_A_i_aerea,
-    calcular_A_l_subterranea,
-    calcular_A_i_subterranea,
-    calcular_N_L,
-    calcular_N_I,
-    calcular_delta_N,
-)
-
-from calculate_risk.probabilidades import (
-    calcular_P_B,
-    calcular_P_SPD_y_P_EB,
-    calcular_K_MS,
-    calcular_P_MS,
-)
-
-from calculate_risk.perdidas import calcular_L_A, calcular_L_B
-from calculate_risk.riesgos import calcular_componente, calcular_X
+from calculate_risk.calculo import calcular_riesgo
 
 from pathlib import Path
 
@@ -868,43 +849,7 @@ class Principal_guiado(Panel):
         self.calcular_E()
         self.calcular_r()
         self.calcular_SP()
-        self.calcular_3_1()
-        self.calcular_3_2()
-        self.calcular_4()       
-        self.calcular_4_1()
-        self.calcular_4_2()
-        self.calcular_5() 
-        self.calcular_5_1()
-        self.calcular_5_2()
-        self.calcular_6_1()
-        self.calcular_6_2()
-        self.calcular_6_3()
-        self.calcular_6_4()
-        self.calcular_6_5()
-        self.calcular_6_6()
-        self.calcular_6_7()      
-        self.calcular_6_8()
-        self.calcular_6_9()
-        self.calcular_6_10()
-        self.calcular_7_1()
-        self.calcular_7_2()
-        self.calcular_7_3()
-        self.calcular_7_4()
-        self.calcular_7_5()
-        self.calcular_7_6()
-        self.calcular_7_7()
-        self.calcular_8_1()
-        self.calcular_8_2()
-        self.calcular_8_3()
-        self.calcular_9_1()
-        self.calcular_9_2()
-        self.calcular_9_3()
-        self.calcular_9_4()
-        self.calcular_9_5()
-        self.calcular_9_6()
-        self.calcular_9_7()
-        self.calcular_9_8()
-        self.calcular_9_9()
+        VAR.update(calcular_riesgo(VAR))
         self.mostrar_resultados()
 
 
