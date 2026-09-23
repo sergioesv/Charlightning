@@ -1,5 +1,8 @@
 """Áreas colectoras y número de eventos en las líneas de servicio."""
 
+import math
+
+
 
 def calcular_A_l_aerea(L_c, H, H_a, H_c):
     """Área colectora para impactos DIRECTOS a una línea aérea, en m².
@@ -43,3 +46,27 @@ def calcular_N_I(N_g, A_i, C_t, C_e):
     PENDIENTE: verificar con IEC 62305-2:2024 (N_SG reemplaza a N_g).
     """
     return N_g * A_i * C_t * C_e * 1e-6
+
+
+def calcular_A_l_subterranea(L_c, H, H_a, rho):
+    """Área colectora para impactos DIRECTOS a una línea subterránea, en m².
+
+    L_c: longitud de la línea (m).
+    H: altura de la estructura (m).
+    H_a: altura de la estructura en el otro extremo de la línea (m).
+    rho: resistividad del terreno (Ω·m).
+    Si la longitud útil queda negativa, se toma 0.
+    PENDIENTE: verificar con IEC 62305-2:2024.
+    """
+    longitud_util = max(0.0, L_c - 3 * (H_a + H))
+    return longitud_util * math.sqrt(rho)
+
+
+def calcular_A_i_subterranea(L_c, rho):
+    """Área colectora para impactos CERCA de una línea subterránea, en m².
+
+    L_c: longitud de la línea (m).
+    rho: resistividad del terreno (Ω·m).
+    PENDIENTE: verificar con IEC 62305-2:2024.
+    """
+    return 25 * L_c * math.sqrt(rho)

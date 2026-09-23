@@ -16,7 +16,6 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import tkinter as tk
-import math
 import PDF_Creator
 from tkinter import ttk
 from tkinter import messagebox
@@ -27,7 +26,15 @@ from variables.globales import papo
 from variables.variable_generales import VAR
 from calculate_risk.collect_entry_data_risk import DataEntryRiskTable
 from calculate_risk.areas import calcular_A_d, calcular_N_D, calcular_A_m, calcular_N_M
-from calculate_risk.lineas import calcular_A_l_aerea, calcular_A_i_aerea, calcular_N_L, calcular_N_I
+from calculate_risk.lineas import (
+    calcular_A_l_aerea,
+    calcular_A_i_aerea,
+    calcular_A_l_subterranea,
+    calcular_A_i_subterranea,
+    calcular_N_L,
+    calcular_N_I,
+)
+
 from pathlib import Path
 
 #Carpeta principal del proyecto: dos niveles arriba de este archivo
@@ -1309,66 +1316,27 @@ class Principal_guiado(Panel):
 # 5. UNDERGROUND SERVICE LINES
 # =============================================================================
     def calcular_5(self, *args):
-        if VAR["pl"] == 2:
-            VAR["n_ugp"] = 1
-        else:
-            VAR["n_ugp"] = 0
-
+        VAR["n_ugp"] = 1 if VAR["pl"] == 2 else 0
 
 # =============================================================================
 # 5.1. Direct Strikes to Underground Service Lines
 # =============================================================================
-
-    def calcular_5_1 (self, *args):
-        '''#cambio              
-        # self.L_c2 = self.L_2 - 3 * self.H - 3 * self.h_a2'''
+    def calcular_5_1(self, *args):
+        # Impactos directos a las líneas subterráneas (fórmulas en calculate_risk/lineas.py)
         VAR["L_c2"] = VAR["L_2"]
-
-
-        '''#cambio
-        VAR["A_c2"] = 2 * VAR["D_c1"] * VAR["L_c2"] '''
-
-        VAR["A_c2"] = (VAR["L_c2"] - 3 *(VAR["h_a2"] + VAR["H"])) * math.isqrt(VAR["P_2"])
-        
-        VAR["A_a2"] = (VAR["l_a2"] * VAR["w_a2"] 
-                         + 6 * VAR["h_a2"] * (VAR["l_a2"] + VAR["w_a2"]) 
-                         + 9 * math.pi * VAR["h_a2"] **2)
-        
-        
-        VAR["N_L2p"] = (VAR["N_g"]
-                          * VAR["A_c2"] 
-                          * VAR["C_t0"] 
-                          * VAR["C_d"]
-                          * 10**(-6))
-        
-        VAR["N_L2"] = (VAR["N_g"]
-                         * VAR["A_c2"] 
-                         * VAR["C_t2"] 
-                         * VAR["C_d"]  
-                         * 10**(-6)) 
-        
+        VAR["A_c2"] = calcular_A_l_subterranea(VAR["L_c2"], VAR["H"], VAR["h_a2"], VAR["P_2"])
+        VAR["N_L2p"] = calcular_N_L(VAR["N_g"], VAR["A_c2"], VAR["C_t0"], VAR["C_d"])
+        VAR["N_L2"] = calcular_N_L(VAR["N_g"], VAR["A_c2"], VAR["C_t2"], VAR["C_d"])
 
 # =============================================================================
 # 5.2. Indirect Strikes to Underground Service Lines
 # =============================================================================
-    def calcular_5_2 (self, *args):
-        #es igual a L_c, pag. 37
-        #Tabla 12 Ai, pag. 38
-        '''cambio
-        self.A_l2 = 2 * self.D_c1 * self.L_2'''
-        VAR["A_l2"] = 25 * VAR["L_c2"] * math.isqrt(VAR["P_2"])
-        VAR["N_I2p"] = (VAR["N_g"]
-                            * VAR["A_l2"] 
-                            * VAR["C_t0"] 
-                            * VAR["C_e"]
-                            * 10**(-6))
-        #para líneas aereas auxiliares
-        #ecu. 10 pag. 39
-        VAR["N_I2"] = (VAR["N_g"]
-                         * VAR["A_l2"] 
-                         * VAR["C_t2"] 
-                         * VAR["C_e"]
-                         * 10**(-6))
+    def calcular_5_2(self, *args):
+        # Impactos cerca de las líneas subterráneas (fórmulas en calculate_risk/lineas.py)
+        VAR["A_l2"] = calcular_A_i_subterranea(VAR["L_c2"], VAR["P_2"])
+        VAR["N_I2p"] = calcular_N_I(VAR["N_g"], VAR["A_l2"], VAR["C_t0"], VAR["C_e"])
+        VAR["N_I2"] = calcular_N_I(VAR["N_g"], VAR["A_l2"], VAR["C_t2"], VAR["C_e"])
+
 
 # =============================================================================
 # 6. RISK CALCULATIONS FOR LOSS CATEGORY 1 - LOSS OF HUMAN LIFE
