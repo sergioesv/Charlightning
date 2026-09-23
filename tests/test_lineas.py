@@ -7,6 +7,7 @@ from calculate_risk.lineas import (
     calcular_N_I,
     calcular_A_l_subterranea,
     calcular_A_i_subterranea,
+    calcular_delta_N,
 )
 
 
