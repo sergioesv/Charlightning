@@ -26,6 +26,11 @@ from calculo_ddt_plot.ventana_calculo_ddt import Calculo_DDT
 from variables.globales import papo
 from variables.variable_generales import VAR
 from calculate_risk.collect_entry_data_risk import DataEntryRiskTable
+from pathlib import Path
+
+#Carpeta principal del proyecto: dos niveles arriba de este archivo
+CARPETA_PROYECTO = Path(__file__).resolve().parent.parent
+
 
 class Principal_guiado(Panel):
     """Panel que muestra una "terminal" negra y el botón para generar la tabla.
@@ -576,7 +581,7 @@ class Principal_guiado(Panel):
 
         self.Frame9 = ttk.Frame(self.Notebook2)
         self.Label65 = ttk.Label(self.Frame9)
-        self.img_1 = tk.PhotoImage(file='archivos\plot.png')
+        self.img_1 = tk.PhotoImage(file=str(CARPETA_PROYECTO / "archivos" / "plot.png"))
         self.Label65.configure(image=self.img_1, text='Label65')
         self.Label65.pack(padx='10', pady='10', side='top')
         self.Frame9.configure(height='200', width='480')

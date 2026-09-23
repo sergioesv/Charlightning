@@ -10,20 +10,19 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox
 from tkinter.filedialog import askopenfilename
+from pathlib import Path
 from netCDF4 import Dataset
 
 
+# Carpeta principal del proyecto: dos niveles arriba de este archivo
+CARPETA_PROYECTO = Path(__file__).resolve().parent.parent
 
 class Calculo_DDT:
     def __init__(self, master=None, retornar = None):
         # build ui
          # Como StrinVar pero en entero
 
-
-
-
-        self.path = "archivos\lis_vhrfc_1998_2013_v01.2.nc"
-
+        self.path = str(CARPETA_PROYECTO / "archivos" / "lis_vhrfc_1998_2013_v01.2.nc")
         self.Toplevel1 = tk.Tk() if master is None else tk.Toplevel(master)
         self.retornar=retornar
         self.ddt_retorno = None
