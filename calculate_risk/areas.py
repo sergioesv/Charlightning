@@ -22,3 +22,26 @@ def calcular_N_D(N_g, A_d, C_d):
     Ecuación (5), pág. 34. El 1e-6 pasa de m² a km².
     """
     return N_g * A_d * C_d * 1e-6
+
+
+def calcular_A_m(L, W, D_m):
+    """Área colectora para impactos cerca de la estructura, en m².
+
+    L, W: largo y ancho de la estructura (m).
+    D_m: distancia (m) hasta la que un rayo a tierra induce
+         sobretensiones peligrosas. La versión original usa 250 m.
+    PENDIENTE: verificar con IEC 62305-2:2024. Una versión anterior
+    de este código sumaba también el término L·W.
+    """
+    return 2 * L * D_m + 2 * W * D_m + math.pi * D_m ** 2
+
+
+def calcular_N_M(N_g, A_m, A_d, C_d):
+    """Número de impactos cerca de la estructura por año.
+
+    Se resta A_d·C_d para no contar los impactos directos.
+    Si el resultado fuera negativo, se toma 0.
+    Ecuación (8), pág. 37.
+    PENDIENTE: en IEC 62305-2:2024, N_SG reemplaza a N_g.
+    """
+    return max(0.0, N_g * (A_m - A_d * C_d) * 1e-6)

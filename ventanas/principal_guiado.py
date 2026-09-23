@@ -26,7 +26,7 @@ from calculo_ddt_plot.ventana_calculo_ddt import Calculo_DDT
 from variables.globales import papo
 from variables.variable_generales import VAR
 from calculate_risk.collect_entry_data_risk import DataEntryRiskTable
-from calculate_risk.areas import calcular_A_d, calcular_N_D
+from calculate_risk.areas import calcular_A_d, calcular_N_D, calcular_A_m, calcular_N_M
 from pathlib import Path
 
 #Carpeta principal del proyecto: dos niveles arriba de este archivo
@@ -1270,31 +1270,9 @@ class Principal_guiado(Panel):
 # =============================================================================
 
     def calcular_3_2(self, *args):
-        
-        '''cambio
-        self.A_m = round((self.L * self.W) 
-                              + (2 * self.D_m ) * (self.L + self.W) 
-                              + (math.pi * (self.D_m ** 2) 
-                              - self.A_d * self.C_d), 3)'''
-
-
-        VAR["A_m"] = (2 * VAR["L"] * VAR["D_m"] 
-                        + 2 * VAR["W"]  * VAR["D_m"]
-                        + math.pi * (VAR["D_m"] ** 2))
-
-        
-        if VAR["A_m"] < 0:
-            VAR["A_m"] = 0
-        else:
-            pass
-
-
-        #ecu (8) pag. 37
-        '''cambio
-        self.N_M = self.N_g * self.A_m *10**(-6)'''
-        VAR["N_M"] = (VAR["N_g"] 
-                        * (VAR["A_m"] - VAR["A_d"] * VAR["C_d"] )
-                        * 10**(-6))
+        # Área e impactos cerca de la estructura (fórmulas en calculate_risk/areas.py)
+        VAR["A_m"] = calcular_A_m(VAR["L"], VAR["W"], VAR["D_m"])
+        VAR["N_M"] = calcular_N_M(VAR["N_g"], VAR["A_m"], VAR["A_d"], VAR["C_d"])
 
 
 # =============================================================================
