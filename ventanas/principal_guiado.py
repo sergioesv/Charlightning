@@ -1491,34 +1491,34 @@ class Principal_guiado(Panel):
 # and chemical discharge due to direct strikes to the structure
 # =============================================================================
     def calcular_7_1(self, *args):
-        VAR["L_B2"] = VAR["r"] * VAR["r_f"] * VAR["L_f2"]
+        # R_B2: daño físico (h_z = 1: sin aumento por peligros especiales)
+        VAR["L_B2"] = calcular_L_B(VAR["r"], 1, VAR["r_f"], VAR["L_f2"])
         VAR["P_B2"] = VAR["P_B1"]
-        VAR["R_B2"] = VAR["N_D"] * VAR["P_B2"] * VAR["L_B2"] 
+        VAR["R_B2"] = calcular_componente(VAR["N_D"], VAR["P_B2"], VAR["L_B2"])
 
 # =============================================================================
-# 7.2. Risk of electrical/electronic equipment malfunction or failure due to 
+# 7.2. Risk of electrical/electronic equipment malfunction or failure due to
 # overvoltages from direct strikes to the structure
 # =============================================================================
     def calcular_7_2(self, *args):
         VAR["P_C2"] = VAR["P_C1"]
         VAR["L_C2"] = VAR["L_o2"]
-        VAR["R_C2"] = VAR["N_D"] * VAR["P_C2"] * VAR["L_C2"] #   ,1
-
+        VAR["R_C2"] = calcular_componente(VAR["N_D"], VAR["P_C2"], VAR["L_C2"])
 
     def calcular_7_3(self, *args):
         VAR["P_M2"] = VAR["P_M1"]
         VAR["L_M2"] = VAR["L_o2"]
-        VAR["R_M2"] = VAR["N_M"] * VAR["P_M2"] * VAR["L_M2"]
+        VAR["R_M2"] = calcular_componente(VAR["N_M"], VAR["P_M2"], VAR["L_M2"])
 
     def calcular_7_4(self, *args):
         VAR["X_V2"] = VAR["X_V1"]
         VAR["L_V2"] = VAR["L_B2"]
-        VAR["R_V2"] = VAR["X_V1"] * VAR["L_B2"]
+        VAR["R_V2"] = VAR["X_V2"] * VAR["L_V2"]
 
     def calcular_7_5(self, *args):
         VAR["X_W2"] = VAR["X_W1"]
         VAR["L_W2"] = VAR["L_o2"]
-        VAR["R_W2"] = VAR["X_W2"] * VAR["L_W2"] 
+        VAR["R_W2"] = VAR["X_W2"] * VAR["L_W2"]
 
     def calcular_7_6(self, *args):
         VAR["X_Z2"] = VAR["X_Z1"]
@@ -1527,24 +1527,19 @@ class Principal_guiado(Panel):
 
     def calcular_7_7(self, *args):
         VAR["R_d2"] = VAR["R_B2"] + VAR["R_C2"]
-        VAR["R_i2"] = (VAR["R_M2"]  #0
-                         + VAR["R_V2"] #0
-                         + VAR["R_W2"] 
-                         + VAR["R_Z2"])
+        VAR["R_i2"] = VAR["R_M2"] + VAR["R_V2"] + VAR["R_W2"] + VAR["R_Z2"]
         VAR["R_2"] = VAR["R_i2"] + VAR["R_d2"]
         VAR["R_F2"] = VAR["R_B2"] + VAR["R_V2"]
-        VAR["R_o2"] = (VAR["R_C2"] 
-                         + VAR["R_M2"] 
-                         + VAR["R_W2"] 
-                         + VAR["R_Z2"])
+        VAR["R_o2"] = VAR["R_C2"] + VAR["R_M2"] + VAR["R_W2"] + VAR["R_Z2"]
 
 # =============================================================================
 # 8. RISK CALCULATIONS FOR LOSS CATEGORY 3 - LOSS OF CULTURAL HERITAGE
 # =============================================================================
     def calcular_8_1(self, *args):
-        VAR["L_B3"] = VAR["r"] * VAR["r_f"] * VAR["L_f3"]
+        # R_B3: daño físico (h_z = 1: sin aumento por peligros especiales)
+        VAR["L_B3"] = calcular_L_B(VAR["r"], 1, VAR["r_f"], VAR["L_f3"])
         VAR["P_B3"] = VAR["P_B1"]
-        VAR["R_B3"] = VAR["N_D"] * VAR["P_B3"] * VAR["L_B3"]
+        VAR["R_B3"] = calcular_componente(VAR["N_D"], VAR["P_B3"], VAR["L_B3"])
 
     def calcular_8_2(self, *args):
         VAR["X_V3"] = VAR["X_V1"]
@@ -1562,31 +1557,30 @@ class Principal_guiado(Panel):
 # 9. RISK CALCULATIONS FOR LOSS CATEGORY 4 - ECONOMIC LOSS
 # =============================================================================
     def calcular_9_1(self, *args):
-        VAR["L_a4"] = VAR["R_a"] * VAR["L_t4"]
-        VAR["R_A4"] = VAR["N_D"] * VAR["P_A"] * VAR["L_a4"]
-
+        VAR["L_a4"] = calcular_L_A(VAR["R_a"], VAR["L_t4"])
+        VAR["R_A4"] = calcular_componente(VAR["N_D"], VAR["P_A"], VAR["L_a4"])
 
     def calcular_9_2(self, *args):
-        VAR["L_B4"] = VAR["r"] * VAR["h4"] * VAR["r_f"] * VAR["L_f4"]
+        VAR["L_B4"] = calcular_L_B(VAR["r"], VAR["h4"], VAR["r_f"], VAR["L_f4"])
         VAR["P_B4"] = VAR["P_B1"]
-        VAR["R_B4"] = VAR["N_D"] * VAR["P_B4"] * VAR["L_B4"]
+        VAR["R_B4"] = calcular_componente(VAR["N_D"], VAR["P_B4"], VAR["L_B4"])
 
     def calcular_9_3(self, *args):
         VAR["P_C4"] = VAR["P_C1"]
         VAR["L_C4"] = VAR["L_o4"]
-        VAR["R_C4"] = VAR["N_D"] * VAR["P_C4"] * VAR["L_C4"]
+        VAR["R_C4"] = calcular_componente(VAR["N_D"], VAR["P_C4"], VAR["L_C4"])
 
     def calcular_9_4(self, *args):
         VAR["P_M4"] = VAR["P_M1"]
         VAR["L_M4"] = VAR["L_o4"]
-        VAR["R_M4"] = VAR["N_M"] * VAR["P_M4"] * VAR["L_M4"]
+        VAR["R_M4"] = calcular_componente(VAR["N_M"], VAR["P_M4"], VAR["L_M4"])
 
     def calcular_9_5(self, *args):
         VAR["X_U4"] = VAR["X_U1"]
-        VAR["L_U4"] = VAR["R_a"] * VAR["L_t4"]
+        VAR["L_U4"] = calcular_L_A(VAR["R_a"], VAR["L_t4"])
         VAR["R_U4"] = VAR["X_U4"] * VAR["L_U4"]
 
-    def calcular_9_6(self, *args):        
+    def calcular_9_6(self, *args):
         VAR["X_V4"] = VAR["X_V1"]
         VAR["L_V4"] = VAR["L_B4"]
         VAR["R_V4"] = VAR["X_V4"] * VAR["L_V4"]
@@ -1594,7 +1588,7 @@ class Principal_guiado(Panel):
     def calcular_9_7(self, *args):
         VAR["X_W4"] = VAR["X_W1"]
         VAR["L_W4"] = VAR["L_o4"]
-        VAR["R_W4"] = VAR["X_W4"] * VAR["L_W4"] 
+        VAR["R_W4"] = VAR["X_W4"] * VAR["L_W4"]
 
     def calcular_9_8(self, *args):
         VAR["X_Z4"] = VAR["X_Z1"]
@@ -1603,18 +1597,11 @@ class Principal_guiado(Panel):
 
     def calcular_9_9(self, *args):
         VAR["R_d4"] = VAR["R_A4"] + VAR["R_B4"] + VAR["R_C4"]
-        VAR["R_i4"] = (VAR["R_M4"] 
-                         + VAR["R_U4"] 
-                         + VAR["R_V4"] 
-                         + VAR["R_W4"] 
-                         + VAR["R_Z4"])
+        VAR["R_i4"] = VAR["R_M4"] + VAR["R_U4"] + VAR["R_V4"] + VAR["R_W4"] + VAR["R_Z4"]
         VAR["R_4"] = VAR["R_i4"] + VAR["R_d4"]
         VAR["R_S4"] = VAR["R_A4"] + VAR["R_U4"]
         VAR["R_F4"] = VAR["R_B4"] + VAR["R_V4"]
-        VAR["R_o4"] = (VAR["R_C4"] 
-                         + VAR["R_M4"] 
-                         +VAR["R_W4"] 
-                         + VAR["R_Z4"])
+        VAR["R_o4"] = VAR["R_C4"] + VAR["R_M4"] + VAR["R_W4"] + VAR["R_Z4"]
 
         _text_ = "{:.2e}".format(VAR["R_d1"])
         self.Entry16['state'] = 'normal'
