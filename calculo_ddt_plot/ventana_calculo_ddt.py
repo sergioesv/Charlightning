@@ -9,7 +9,6 @@ Created on Sat May  7 23:26:04 2022
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox
-from tkinter.filedialog import askopenfilename
 from pathlib import Path
 from netCDF4 import Dataset
 
