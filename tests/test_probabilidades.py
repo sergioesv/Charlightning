@@ -5,6 +5,7 @@ from calculate_risk.probabilidades import (
     calcular_P_SPD_y_P_EB,
     calcular_K_MS,
     calcular_P_MS,
+    calcular_P_Z,
 )
 
 
@@ -50,3 +51,9 @@ def test_P_MS_nunca_pasa_de_1():
     # Sin apantallamiento (K_MS = 1) o mayor, la probabilidad queda en 1
     assert calcular_P_MS(1) == 1
     assert calcular_P_MS(2) == 1
+
+def test_P_Z_es_el_producto_de_sus_tres_factores():
+    # Ecuación B.11: P_Z = P_DPS * P_LI * C_LI
+    assert calcular_P_Z(P_DPS=0.05, P_LI=0.3, C_LI=1) == approx(0.015)
+    assert calcular_P_Z(P_DPS=1, P_LI=1, C_LI=1) == 1
+    assert calcular_P_Z(P_DPS=0.05, P_LI=1, C_LI=0) == 0

@@ -56,3 +56,18 @@ def calcular_P_MS(K_MS):
     referencia clara a la norma; ahora se usa la fórmula directa.
     """
     return min(1.0, K_MS ** 2)
+
+
+def calcular_P_Z(P_DPS, P_LI, C_LI):
+    """Probabilidad de falla de equipos por impactos cerca de las líneas.
+
+    P_DPS: probabilidad según el NPR del sistema coordinado de DPS.
+    P_LI: según la tensión soportada de los equipos (Tabla B.9).
+    C_LI: según el apantallamiento/puesta a tierra de la línea (Tabla B.4).
+    Ecuación (B.11), Anexo B.
+    Nueva: antes R_Z reutilizaba por aproximación los valores de P_W
+    (que usan P_LD, de la Tabla B.8, para daño por corriente directa),
+    en vez de P_LI (Tabla B.9, para sobretensión inducida por impacto
+    cercano), que es la tabla que corresponde a este componente.
+    """
+    return P_DPS * P_LI * C_LI

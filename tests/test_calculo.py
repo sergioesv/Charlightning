@@ -31,13 +31,15 @@ def test_edificio_ejemplo_resultados():
     # sirven para detectar cambios accidentales; la validación contra la norma
     # está en tests/test_validacion_norma.py (Anexo E.2, casa rural).
     # Actualizados tras corregir A_m, N_M, y las áreas/frecuencias de líneas
-    # (A_l, A_i, N_L, N_I), y tras combinar las probabilidades P_M, P_U y P_W
-    # por producto en vez de mínimo, según IEC 62305-2:2010 / NTC 4552-2:2023.
+    # (A_l, A_i, N_L, N_I), tras combinar las probabilidades P_M, P_U y P_W
+    # por producto en vez de mínimo, y tras calcular P_Z con su propia
+    # fórmula (P_DPS * P_LI * C_LI) en vez de reutilizar P_W, según
+    # IEC 62305-2:2010 / NTC 4552-2:2023.
     r = calcular_riesgo(EDIFICIO_EJEMPLO)
     assert r["A_d"] == approx(2297.876, rel=1e-6)
     assert r["N_D"] == approx(0.01148938, rel=1e-6)
     assert r["N_M"] == approx(8.153982, rel=1e-6)
-    assert r["R_1"] == approx(5.217013e-2, rel=1e-6)
-    assert r["R_2"] == approx(5.216663e-2, rel=1e-6)
+    assert r["R_1"] == approx(5.811013e-2, rel=1e-6)
+    assert r["R_2"] == approx(5.810663e-2, rel=1e-6)
     assert r["R_3"] == approx(1.157447e-5, rel=1e-6)
-    assert r["R_4"] == approx(5.219197e-2, rel=1e-6)
+    assert r["R_4"] == approx(5.813197e-2, rel=1e-6)

@@ -19,6 +19,7 @@ from calculate_risk.probabilidades import (
     calcular_P_SPD_y_P_EB,
     calcular_K_MS,
     calcular_P_MS,
+    calcular_P_Z,
 )
 from calculate_risk.perdidas import calcular_L_A, calcular_L_B
 from calculate_risk.riesgos import calcular_componente, calcular_X
@@ -111,12 +112,16 @@ def _riesgo_1(v):
     v["R_M1"] = calcular_componente(v["N_M"], v["P_M1"], v["L_M1"])
 
     # 6.6 R_U: lesiones por impactos directos a las líneas
-    # P_U = P_TU * P_EB * P_LD * C_LD (ecuación B.8); P_TU y C_LD se toman
-    # en 1 (sin medidas adicionales / sin blindaje) porque la pantalla aún
-    # no pide esos datos. PENDIENTE: agregar P_TU y C_LD a la pantalla.
-    v["P_U1p"] = v["P_EB"] * v["P_LD0"]
-    v["P_U1oh"] = v["P_EB"] * v["P_LD1"]
-    v["P_U1ug"] = v["P_EB"] * v["P_LD2"]
+    # P_U = P_TU * P_EB * P_LD * C_LD (ecuación B.8). P_TU (Tabla B.6,
+    # medidas contra tensión de contacto) y C_LD (Tabla B.4, apantallamiento/
+    # puesta a tierra de la línea) se dejan en 1 (el caso más desfavorable:
+    # sin medidas adicionales) porque la pantalla aún no pide esos datos.
+    # PENDIENTE: agregar P_TU y C_LD como opciones de la pantalla.
+    P_TU = 1
+    C_LD = 1
+    v["P_U1p"] = P_TU * v["P_EB"] * v["P_LD0"] * C_LD
+    v["P_U1oh"] = P_TU * v["P_EB"] * v["P_LD1"] * C_LD
+    v["P_U1ug"] = P_TU * v["P_EB"] * v["P_LD2"] * C_LD
     v["X_U1"] = calcular_X([
         (v["n_ohp"], v["N_L1p"], v["P_U1p"]),
         (v["n_oh"], v["N_L1"], v["P_U1oh"]),
@@ -132,16 +137,25 @@ def _riesgo_1(v):
     v["R_V1"] = v["X_V1"] * v["L_V1"]
 
     # 6.8 R_W: falla de equipos por impactos directos a las líneas
-    # P_W = P_DPS * P_LD * C_LD (ecuación B.10); C_LD en 1 por la misma
-    # razón de arriba. PENDIENTE: agregar C_LD a la pantalla.
-    v["P_W1p"] = v["P_SPD"] * v["P_LD0"]
-    v["P_W1oh"] = v["P_SPD"] * v["P_LD1"]
-    v["P_W1ug"] = v["P_SPD"] * v["P_LD2"]
-    v["X_W1"] = calcular_X([
-        (v["n_ohp"], v["N_L1p"], v["P_W1p"]),
-        (v["n_oh"], v["N_L1"], v["P_W1oh"]),
-        (v["n_ugp"], v["N_L2p"], v["P_W1p"]),
-        (v["n_ug"], v["N_L2"], v["P_W1ug"]),
+    # P_Z = P_DPS * P_LI * C_LI (ecuación B.11). P_LI (Tabla B.9, según la
+    # tensión soportada de los equipos) y C_LI (Tabla B.4) se dejan en 1
+    # (caso más desfavorable) porque la pantalla aún no pide esos datos.
+    # Corregido: antes R_Z reutilizaba por aproximación los valores de
+    # P_W (Tabla B.8, para corriente directa en la línea), que no es la
+    # tabla que corresponde a este componente (impacto cerca de la línea).
+    # PENDIENTE: agregar P_LI y C_LI como opciones de la pantalla.
+    P_LI = 1
+    C_LI = 1
+    v["P_Z1"] = calcular_P_Z(v["P_SPD"], P_LI, C_LI)
+    v["DELTA_N_1p"] = calcular_delta_N(v["N_I1p"], v["N_L1p"])
+    v["DELTA_N_1"] = calcular_delta_N(v["N_I1"], v["N_L1"])
+    v["DELTA_N_2p"] = calcular_delta_N(v["N_I2p"], v["N_L2p"])
+    v["DELTA_N_2"] = calcular_delta_N(v["N_I2"], v["N_L2"])
+    v["X_Z1"] = calcular_X([
+        (v["n_ohp"], v["DELTA_N_1p"], v["P_Z1"]),
+        (v["n_oh"], v["DELTA_N_1"], v["P_Z1"]),
+        (v["n_ugp"], v["DELTA_N_2p"], v["P_Z1"]),
+        (v["n_ug"], v["DELTA_N_2"], v["P_Z1"]),
     ])
     v["L_W1"] = v["L_o1"]
     v["R_W1"] = v["X_W1"] * v["L_W1"]
