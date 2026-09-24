@@ -70,7 +70,7 @@ class Calculo_DDT:
         self.Label54 = ttk.Label(self.Toplevel1)
         self.Label54.configure(text='...')
         self.Label54.grid(column='1', row='5')
-        self.Button11.configure(state='diabled', command=self.calcular_ddt)
+        self.Button11.configure(state='disabled', command=self.calcular_ddt)
         self.Toplevel1.configure(height='200', width='200')
 
         # Main widget
