@@ -54,4 +54,18 @@ VALORES_OPCIONES = {
     "r": [1, 0.5, 0.2],
     # DPS: ninguno, solo en la entrada de servicios, según NTC 4552-4
     "SP": [0, 1, 2],
+    # Medidas contra tensión de contacto en las líneas (Tabla B.6):
+    # sin medidas, avisos de peligro, aislamiento eléctrico, restricciones físicas
+    "P_TU": [1, 0.1, 0.01, 0],
+    # Apantallamiento/puesta a tierra de la línea para daño por corriente
+    # directa en la línea (Tabla B.4, simplificado a los dos casos más
+    # comunes: normal, o apantallada y puesta a tierra en la entrada)
+    "C_LD": [1, 0],
+    # Igual que C_LD, pero para la sobretensión inducida por un impacto
+    # cerca de la línea (Tabla B.4, misma simplificación)
+    "C_LI": [1, 0],
+    # Tensión soportada de los equipos conectados a las líneas (Tabla B.9,
+    # simplificado a dos casos representativos: equipos sensibles con
+    # U_W bajo, o tensión soportada típica U_W = 2,5 kV)
+    "P_LI": [1, 0.3],
 }

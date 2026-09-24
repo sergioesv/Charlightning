@@ -15,6 +15,7 @@ EDIFICIO_EJEMPLO = {
     "L_f2": 0.01, "L_o2": 0.001, "L_f3": 0.1,
     "h4": 1, "L_f4": 0.2, "L_o4": 0.001, "L_t4": 0.01,
     "E": 0.9, "r": 0.5, "SP": 1,
+    "P_TU": 1, "C_LD": 1, "C_LI": 1, "P_LI": 1,
     "h_a1": 0, "C_t1": 1,
     "h_a2": 0, "C_t2": 1, "R_a": 0.01, "L_t1": 1e-4,
 }
@@ -43,3 +44,14 @@ def test_edificio_ejemplo_resultados():
     assert r["R_2"] == approx(5.810663e-2, rel=1e-6)
     assert r["R_3"] == approx(1.157447e-5, rel=1e-6)
     assert r["R_4"] == approx(5.813197e-2, rel=1e-6)
+
+def test_P_TU_C_LD_C_LI_influyen_en_el_resultado():
+    # Si P_TU, C_LD y C_LI bajan (más medidas de protección en la línea),
+    # R_1 debe bajar: R_U1, R_W1 y R_Z1 dependen de ellos.
+    datos_protegidos = dict(EDIFICIO_EJEMPLO)
+    datos_protegidos["P_TU"] = 0.01
+    datos_protegidos["C_LD"] = 0
+    datos_protegidos["C_LI"] = 0
+    r_base = calcular_riesgo(EDIFICIO_EJEMPLO)
+    r_protegido = calcular_riesgo(datos_protegidos)
+    assert r_protegido["R_1"] < r_base["R_1"]

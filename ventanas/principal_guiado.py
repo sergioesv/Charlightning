@@ -371,10 +371,65 @@ class Principal_guiado(Panel):
             width=ancho_combobox_labelframe2)
         self.Combobox11.grid(column='1', padx='3', row='2', sticky='e')
         self.Combobox11.current(1)
+
         self.Labelframe7.configure(height='200', text='Medidas de protección', width='200')
         self.Labelframe7.grid(column='0', padx='10', pady='12', row='3', sticky='ew')
+
+        self.Labelframe14 = ttk.Labelframe(self.Frame2)
+        self.Label_P_TU = ttk.Label(self.Labelframe14)
+        self.Label_P_TU.configure(text='Medidas contra tensión de contacto:')
+        self.Label_P_TU.grid(column='0', padx='3', pady='2', row='0', sticky='w')
+        self.Label_C_LD = ttk.Label(self.Labelframe14)
+        self.Label_C_LD.configure(text='Apantallamiento de línea (corriente directa):')
+        self.Label_C_LD.grid(column='0', padx='3', pady='2', row='1', sticky='w')
+        self.Label_C_LI = ttk.Label(self.Labelframe14)
+        self.Label_C_LI.configure(text='Apantallamiento de línea (impacto cercano):')
+        self.Label_C_LI.grid(column='0', padx='3', pady='2', row='2', sticky='w')
+        self.Label_P_LI = ttk.Label(self.Labelframe14)
+        self.Label_P_LI.configure(text='Tensión soportada de los equipos:')
+        self.Label_P_LI.grid(column='0', padx='3', pady='2', row='3', sticky='w')
+        self.Combobox25 = ttk.Combobox(self.Labelframe14)
+        self.Combobox25.configure(
+            state='readonly',
+            values=["Sin medidas",
+                    "Avisos de peligro",
+                    "Aislamiento eléctrico",
+                    "Restricciones físicas de acceso"],
+            width=ancho_combobox_labelframe2)
+        self.Combobox25.grid(column='1', padx='3', row='0', sticky='e')
+        self.Combobox25.current(0)
+        self.Labelframe14.columnconfigure('1', weight='1')
+        self.Combobox26 = ttk.Combobox(self.Labelframe14)
+        self.Combobox26.configure(
+            state='readonly',
+            values=["Normal",
+                    "Apantallada y puesta a tierra en la entrada"],
+            width=ancho_combobox_labelframe2)
+        self.Combobox26.grid(column='1', padx='3', row='1', sticky='e')
+        self.Combobox26.current(0)
+        self.Combobox27 = ttk.Combobox(self.Labelframe14)
+        self.Combobox27.configure(
+            state='readonly',
+            values=["Normal",
+                    "Apantallada y puesta a tierra en la entrada"],
+            width=ancho_combobox_labelframe2)
+        self.Combobox27.grid(column='1', padx='3', row='2', sticky='e')
+        self.Combobox27.current(0)
+        self.Combobox28 = ttk.Combobox(self.Labelframe14)
+        self.Combobox28.configure(
+            state='readonly',
+            values=["Equipos sensibles (U_W bajo)",
+                    "Tensión soportada típica (U_W = 2,5 kV)"],
+            width=ancho_combobox_labelframe2)
+        self.Combobox28.grid(column='1', padx='3', row='3', sticky='e')
+        self.Combobox28.current(0)
+        self.Labelframe14.configure(height='200', text='Medidas adicionales en las líneas (Anexo B)', width='200')
+        self.Labelframe14.grid(column='0', padx='10', pady='12', row='4', sticky='ew')
+
         self.Frame2.configure(height='200', width='200')
         self.Frame2.pack(side='top')
+
+
 
         self.Labelframe8 = ttk.Labelframe(self.Frame3)
         self.Label22 = ttk.Label(self.Labelframe8)
@@ -949,6 +1004,10 @@ class Principal_guiado(Panel):
             "E": self.Combobox9,
             "r": self.Combobox10,
             "SP": self.Combobox11,
+            "P_TU": self.Combobox25,
+            "C_LD": self.Combobox26,
+            "C_LI": self.Combobox27,
+            "P_LI": self.Combobox28,
         }
         for clave, combo in combos.items():
             VAR[clave] = VALORES_OPCIONES[clave][combo.current()]
