@@ -137,6 +137,19 @@ def _riesgo_1(v):
     v["R_V1"] = v["X_V1"] * v["L_V1"]
 
     # 6.8 R_W: falla de equipos por impactos directos a las líneas
+    v["P_W1p"] = v["P_SPD"] * v["P_LD0"] * C_LD
+    v["P_W1oh"] = v["P_SPD"] * v["P_LD1"] * C_LD
+    v["P_W1ug"] = v["P_SPD"] * v["P_LD2"] * C_LD
+    v["X_W1"] = calcular_X([
+        (v["n_ohp"], v["N_L1p"], v["P_W1p"]),
+        (v["n_oh"], v["N_L1"], v["P_W1oh"]),
+        (v["n_ugp"], v["N_L2p"], v["P_W1p"]),
+        (v["n_ug"], v["N_L2"], v["P_W1ug"]),
+    ])
+    v["L_W1"] = v["L_o1"]
+    v["R_W1"] = v["X_W1"] * v["L_W1"]
+
+    # 6.9 R_Z: falla de equipos por impactos cerca de las líneas
     # P_Z = P_DPS * P_LI * C_LI (ecuación B.11). P_LI (Tabla B.9, según la
     # tensión soportada de los equipos) y C_LI (Tabla B.4) se dejan en 1
     # (caso más desfavorable) porque la pantalla aún no pide esos datos.
@@ -156,20 +169,6 @@ def _riesgo_1(v):
         (v["n_oh"], v["DELTA_N_1"], v["P_Z1"]),
         (v["n_ugp"], v["DELTA_N_2p"], v["P_Z1"]),
         (v["n_ug"], v["DELTA_N_2"], v["P_Z1"]),
-    ])
-    v["L_W1"] = v["L_o1"]
-    v["R_W1"] = v["X_W1"] * v["L_W1"]
-
-    # 6.9 R_Z: falla de equipos por impactos cerca de las líneas
-    v["DELTA_N_1p"] = calcular_delta_N(v["N_I1p"], v["N_L1p"])
-    v["DELTA_N_1"] = calcular_delta_N(v["N_I1"], v["N_L1"])
-    v["DELTA_N_2p"] = calcular_delta_N(v["N_I2p"], v["N_L2p"])
-    v["DELTA_N_2"] = calcular_delta_N(v["N_I2"], v["N_L2"])
-    v["X_Z1"] = calcular_X([
-        (v["n_ohp"], v["DELTA_N_1p"], v["P_W1p"]),
-        (v["n_oh"], v["DELTA_N_1"], v["P_W1oh"]),
-        (v["n_ugp"], v["DELTA_N_2p"], v["P_W1p"]),
-        (v["n_ug"], v["DELTA_N_2"], v["P_W1ug"]),
     ])
     v["L_Z1"] = v["L_o1"]
     v["R_Z1"] = v["X_Z1"] * v["L_Z1"]
