@@ -24,3 +24,9 @@ def test_correcciones():
     assert VALORES_OPCIONES["h_1"][6] == 50
     # "1 en 10000 años" es 1e-4 (antes decía 1e-5, igual que 1 en 100000)
     assert VALORES_OPCIONES["R_T4"][3] == 0.0001
+    # En la Tabla B.4, una línea apantallada conectada
+    # a la misma barra tiene CLD = 1.
+    assert VALORES_OPCIONES["C_LD"][1] == 1
+
+    # Para ese mismo caso, CLI = 0.
+    assert VALORES_OPCIONES["C_LI"][1] == 0

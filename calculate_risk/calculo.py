@@ -128,7 +128,19 @@ def _riesgo_1(v):
     v["R_U1"] = v["X_U1"] * v["L_U1"]
 
     # 6.7 R_V: daño físico por impactos directos a las líneas
-    v["X_V1"] = v["X_U1"]
+    # P_V = P_EB * P_LD * C_LD (ecuación B.9).
+    # Importante: P_V NO incluye P_TU.
+    v["P_V1p"] = v["P_EB"] * v["P_LD0"] * v["C_LD"]
+    v["P_V1oh"] = v["P_EB"] * v["P_LD1"] * v["C_LD"]
+    v["P_V1ug"] = v["P_EB"] * v["P_LD2"] * v["C_LD"]
+
+    v["X_V1"] = calcular_X([
+        (v["n_ohp"], v["N_L1p"], v["P_V1p"]),
+        (v["n_oh"], v["N_L1"], v["P_V1oh"]),
+        (v["n_ugp"], v["N_L2p"], v["P_V1ug"]),
+        (v["n_ug"], v["N_L2"], v["P_V1ug"]),
+    ])
+
     v["L_V1"] = v["L_B1"]
     v["R_V1"] = v["X_V1"] * v["L_V1"]
 

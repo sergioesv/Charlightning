@@ -21,6 +21,96 @@ EDIFICIO_EJEMPLO = {
 }
 
 
+CASA_RURAL = {
+    "L": 15, "W": 20, "H": 6, "H_P": 6,
+    "DDT": 4, "C_d": 1, "C_e": 1,
+    "r_f": 1e-3,
+    "Ks1": 1, "Ks2": 1, "Ks3": 0.2, "Ks4": 1,
+    "P_A": 1,
+
+    # Línea eléctrica: subterránea
+    "pl": 2,
+    "P_LD0": 1,
+    "C_t0": 1,
+
+    # Una línea adicional aérea de telecomunicaciones
+    "n_oh": 1,
+    "n_ug": 0,
+    "P_LD1": 1,
+    "P_LD2": 1,
+
+    # Pérdidas L1
+    "h_1": 1,
+    "L_f1": 0.1,
+    "L_o1": 0,
+
+    # R2-R4 no son relevantes para esta prueba
+    "L_f2": 0,
+    "L_o2": 0,
+    "L_f3": 0,
+
+    "h4": 1,
+    "L_f4": 0,
+    "L_o4": 0,
+    "L_t4": 0,
+
+    # Sin SPCR
+    "E": 0,
+    "r": 1,
+
+    # Sin DPS
+    "SP": 0,
+
+    # Protección de líneas
+    "P_TU": 1,
+    "C_LD": 1,
+    "C_LI": 1,
+    "P_LI": 0.3,
+
+    # Casa rural: suelo linóleo, rt = 1e-5
+    "R_a": 1e-5,
+    "L_t1": 1e-2,
+
+    "h_a1": 0,
+    "C_t1": 1,
+    "h_a2": 0,
+    "C_t2": 1,
+}
+
+
+def test_casa_rural_sin_proteccion():
+    r = calcular_riesgo(CASA_RURAL)
+
+    # Norma: R1 ≈ 2,51 × 10^-5
+    assert r["R_1"] == approx(2.51e-5, rel=0.01)
+
+
+def test_casa_rural_SPCR_IV_DPS_entrada():
+    datos = dict(CASA_RURAL)
+    datos["E"] = 0.8
+    datos["SP"] = 1
+
+    r = calcular_riesgo(datos)
+
+    # Norma: R1 ≈ 0,141 × 10^-5 = 1,41 × 10^-6
+    assert r["R_1"] == approx(1.41e-6, rel=0.01)
+
+
+def test_P_TU_no_cambia_RV():
+    datos = dict(CASA_RURAL)
+
+    r_base = calcular_riesgo(datos)
+
+    datos["P_TU"] = 0
+    r_sin_PTU = calcular_riesgo(datos)
+
+    # PV no depende de PTU.
+    assert r_sin_PTU["R_V1"] == approx(r_base["R_V1"])
+
+    # PU sí depende de PTU.
+    assert r_sin_PTU["R_U1"] < r_base["R_U1"]
+
+
 def test_no_modifica_los_datos_de_entrada():
     datos = dict(EDIFICIO_EJEMPLO)
     calcular_riesgo(datos)

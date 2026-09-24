@@ -60,7 +60,7 @@ VALORES_OPCIONES = {
     # Apantallamiento/puesta a tierra de la línea para daño por corriente
     # directa en la línea (Tabla B.4, simplificado a los dos casos más
     # comunes: normal, o apantallada y puesta a tierra en la entrada)
-    "C_LD": [1, 0],
+    "C_LD": [1, 1],
     # Igual que C_LD, pero para la sobretensión inducida por un impacto
     # cerca de la línea (Tabla B.4, misma simplificación)
     "C_LI": [1, 0],
