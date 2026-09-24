@@ -47,33 +47,41 @@ def _eventos_estructura(v):
     v["N_g"] = v["DDT"]
     v["A_d"] = calcular_A_d(v["L"], v["W"], v["H"], v["H_P"])
     v["N_D"] = calcular_N_D(v["N_g"], v["A_d"], v["C_d"])
-    v["A_m"] = calcular_A_m(v["L"], v["W"], v["D_m"])
-    v["N_M"] = calcular_N_M(v["N_g"], v["A_m"], v["A_d"], v["C_d"])
+    v["A_m"] = calcular_A_m(v["L"], v["W"])
+    v["N_M"] = calcular_N_M(v["N_g"], v["A_m"])
 
 
 def _eventos_lineas(v):
-    """Secciones 4 y 5: rayos sobre las líneas de servicio y cerca de ellas."""
+    """Secciones 4 y 5: rayos sobre las líneas de servicio y cerca de ellas.
+
+    C_I es el factor de instalación de la Tabla A.2 (aérea = 1,
+    subterránea = 0,5); con esta edición de la norma, el área colectora
+    ya no depende de si la línea es aérea o subterránea, solo C_I.
+    """
     v["L_1"] = 1000
     v["L_2"] = 1000
     v["n_ohp"] = 1 if v["pl"] == 1 else 0
     v["n_ugp"] = 1 if v["pl"] == 2 else 0
 
+    C_I_aerea = 1.0
+    C_I_subterranea = 0.5
+
     # 4.1 y 4.2: líneas aéreas
-    v["A_c1"] = calcular_A_l_aerea(v["L_1"], v["H"], v["h_a1"], v["H_c1"])
-    v["N_L1p"] = calcular_N_L(v["N_g"], v["A_c1"], v["C_t0"], v["C_d"])
-    v["N_L1"] = calcular_N_L(v["N_g"], v["A_c1"], v["C_t1"], v["C_d"])
-    v["A_l1"] = calcular_A_i_aerea(v["L_1"], v["D_L1"])
-    v["N_I1p"] = calcular_N_I(v["N_g"], v["A_l1"], v["C_t0"], v["C_e"])
-    v["N_I1"] = calcular_N_I(v["N_g"], v["A_l1"], v["C_t1"], v["C_e"])
+    v["A_c1"] = calcular_A_l_aerea(v["L_1"])
+    v["N_L1p"] = calcular_N_L(v["N_g"], v["A_c1"], C_I_aerea, v["C_e"], v["C_t0"])
+    v["N_L1"] = calcular_N_L(v["N_g"], v["A_c1"], C_I_aerea, v["C_e"], v["C_t1"])
+    v["A_l1"] = calcular_A_i_aerea(v["L_1"])
+    v["N_I1p"] = calcular_N_I(v["N_g"], v["A_l1"], C_I_aerea, v["C_e"], v["C_t0"])
+    v["N_I1"] = calcular_N_I(v["N_g"], v["A_l1"], C_I_aerea, v["C_e"], v["C_t1"])
 
     # 5.1 y 5.2: líneas subterráneas
     v["L_c2"] = v["L_2"]
-    v["A_c2"] = calcular_A_l_subterranea(v["L_c2"], v["H"], v["h_a2"], v["P_2"])
-    v["N_L2p"] = calcular_N_L(v["N_g"], v["A_c2"], v["C_t0"], v["C_d"])
-    v["N_L2"] = calcular_N_L(v["N_g"], v["A_c2"], v["C_t2"], v["C_d"])
-    v["A_l2"] = calcular_A_i_subterranea(v["L_c2"], v["P_2"])
-    v["N_I2p"] = calcular_N_I(v["N_g"], v["A_l2"], v["C_t0"], v["C_e"])
-    v["N_I2"] = calcular_N_I(v["N_g"], v["A_l2"], v["C_t2"], v["C_e"])
+    v["A_c2"] = calcular_A_l_subterranea(v["L_c2"])
+    v["N_L2p"] = calcular_N_L(v["N_g"], v["A_c2"], C_I_subterranea, v["C_e"], v["C_t0"])
+    v["N_L2"] = calcular_N_L(v["N_g"], v["A_c2"], C_I_subterranea, v["C_e"], v["C_t2"])
+    v["A_l2"] = calcular_A_i_subterranea(v["L_c2"])
+    v["N_I2p"] = calcular_N_I(v["N_g"], v["A_l2"], C_I_subterranea, v["C_e"], v["C_t0"])
+    v["N_I2"] = calcular_N_I(v["N_g"], v["A_l2"], C_I_subterranea, v["C_e"], v["C_t2"])
 
 
 def _riesgo_1(v):

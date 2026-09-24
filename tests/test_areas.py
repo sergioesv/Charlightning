@@ -19,15 +19,10 @@ def test_N_D():
 
 
 def test_A_m():
-    # 2·20·250 + 2·10·250 + π·250² = 10000 + 5000 + 196349,54 = 211349,54 m²
-    assert calcular_A_m(L=20, W=10, D_m=250) == approx(211349.54, rel=1e-6)
+    # Distancia fija de 500 m (Anexo A.7): 2·500·30 + π·500² = 815398,16 m²
+    assert calcular_A_m(L=20, W=10) == approx(815398.163, rel=1e-6)
 
 
 def test_N_M():
-    # 10 · (211349,54 − 2297,88·0,5) · 10⁻⁶ = 2,102 impactos/año
-    assert calcular_N_M(N_g=10, A_m=211349.54, A_d=2297.876, C_d=0.5) == approx(2.102006, rel=1e-6)
-
-
-def test_N_M_nunca_es_negativo():
-    # Si el área directa es mayor que A_m, el resultado debe ser 0
-    assert calcular_N_M(N_g=10, A_m=100, A_d=1000, C_d=1) == 0
+    # 10 · 815398,16 · 10⁻⁶ = 8,154 impactos/año. Ya no se resta A_d·C_d.
+    assert calcular_N_M(N_g=10, A_m=815398.163) == approx(8.153982, rel=1e-6)

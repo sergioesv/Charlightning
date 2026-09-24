@@ -28,20 +28,20 @@ def calcular_A_m(L, W, D_m):
     """Área colectora para impactos cerca de la estructura, en m².
 
     L, W: largo y ancho de la estructura (m).
-    D_m: distancia (m) hasta la que un rayo a tierra induce
-         sobretensiones peligrosas. La versión original usa 250 m.
-    PENDIENTE: verificar con IEC 62305-2:2024. Una versión anterior
-    de este código sumaba también el término L·W.
+    La distancia hasta la que un rayo a tierra induce sobretensiones
+    peligrosas es fija: 500 m (Anexo A.7, IEC 62305-2:2010 / NTC 4552-2:2023).
+    Corregido: antes se usaba una distancia D_m = 250 m variable, que
+    no corresponde a esta edición de la norma.
     """
-    return 2 * L * D_m + 2 * W * D_m + math.pi * D_m ** 2
+    D = 500
+    return 2 * D * (L + W) + math.pi * D ** 2
 
 
-def calcular_N_M(N_g, A_m, A_d, C_d):
+def calcular_N_M(N_g, A_m):
     """Número de impactos cerca de la estructura por año.
 
-    Se resta A_d·C_d para no contar los impactos directos.
-    Si el resultado fuera negativo, se toma 0.
-    Ecuación (8), pág. 37.
-    PENDIENTE: en IEC 62305-2:2024, N_SG reemplaza a N_g.
+    Ecuación (A.6), Anexo A. Ya NO se resta A_d·C_d: en esta edición de
+    la norma, N_M no descuenta los impactos directos a la estructura.
+    Corregido: antes se restaba A_d·C_d (fórmula de otra edición de la norma).
     """
-    return max(0.0, N_g * (A_m - A_d * C_d) * 1e-6)
+    return N_g * A_m * 1e-6
