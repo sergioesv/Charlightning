@@ -91,19 +91,6 @@ class DataEntryRiskTable:
         return P_A
 
 
-    def get_lightning_strike_distance(self):
-        """
-        Distance from structure that a lightning strike to ground creates a magnetic field 
-        sufficient to induce an over-voltage exceeding the impulse level of equipment 
-        internal to the structure. (D_m).
-
-        :param D_m : Fixed factor - 250m
-
-        :return: D_m
-        """
-        D_m = 250
-
-        return D_m
 
     def get_height_factor_surrounding(self, selected_index):
         """
@@ -195,7 +182,6 @@ if __name__ == "__main__":
     print("Ks1= " + str(instance.get_external_effectiveness(0)))
     print("Ks3= " + str(instance.get_internal_effectiveness()))
     print("P_A= " + str(instance.get_shock_prob_humans_animals()))
-    print("D_m= " + str(instance.get_lightning_strike_distance()))
     print("C_d= " + str(instance.get_height_factor_surrounding(0)))
     print("C_e= " + str(instance.get_factor_line_density_C_e(0)))
 

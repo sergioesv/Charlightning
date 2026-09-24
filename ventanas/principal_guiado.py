@@ -235,24 +235,11 @@ class Principal_guiado(Panel):
         self.Combobox_factor_line_density_C_e.grid(column='1', padx='3', pady='2', row='1', sticky='e')
         self.Combobox_factor_line_density_C_e.current(1)
 
-        self.Label31 = ttk.Label(self.Labelframe3)
-        self.Label31.configure(text='Resistividad del terreno [Ω.m]')
-        self.Label31.grid(column='0', padx='3', pady='2', row='3', sticky='w')
-        self.Labelframe3.rowconfigure('3', weight='25')
-        
-        
-        self.Entry_var_resistividad = ttk.Entry(self.Labelframe3)
-        _text_ = '''500'''
-        self.Entry_var_resistividad.delete('0', 'end')
-        self.Entry_var_resistividad.insert('0', _text_)
-        self.Entry_var_resistividad['state'] = 'readonly'
-        self.Entry_var_resistividad.grid(column='1', padx='3', pady='2', row='3', sticky='e')
-        
-        
-
-
-
-
+        # Se quitó el campo "Resistividad del terreno": en la norma vigente
+        # (IEC 62305-2:2010 / NTC 4552-2:2023) la distancia de influencia
+        # para impactos cercanos a la estructura es fija (500 m) y ya no
+        # depende de la resistividad del terreno (ver calcular_A_m).
+      
 
 
         self.Radiobutton1 = ttk.Radiobutton(self.Labelframe3)
@@ -904,7 +891,6 @@ class Principal_guiado(Panel):
         VAR["Ks1"] = collect_data_entry.get_external_effectiveness(self.Combobox_external_effectiveness.current())
         VAR["Ks2"] = collect_data_entry.get_internal_effectiveness()
         VAR["P_A"] = collect_data_entry.get_shock_prob_humans_animals()
-        VAR["D_m"] = collect_data_entry.get_lightning_strike_distance()
         VAR["C_d"] = collect_data_entry.get_height_factor_surrounding(
                                         self.Combobox_height_factor_surrounding.current()
                                         )
