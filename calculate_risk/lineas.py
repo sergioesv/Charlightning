@@ -14,7 +14,7 @@ def calcular_A_l_aerea(L_c):
     return 40 * L_c
 
 
-def calcular_A_i_aerea(L_c, D_L):
+def calcular_A_i_aerea(L_c):
     """Área colectora para impactos CERCA de una línea aérea, en m².
 
     L_c: longitud de la línea (m).
@@ -49,7 +49,7 @@ def calcular_N_I(N_g, A_i, C_I, C_E, C_T):
     return N_g * A_i * C_I * C_E * C_T * 1e-6
 
 
-def calcular_A_l_subterranea(L_c, H, H_a, rho):
+def calcular_A_l_subterranea(L_c):
     """Área colectora para impactos DIRECTOS a una línea subterránea, en m².
 
     L_c: longitud de la línea (m).
@@ -58,9 +58,9 @@ def calcular_A_l_subterranea(L_c, H, H_a, rho):
     fórmula de otra edición de la norma; en esta edición la resistividad
     no interviene en el área colectora.
     """
-    return return 40 * L_c
+    return 40 * L_c
 
-def calcular_A_i_subterranea(L_c, rho):
+def calcular_A_i_subterranea(L_c):
     """Área colectora para impactos CERCA de una línea subterránea, en m².
 
     L_c: longitud de la línea (m).
