@@ -24,7 +24,7 @@ def calcular_N_D(N_g, A_d, C_d):
     return N_g * A_d * C_d * 1e-6
 
 
-def calcular_A_m(L, W, D_m):
+def calcular_A_m(L, W):
     """Área colectora para impactos cerca de la estructura, en m².
 
     L, W: largo y ancho de la estructura (m).
