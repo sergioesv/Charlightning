@@ -106,14 +106,17 @@ def _riesgo_1(v):
     # 6.5 R_M: falla de equipos por impactos cercanos
     v["K_MS1"] = calcular_K_MS(v["Ks1"], v["Ks2"], v["Ks3"], v["Ks4"])
     v["P_MS1"] = calcular_P_MS(v["K_MS1"])
-    v["P_M1"] = min(v["P_SPD"], v["P_MS1"])
+    v["P_M1"] = v["P_SPD"] * v["P_MS1"]
     v["L_M1"] = v["L_o1"]
     v["R_M1"] = calcular_componente(v["N_M"], v["P_M1"], v["L_M1"])
 
     # 6.6 R_U: lesiones por impactos directos a las líneas
-    v["P_U1p"] = min(v["P_LD0"], v["P_EB"])
-    v["P_U1oh"] = min(v["P_LD1"], v["P_EB"])
-    v["P_U1ug"] = min(v["P_LD2"], v["P_EB"])
+    # P_U = P_TU * P_EB * P_LD * C_LD (ecuación B.8); P_TU y C_LD se toman
+    # en 1 (sin medidas adicionales / sin blindaje) porque la pantalla aún
+    # no pide esos datos. PENDIENTE: agregar P_TU y C_LD a la pantalla.
+    v["P_U1p"] = v["P_EB"] * v["P_LD0"]
+    v["P_U1oh"] = v["P_EB"] * v["P_LD1"]
+    v["P_U1ug"] = v["P_EB"] * v["P_LD2"]
     v["X_U1"] = calcular_X([
         (v["n_ohp"], v["N_L1p"], v["P_U1p"]),
         (v["n_oh"], v["N_L1"], v["P_U1oh"]),
@@ -129,9 +132,11 @@ def _riesgo_1(v):
     v["R_V1"] = v["X_V1"] * v["L_V1"]
 
     # 6.8 R_W: falla de equipos por impactos directos a las líneas
-    v["P_W1p"] = min(v["P_LD0"], v["P_SPD"])
-    v["P_W1oh"] = min(v["P_LD1"], v["P_SPD"])
-    v["P_W1ug"] = min(v["P_LD2"], v["P_SPD"])
+    # P_W = P_DPS * P_LD * C_LD (ecuación B.10); C_LD en 1 por la misma
+    # razón de arriba. PENDIENTE: agregar C_LD a la pantalla.
+    v["P_W1p"] = v["P_SPD"] * v["P_LD0"]
+    v["P_W1oh"] = v["P_SPD"] * v["P_LD1"]
+    v["P_W1ug"] = v["P_SPD"] * v["P_LD2"]
     v["X_W1"] = calcular_X([
         (v["n_ohp"], v["N_L1p"], v["P_W1p"]),
         (v["n_oh"], v["N_L1"], v["P_W1oh"]),

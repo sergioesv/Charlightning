@@ -5,7 +5,8 @@ def calcular_P_B(E):
     """Probabilidad de daño físico por impacto directo a la estructura.
 
     E: eficiencia del sistema de protección contra rayos (0 = sin SPCR).
-    PENDIENTE: verificar con IEC 62305-2:2024.
+    Tabla B.2: sin SPCR = 1; nivel IV = 0,2; III = 0,1; II = 0,05; I = 0,02.
+    Con E = 1 − P_B, esos mismos valores corresponden a E = 0; 0,8; 0,9; 0,95; 0,98.
     """
     return 1 - E
 
@@ -19,12 +20,13 @@ def calcular_P_SPD_y_P_EB(P_B, SP):
         2 = sistema de DPS coordinados (NTC 4552-4).
     El nivel de los DPS se toma igual al nivel del SPCR (según P_B).
     Devuelve dos valores: (P_SPD, P_EB).
-    PENDIENTE: verificar con IEC 62305-2:2024.
+    Tablas B.3 (P_DPS) y B.7 (P_EB): NPR III-IV = 0,05; NPR II = 0,02; NPR I = 0,01.
+    Corregido: la franja NPR III-IV daba 0,03 en vez de 0,05.
     """
     if P_B > 0.3:
         valor_segun_nivel = 1
     elif P_B > 0.06:
-        valor_segun_nivel = 0.03
+        valor_segun_nivel = 0.05
     elif P_B > 0.03:
         valor_segun_nivel = 0.02
     else:
@@ -46,27 +48,11 @@ def calcular_K_MS(K_S1, K_S2, K_S3, K_S4):
     return K_S1 * K_S2 * K_S3 * K_S4
 
 
-# Tabla de P_MS: cada fila es (límite superior de K_MS, valor de P_MS).
-# Se recorre de arriba a abajo y se toma la primera fila que cumpla.
-TABLA_P_MS = [
-    (0.013, 0.0001),
-    (0.014, 0.001),
-    (0.015, 0.003),
-    (0.016, 0.005),
-    (0.021, 0.01),
-    (0.035, 0.1),
-    (0.07, 0.5),
-    (0.15, 0.9),
-]
-
-
 def calcular_P_MS(K_MS):
     """Probabilidad de falla de equipos por impactos cerca de la estructura.
 
-    Busca K_MS en TABLA_P_MS. Si K_MS es mayor que todos los límites, vale 1.
-    PENDIENTE: verificar con IEC 62305-2:2024.
+    P_MS = (K_S1·K_S2·K_S3·K_S4)², con un máximo de 1 (Anexo B, ecuación B.4).
+    Corregido: antes se buscaba K_MS en una tabla de escalones sin
+    referencia clara a la norma; ahora se usa la fórmula directa.
     """
-    for limite, P_MS in TABLA_P_MS:
-        if K_MS <= limite:
-            return P_MS
-    return 1.0
+    return min(1.0, K_MS ** 2)

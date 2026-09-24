@@ -28,10 +28,11 @@ def test_dps_solo_en_entrada_de_servicios():
 
 
 def test_dps_coordinados_segun_nivel_del_spcr():
-    # SP = 2: los dos bajan según el nivel del SPCR
-    assert calcular_P_SPD_y_P_EB(P_B=0.1, SP=2) == (0.03, 0.03)
-    assert calcular_P_SPD_y_P_EB(P_B=0.05, SP=2) == (0.02, 0.02)
-    assert calcular_P_SPD_y_P_EB(P_B=0.02, SP=2) == (0.01, 0.01)
+    # SP = 2: los dos bajan según el nivel del SPCR (Tablas B.3 y B.7)
+    assert calcular_P_SPD_y_P_EB(P_B=0.2, SP=2) == (0.05, 0.05)   # NPR IV
+    assert calcular_P_SPD_y_P_EB(P_B=0.1, SP=2) == (0.05, 0.05)   # NPR III
+    assert calcular_P_SPD_y_P_EB(P_B=0.05, SP=2) == (0.02, 0.02)  # NPR II
+    assert calcular_P_SPD_y_P_EB(P_B=0.02, SP=2) == (0.01, 0.01)  # NPR I
 
 
 def test_K_MS():
@@ -39,13 +40,13 @@ def test_K_MS():
     assert calcular_K_MS(K_S1=0.2, K_S2=1, K_S3=0.1, K_S4=1) == approx(0.02)
 
 
-def test_P_MS_valores_de_la_tabla():
-    assert calcular_P_MS(0.01) == 0.0001    # menor que el primer límite
-    assert calcular_P_MS(0.013) == 0.0001   # justo en el límite
-    assert calcular_P_MS(0.02) == 0.01      # entre 0,016 y 0,021
-    assert calcular_P_MS(0.1) == 0.9        # entre 0,07 y 0,15
+def test_P_MS_es_el_cuadrado_de_K_MS():
+    # Ecuación B.4: P_MS = (K_S1*K_S2*K_S3*K_S4)^2 = K_MS^2
+    assert calcular_P_MS(0.1) == approx(0.01)
+    assert calcular_P_MS(0.5) == approx(0.25)
 
 
-def test_P_MS_fuera_de_la_tabla():
-    # Sin apantallamiento (K_MS = 1) la probabilidad es 1
+def test_P_MS_nunca_pasa_de_1():
+    # Sin apantallamiento (K_MS = 1) o mayor, la probabilidad queda en 1
     assert calcular_P_MS(1) == 1
+    assert calcular_P_MS(2) == 1
