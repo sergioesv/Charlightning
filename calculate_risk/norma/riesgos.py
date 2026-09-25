@@ -180,6 +180,7 @@ def evaluar_zona(zona, estructura, lineas, N_G: float, tipo: int) -> dict:
     if "R_M" in aplica:
         R["R_M"] = r_m(N_M, P_M, L_M)
 
+    detalle_lineas = {}
     for ln in lineas:
         N_L = frecuencias.n_l(N_G, ln.L_L, ln.C_I, ln.C_E, ln.C_T)
         N_I = frecuencias.n_i(N_G, ln.L_L, ln.C_I, ln.C_E, ln.C_T)
@@ -197,6 +198,13 @@ def evaluar_zona(zona, estructura, lineas, N_G: float, tipo: int) -> dict:
         P_W = probabilidades.combinar(probabilidades.p_w(p, ln.P_LD, ln.C_LD) for p in P_DPS_list)
         P_Z = probabilidades.combinar(probabilidades.p_z(p, ln.P_LI, ln.C_LI) for p in P_DPS_list)
 
+        detalle_lineas[ln.nombre] = {
+            "A_L": areas.area_linea_descargas_directas(ln.L_L),
+            "A_I": areas.area_linea_descargas_cercanas(ln.L_L),
+            "N_L": N_L, "N_I": N_I, "N_DJ": N_DJ,
+            "P_U": P_U, "P_V": P_V, "P_W": P_W, "P_Z": P_Z,
+        }
+
         if "R_U" in aplica and not zona.exterior_sin_personas:
             R["R_U"] += r_u(N_L, N_DJ, P_U, L_U)
         if "R_V" in aplica:
@@ -207,6 +215,16 @@ def evaluar_zona(zona, estructura, lineas, N_G: float, tipo: int) -> dict:
             R["R_Z"] += r_z(N_I, P_Z, L_Z)
 
     R["total"] = sum(R[c] for c in COMPONENTES)
+    # Valores intermedios, para poder mostrar el desarrollo del cálculo en la
+    # memoria (Paso 40): sin esto solo se ve el resultado, no de dónde sale.
+    R["_detalle"] = {
+        "A_D": A_D, "N_D": N_D, "N_M": N_M,
+        "P_A": P_A, "P_B": P_B, "P_C": P_C, "P_M": P_M,
+        "L_A": L_A, "L_B": L_B, "L_C": L_C,
+        "L_U": L_U, "L_V": L_V, "L_M": L_M, "L_W": L_W, "L_Z": L_Z,
+        "aplica": aplica,
+        "lineas": detalle_lineas,
+    }
     return R
 
 
