@@ -1,0 +1,89 @@
+"""
+Paso 38a: catalogo de medidas de proteccion y su aplicacion a un caso.
+
+Lo importante: el catalogo no trae ningun numero propio, sale de tablas.py.
+La comprobacion fuerte es que, escogiendo del catalogo "SPCR nivel IV" +
+"DPS NPR III-IV", la casa rural del Anexo E.2 da 0,141e-5, que es justo la
+solucion b) publicada por la norma.
+"""
+from pytest import approx
+
+from calculate_risk.norma import medidas, riesgos, tablas
+from calculate_risk.norma.adaptador import caso_desde_pantalla
+from tests.datos_pantalla import CASA_RURAL
+
+
+def _casa_rural():
+    c = caso_desde_pantalla(CASA_RURAL, tipo=1)
+    return c["estructura"], c["lineas"], c["zonas"], c["N_G"]
+
+
+def _r1(estructura, lineas, zonas, N_G):
+    return riesgos.evaluar(estructura, lineas, zonas, N_G, tipos=(1,))[1]
+
+
+def test_el_catalogo_sale_de_las_tablas_de_la_norma():
+    cat = {m.nombre: m for m in medidas.catalogo()}
+
+    # SPCR nivel IV -> P_B de la Tabla B.2
+    spcr = cat["spcr:spcr_nivel_IV"]
+    assert spcr.efectos == (medidas.Efecto("zona", "P_B", tablas.PB["spcr_nivel_IV"]),)
+
+    # Un DPS coordinado baja P_DPS (Tabla B.3) y P_EB (Tabla B.7) a la vez
+    dps = cat["dps:npr_I"]
+    assert set(dps.efectos) == {
+        medidas.Efecto("sistema", "P_DPS", tablas.PDPS["npr_I"]),
+        medidas.Efecto("linea", "P_EB", tablas.PEB["npr_I"]),
+    }
+
+    # El blindaje de la linea toca C_LD y C_LI (Tabla B.4)
+    blindaje = cat["blindaje_linea:aerea_apantallada_conectada_barra"]
+    valores = tablas.CLD_CLI["aerea_apantallada_conectada_barra"]
+    assert set(blindaje.efectos) == {
+        medidas.Efecto("linea", "C_LD", valores["CLD"]),
+        medidas.Efecto("linea", "C_LI", valores["CLI"]),
+    }
+
+
+def test_las_familias_son_alternativas_entre_si():
+    fam = medidas.familias(medidas.catalogo())
+
+    assert set(fam) == {"spcr", "dps", "tension_estructura", "tension_linea",
+                        "incendio", "cableado_interno", "blindaje_linea"}
+    # Dentro de una familia, todas las medidas tocan los mismos campos
+    for nombre, lista in fam.items():
+        campos = {tuple(sorted(e.campo for e in m.efectos)) for m in lista}
+        assert len(campos) == 1, nombre
+
+
+def test_aplicar_no_modifica_el_caso_original():
+    estructura, lineas, zonas, N_G = _casa_rural()
+    spcr = next(m for m in medidas.catalogo() if m.nombre == "spcr:spcr_nivel_I")
+
+    medidas.aplicar(estructura, lineas, zonas, [spcr])
+
+    assert zonas[0].P_B == 1.0          # sigue sin SPCR
+    assert lineas[0].P_EB == 1.0
+
+
+def test_casa_rural_con_spcr_iv_y_dps_da_la_solucion_b_de_la_norma():
+    estructura, lineas, zonas, N_G = _casa_rural()
+    assert not _r1(estructura, lineas, zonas, N_G)["cumple"]
+
+    cat = {m.nombre: m for m in medidas.catalogo()}
+    elegidas = [cat["spcr:spcr_nivel_IV"], cat["dps:npr_III_IV"]]
+    e, l, z = medidas.aplicar(estructura, lineas, zonas, elegidas)
+
+    r1 = _r1(e, l, z, N_G)
+    assert r1["total"] == approx(0.141e-5, rel=0.01)   # Anexo E.2, solucion b)
+    assert r1["cumple"]
+
+
+def test_los_costos_se_pasan_aparte_porque_la_norma_no_los_trae():
+    sin_costos = {m.nombre: m.costo for m in medidas.catalogo()}
+    assert set(sin_costos.values()) == {0.0}
+
+    con_costos = {m.nombre: m.costo
+                  for m in medidas.catalogo(costos={"spcr:spcr_nivel_IV": 12_000_000})}
+    assert con_costos["spcr:spcr_nivel_IV"] == 12_000_000
+    assert con_costos["dps:npr_I"] == 0.0
