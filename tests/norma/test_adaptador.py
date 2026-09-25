@@ -17,7 +17,7 @@ from pytest import approx
 from calculate_risk.norma import riesgos
 from calculate_risk.norma.adaptador import caso_desde_pantalla
 from calculate_risk.calculo import calcular_riesgo
-from tests.test_calculo import CASA_RURAL, EDIFICIO_EJEMPLO
+from tests.datos_pantalla import CASA_RURAL, EDIFICIO_EJEMPLO
 
 
 def _con_motor_nuevo(datos, tipo=1):
