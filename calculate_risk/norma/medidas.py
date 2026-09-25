@@ -20,7 +20,7 @@ import copy
 import itertools
 from dataclasses import dataclass, replace
 
-from calculate_risk.norma import riesgos, tablas
+from calculate_risk.norma import costos, riesgos, tablas
 
 
 @dataclass(frozen=True)
@@ -156,6 +156,12 @@ class Solucion:
     cumple: bool
     costo: float
 
+    # Anexo D (solo si se dieron los datos economicos)
+    C_L: float = None      # costo de las perdidas sin proteccion (ec. D.2)
+    C_RL: float = None     # perdidas residuales con la proteccion (ec. D.4)
+    C_PM: float = None     # costo anual de las medidas (ec. D.5)
+    S_M: float = None      # ahorro anual; se justifica si S_M > 0 (ec. D.6)
+
     @property
     def nombres(self) -> tuple:
         return tuple(m.nombre for m in self.medidas)
@@ -172,19 +178,41 @@ def combinaciones(medidas):
 
 
 def explorar(estructura, lineas, zonas, N_G, tipo=1, catalogo_medidas=None,
-             solo_familias=None, solo_las_que_cumplen=True) -> list:
+             solo_familias=None, solo_las_que_cumplen=True, economia=None) -> list:
     """Prueba combinaciones de medidas y devuelve las soluciones evaluadas.
 
     Es el ciclo de la Figura 1 hecho de una vez: en vez de instalar, recalcular
     y repetir a mano, se calcula R para cada combinación posible.
 
     solo_familias: nombres de familia a considerar (None = todas).
-    Las soluciones salen ordenadas: primero las de menor costo; a igual costo,
-    las que usan menos medidas; y a igualdad de todo, las de menor riesgo.
+
+    economia: {"c_t": valor total de la estructura, "i": interes,
+    "a": amortizacion, "m": mantenimiento, "caso_l4": (estructura, lineas, zonas)}.
+    Si se da, cada solucion trae ademas el analisis del Anexo D y las soluciones
+    se ordenan por el ahorro anual S_M (de mayor a menor); si no, por costo.
+
+    OJO con "caso_l4": el Anexo D siempre trabaja sobre R4, y el caso armado
+    para R1 no sirve para R4 (la zona lleva otros L_F, L_O y otras razones
+    c/c_t). Por eso hay que pasar aparte el mismo caso pero armado para L4.
+    Si ya se esta evaluando tipo=4, se puede omitir.
     """
     medidas_disponibles = catalogo_medidas if catalogo_medidas is not None else catalogo()
     if solo_familias is not None:
         medidas_disponibles = [m for m in medidas_disponibles if m.familia in solo_familias]
+
+    # Anexo D: el costo de las perdidas SIN proteccion es el punto de partida
+    C_L = caso_l4 = None
+    if economia is not None:
+        caso_l4 = economia.get("caso_l4")
+        if caso_l4 is None:
+            if tipo != 4:
+                raise ValueError(
+                    "El Anexo D trabaja sobre R4: hay que pasar economia['caso_l4'] "
+                    "con el mismo caso armado para L4"
+                )
+            caso_l4 = (estructura, lineas, zonas)
+        r4_base = riesgos.evaluar(*caso_l4, N_G, tipos=(4,))[4]
+        C_L = costos.c_l(r4_base["total"], economia["c_t"])
 
     soluciones = []
     for combinacion in combinaciones(medidas_disponibles):
@@ -192,13 +220,27 @@ def explorar(estructura, lineas, zonas, N_G, tipo=1, catalogo_medidas=None,
         r = riesgos.evaluar(e, l, z, N_G, tipos=(tipo,))[tipo]
         if solo_las_que_cumplen and not r["cumple"]:
             continue
+
+        C_P = sum(m.costo for m in combinacion)
+        C_RL = C_PM = S_M = None
+        if economia is not None:
+            r4 = riesgos.evaluar(*aplicar(*caso_l4, combinacion), N_G, tipos=(4,))[4]
+            C_RL = costos.c_rl(r4["total"], economia["c_t"])
+            C_PM = costos.c_pm(C_P, economia["i"], economia["a"], economia["m"])
+            S_M = costos.s_m(C_L, C_PM, C_RL)
+
         soluciones.append(Solucion(
             medidas=combinacion,
             riesgo=r["total"],
             R_T=r["R_T"],
             cumple=r["cumple"],
-            costo=sum(m.costo for m in combinacion),
+            costo=C_P,
+            C_L=C_L, C_RL=C_RL, C_PM=C_PM, S_M=S_M,
         ))
 
-    soluciones.sort(key=lambda s: (s.costo, len(s.medidas), s.riesgo))
+    if economia is not None:
+        # Primero las que cumplen, y entre ellas la de mayor ahorro anual
+        soluciones.sort(key=lambda s: (not s.cumple, -s.S_M, len(s.medidas)))
+    else:
+        soluciones.sort(key=lambda s: (not s.cumple, s.costo, len(s.medidas), s.riesgo))
     return soluciones

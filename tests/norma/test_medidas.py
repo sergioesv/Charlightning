@@ -6,11 +6,12 @@ La comprobacion fuerte es que, escogiendo del catalogo "SPCR nivel IV" +
 "DPS NPR III-IV", la casa rural del Anexo E.2 da 0,141e-5, que es justo la
 solucion b) publicada por la norma.
 """
+import pytest
 from pytest import approx
 
-from calculate_risk.norma import medidas, riesgos, tablas
+from calculate_risk.norma import costos, medidas, riesgos, tablas
 from calculate_risk.norma.adaptador import caso_desde_pantalla
-from tests.datos_pantalla import CASA_RURAL
+from tests.datos_pantalla import CASA_RURAL, EDIFICIO_EJEMPLO
 
 
 def _casa_rural():
@@ -167,3 +168,75 @@ def test_las_soluciones_salen_ordenadas_por_costo():
     # La mas barata que cumple es poner solo los DPS NPR IV (1 millon)
     assert soluciones[0].nombres == ("dps:npr_III_IV",)
     assert soluciones[0].costo == 1_000_000
+
+
+
+
+# ---------------------------------------------------------------------------
+# Paso 38c: costo-beneficio del Anexo D
+# ---------------------------------------------------------------------------
+
+ECONOMIA = {"c_t": 500_000_000, "i": 0.04, "a": 0.05, "m": 0.01}
+
+PRECIOS = {
+    "dps:npr_III_IV": 3_000_000, "dps:npr_II": 6_000_000, "dps:npr_I": 10_000_000,
+    "spcr:spcr_nivel_IV": 25_000_000, "spcr:spcr_nivel_III": 35_000_000,
+    "spcr:spcr_nivel_II": 50_000_000, "spcr:spcr_nivel_I": 80_000_000,
+    "spcr:captador_nivel_I_con_armadura_continua": 120_000_000,
+    "spcr:techo_metalico_o_captacion_completa_con_armadura": 200_000_000,
+}
+
+
+def _edificio_con_economia():
+    """El EDIFICIO_EJEMPLO, con su caso de L4 aparte para el Anexo D."""
+    c1 = caso_desde_pantalla(EDIFICIO_EJEMPLO, tipo=1)
+    c4 = caso_desde_pantalla(EDIFICIO_EJEMPLO, tipo=4)
+    economia = dict(ECONOMIA,
+                    caso_l4=(c4["estructura"], c4["lineas"], c4["zonas"]))
+    return (c1["estructura"], c1["lineas"], c1["zonas"], c1["N_G"]), economia
+
+
+def _explorar_con_economia():
+    (estructura, lineas, zonas, N_G), economia = _edificio_con_economia()
+    return medidas.explorar(
+        estructura, lineas, zonas, N_G, tipo=1,
+        catalogo_medidas=medidas.catalogo(costos=PRECIOS),
+        solo_familias={"spcr", "dps"},
+        solo_las_que_cumplen=False,
+        economia=economia,
+    )
+
+
+def test_el_anexo_d_exige_el_caso_armado_para_l4():
+    # El caso de R1 no sirve para R4: la zona lleva otros L_F, L_O y otras
+    # razones c/c_t. Si no se pasa caso_l4, hay que avisar en vez de dar 0.
+    (estructura, lineas, zonas, N_G), _ = _edificio_con_economia()
+
+    with pytest.raises(ValueError, match="caso_l4"):
+        medidas.explorar(estructura, lineas, zonas, N_G, tipo=1,
+                         solo_familias={"spcr"},
+                         economia={"c_t": 1, "i": 0, "a": 0, "m": 0})
+
+
+def test_sin_medidas_el_ahorro_es_exactamente_cero():
+    # Sin proteccion, las perdidas residuales son las mismas perdidas y no hay
+    # costo de medidas: S_M = C_L - (0 + C_L) = 0.
+    sin_nada = next(s for s in _explorar_con_economia() if s.medidas == ())
+
+    assert sin_nada.C_PM == 0
+    assert sin_nada.C_RL == approx(sin_nada.C_L)
+    assert sin_nada.S_M == approx(0.0)
+
+
+def test_el_ahorro_es_el_de_las_ecuaciones_del_anexo_d():
+    for s in _explorar_con_economia():
+        C_PM = costos.c_pm(s.costo, ECONOMIA["i"], ECONOMIA["a"], ECONOMIA["m"])
+        assert s.C_PM == approx(C_PM)
+        assert s.S_M == approx(costos.s_m(s.C_L, s.C_PM, s.C_RL))
+
+
+def test_con_economia_ordena_por_ahorro_anual():
+    soluciones = _explorar_con_economia()
+
+    claves = [(not s.cumple, -s.S_M) for s in soluciones]
+    assert claves == sorted(claves)
