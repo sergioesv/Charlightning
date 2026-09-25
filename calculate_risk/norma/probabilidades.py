@@ -68,3 +68,15 @@ def combinar(probabilidades) -> float:
     for p in ps:
         resultado *= (1.0 - p)
     return 1.0 - resultado
+
+
+def combinar(probabilidades) -> float:
+    """Combina varias probabilidades de sistemas internos en una zona:
+    P = 1 - producto(1 - P_i) (ec. 14, 15)."""
+    ps = list(probabilidades)
+    if not ps:
+        return 0.0
+    resultado = 1.0
+    for p in ps:
+        resultado *= (1.0 - p)
+    return 1.0 - resultado
