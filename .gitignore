@@ -9,3 +9,13 @@ venv/
 # Archivos basura del sistema operativo
 Thumbs.db
 .DS_Store
+
+# Lo que deja el boton Informe (se regenera cada vez)
+Memoria de calculo.*
+memoria_*.png
+memoria_*.csv
+*.aux
+*.log
+
+# Cache de pytest
+.pytest_cache/
