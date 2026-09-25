@@ -1,9 +1,9 @@
 """
 Modelo de datos de un caso de evaluación de riesgo (NTC 4552-2:2023).
 
-Estas clases solo almacenan los datos de entrada; el cálculo de N, P, L
-y R se hace aparte, con las funciones de frecuencias.py, probabilidades.py
-y perdidas.py (Pasos 29-30), a partir de estos datos.
+Cada campo guarda ya el VALOR resuelto del factor (por ejemplo C_D=1.0),
+no la llave de la tabla; tablas.py se usa para resolver esos valores antes
+de construir estos objetos.
 """
 
 from dataclasses import dataclass, field
@@ -11,69 +11,87 @@ from dataclasses import dataclass, field
 
 @dataclass
 class Estructura:
-    """Estructura a proteger."""
-    L: float          # longitud [m]
-    W: float          # ancho [m]
-    H: float          # altura [m]
-    ubicacion: str    # llave de tablas.CD: "aislada", "rodeada_objetos_mas_altos", ...
-    H_min: float = None   # altura mínima, si tiene protrusión (Figura A.2)
-    H_p: float = None     # altura de la protrusión
-
-
-@dataclass
-class EstructuraAdyacente:
-    """Estructura conectada en el extremo lejano de una línea (N_DJ, ec. A.5)."""
+    """Estructura a proteger (también se usa para la estructura adyacente)."""
     L: float
     W: float
     H: float
-    ubicacion: str    # llave de tablas.CD
+    H_p: float = 0.0        # altura de protrusión en el techo (0 si no hay)
+    C_D: float = 1.0        # Tabla A.1
+    n_t: float = 1.0        # personas totales en la estructura
+    c_t: float = 1.0        # valor total de la estructura (para L4)
 
-
-@dataclass
-class SeccionLinea:
-    """Un tramo de línea, con su propio trazado y longitud (Anexo A/B)."""
-    longitud: float    # L_L [m]; 1000 si se desconoce
-    instalacion: str   # llave de tablas.CI: "aerea", "subterranea", ...
-    tipo: str          # llave de tablas.CT: "bt_datos_telecomunicacion", "at_con_transformador"
-    entorno: str       # llave de tablas.CE: "rural", "suburbano", "urbano", "urbano_edificios_altos"
-    blindaje: str      # llave de tablas.CLD_CLI
+    # Habilitan componentes condicionales (numeral 4.3)
+    riesgo_explosion_o_vital: bool = False   # habilita R_C, R_M, R_W, R_Z en R1
+    hay_animales: bool = False               # habilita R_A, R_U en R4
 
 
 @dataclass
 class Linea:
-    """Una línea entrante a la estructura; puede tener varias secciones."""
-    secciones: list = field(default_factory=list)          # list[SeccionLinea]
-    estructura_adyacente: EstructuraAdyacente = None
+    """Línea (o sección de línea) conectada a la estructura."""
+    nombre: str
+    L_L: float = 1000.0     # longitud de la sección [m]
+    C_I: float = 1.0        # Tabla A.2
+    C_T: float = 1.0        # Tabla A.3
+    C_E: float = 1.0        # Tabla A.4
+    U_W: float = 2.5        # tensión soportada al impulso [kV]
+
+    C_LD: float = 1.0       # Tabla B.4
+    C_LI: float = 1.0       # Tabla B.4
+    P_LD: float = 1.0       # Tabla B.8
+    P_LI: float = 1.0       # Tabla B.9
+    P_EB: float = 1.0       # Tabla B.7
+
+    adyacente: Estructura = None   # estructura conectada en el extremo lejano (ec. A.5)
+    C_DJ: float = 1.0              # Tabla A.1, para la estructura adyacente
 
 
 @dataclass
 class SistemaInterno:
-    """Sistema interno conectado a una línea (para P_M, P_U, P_V, P_W, P_Z)."""
-    uw: float          # tensión soportada al impulso [kV]: 1, 1.5, 2.5, 4 o 6
-    tipo_linea: str    # "potencia" o "telecomunicacion", para tablas.PLD/PLI
+    """Sistema interno dentro de una zona, alimentado por una línea."""
+    nombre: str
+    linea: str = ""          # nombre de la Linea que lo alimenta (para su C_LD)
+    K_S3: float = 1.0        # Tabla B.5
+    U_W: float = 2.5         # -> K_S4 = 1/U_W
+    P_DPS: float = 1.0       # Tabla B.3
 
 
 @dataclass
 class Zona:
-    """Una zona de la estructura, con sus propios parámetros de riesgo."""
+    """Zona Z_S de características homogéneas dentro de la estructura."""
     nombre: str
-    nz: float          # personas en la zona
-    tz: float          # horas anuales de presencia
-    superficie: str    # llave de tablas.N_SUPERFICIE (factor rt)
 
+    P_TA: float = 1.0        # Tabla B.1
+    P_TU: float = 1.0        # Tabla B.6
+    P_B: float = 1.0         # Tabla B.2
+    K_S1: float = 1.0        # 0,12 x w_m1 (ec. B.5)
+    K_S2: float = 1.0        # 0,12 x w_m2 (ec. B.6)
 
-@dataclass
-class PerdidasZona:
-    """Valores económicos/culturales de una zona (para L3 y L4)."""
-    ca: float = 0.0    # animales
-    cb: float = 0.0    # edificio
-    cc: float = 0.0    # contenido
-    cs: float = 0.0    # sistemas internos
+    sistemas_internos: list = field(default_factory=list)   # list[SistemaInterno]
+
+    r_t: float = 1.0         # Tabla C.3
+    r_p: float = 1.0         # Tabla C.4
+    r_f: float = 1.0         # Tabla C.5
+    h_z: float = 1.0         # Tabla C.6
+
+    L_T: float = 0.0         # Tabla C.2 / C.12
+    L_F: float = 0.0         # Tabla C.2 / C.8 / C.10 / C.12
+    L_O: float = 0.0         # Tabla C.2 / C.8 / C.12
+
+    n_z: float = 0.0         # personas o usuarios en la zona
+    t_z: float = 8760.0      # horas/año de presencia
+
+    c_z: float = 0.0         # valor de patrimonio cultural en la zona (L3)
+    c_a: float = 0.0         # valor de animales (L4)
+    c_b: float = 0.0         # valor del edificio (L4)
+    c_c: float = 0.0         # valor del contenido (L4)
+    c_s: float = 0.0         # valor de los sistemas internos (L4)
+
+    exterior_sin_personas: bool = False   # anula R_A y R_U (numeral B.6)
 
 
 @dataclass
 class Caso:
     """Un caso completo: la estructura, sus zonas y sus líneas."""
     estructura: Estructura
-    zonas: list = field(default_factory=list)   # list[Zona]
-    lineas: list = field(default_factory=list)  # list[Linea]
+    zonas: list = field(default_factory=list)    # list[Zona]
+    lineas: list = field(default_factory=list)   # list[Linea]
