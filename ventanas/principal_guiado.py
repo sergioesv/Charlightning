@@ -25,7 +25,7 @@ from calculo_ddt_plot.ventana_calculo_ddt import Calculo_DDT
 from variables.globales import papo
 from variables.variable_generales import VAR
 from calculate_risk.collect_entry_data_risk import DataEntryRiskTable
-from calculate_risk.calculo import calcular_riesgo
+from calculate_risk.norma.adaptador import resultados_pantalla
 from calculate_risk.opciones import VALORES_OPCIONES
 
 from pathlib import Path
@@ -870,7 +870,7 @@ class Principal_guiado(Panel):
         self.calcular_n_oh()
         self.calcular_n_ug()
         self.leer_combos()
-        VAR.update(calcular_riesgo(VAR))
+        VAR.update(resultados_pantalla(VAR))
         self.mostrar_resultados()
 
 
