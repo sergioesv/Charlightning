@@ -1,14 +1,13 @@
 """
-Paso 37b: resultados_pantalla() entrega las mismas llaves que hoy produce
-calculate_risk.calculo.calcular_riesgo, pero calculadas con el motor nuevo.
+resultados_pantalla() entrega las llaves que leen la pantalla
+(mostrar_resultados) y el informe PDF, calculadas con el motor nuevo.
 
-Es el contrato que necesita la pantalla (mostrar_resultados) y el informe PDF.
-Cuando esta prueba esta en verde, se puede cambiar la llamada en
-ventanas/principal_guiado.py y retirar el motor viejo (Pasos 37c y 37d).
+Los valores de las areas y frecuencias quedaron congelados en el Paso 37d, al
+retirar el motor viejo; hasta ese momento se comprobaban comparandolos contra
+calculate_risk.calculo.calcular_riesgo, y salian identicos en los dos casos.
 """
 from pytest import approx
 
-from calculate_risk.calculo import calcular_riesgo
 from calculate_risk.norma.adaptador import resultados_pantalla
 from tests.datos_pantalla import CASA_RURAL, EDIFICIO_EJEMPLO
 
@@ -21,6 +20,22 @@ LLAVES_INFORME = [
     "A_m", "A_c1", "A_c2", "A_l2", "N_D", "N_M", "N_L1", "N_L2", "N_I2",
 ] + [f"R_{c}{t}" for c in ("A", "B", "C", "M", "U", "V", "W", "Z") for t in (1, 2, 3, 4)]
 
+# Areas y frecuencias del EDIFICIO_EJEMPLO (20 x 10 x 6 m, H_P=6, DDT=10).
+INTERMEDIOS_EDIFICIO = {
+    "A_d": 2297.8760197630927,
+    "A_m": 815398.1633974483,
+    "N_D": 0.011489380098815463,
+    "N_M": 8.153981633974482,
+    "A_c1": 40000.0,
+    "A_c2": 40000.0,
+    "A_l1": 4000000.0,
+    "A_l2": 4000000.0,
+    "N_L1": 0.2,
+    "N_L2": 0.1,
+    "N_I1": 20.0,
+    "N_I2": 10.0,
+}
+
 
 def test_estan_todas_las_llaves_que_usan_la_pantalla_y_el_informe():
     r = resultados_pantalla(EDIFICIO_EJEMPLO)
@@ -29,23 +44,19 @@ def test_estan_todas_las_llaves_que_usan_la_pantalla_y_el_informe():
     assert faltan == []
 
 
-def test_areas_y_frecuencias_identicas_al_motor_viejo():
-    for datos in (CASA_RURAL, EDIFICIO_EJEMPLO):
-        viejo = calcular_riesgo(datos)
-        nuevo = resultados_pantalla(datos)
+def test_areas_y_frecuencias_del_edificio_ejemplo():
+    r = resultados_pantalla(EDIFICIO_EJEMPLO)
 
-        for llave in ("A_d", "A_m", "N_D", "N_M", "A_c1", "A_c2", "A_l2",
-                      "N_L1", "N_L2", "N_I2"):
-            assert nuevo[llave] == approx(viejo[llave], rel=1e-9), llave
+    for llave, esperado in INTERMEDIOS_EDIFICIO.items():
+        assert r[llave] == approx(esperado, rel=1e-9), llave
 
 
-def test_casa_rural_da_los_mismos_riesgos_que_el_motor_viejo():
-    viejo = calcular_riesgo(CASA_RURAL)
-    nuevo = resultados_pantalla(CASA_RURAL)
+def test_casa_rural_coincide_con_la_norma():
+    r = resultados_pantalla(CASA_RURAL)
 
-    for tipo in (1, 2, 3, 4):
-        assert nuevo[f"R_{tipo}"] == approx(viejo[f"R_{tipo}"], rel=1e-9)
-    assert nuevo["R_1"] == approx(2.51e-5, rel=0.01)      # Anexo E.2 de la norma
+    assert r["R_1"] == approx(2.51e-5, rel=0.01)      # Anexo E.2 de la norma
+    # En este caso L_f2, L_f3, L_f4, L_o* y L_t4 valen 0, asi que R2-R4 son 0.
+    assert r["R_2"] == 0 and r["R_3"] == 0 and r["R_4"] == 0
 
 
 def test_grupos_directo_e_indirecto_suman_el_total():
