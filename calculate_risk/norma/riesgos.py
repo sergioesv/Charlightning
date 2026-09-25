@@ -130,6 +130,19 @@ def _perdidas_zona(zona, tipo: int, n_t: float, c_t: float) -> tuple:
     return L_A, L_B, L_C
 
 
+def _p_dps_de_linea(zona, nombre_linea: str) -> list:
+    """P_DPS de los sistemas internos que alimenta esta línea.
+
+    Un SistemaInterno con linea="" no está atado a una línea concreta: lo
+    alimentan todas. Si la zona no tiene ningún sistema interno para esta
+    línea, P_DPS = 1 (sin DPS coordinado)."""
+    propios = [si.P_DPS for si in zona.sistemas_internos if si.linea == nombre_linea]
+    if propios:
+        return propios
+    sin_linea = [si.P_DPS for si in zona.sistemas_internos if not si.linea]
+    return sin_linea or [1.0]
+
+
 def evaluar_zona(zona, estructura, lineas, N_G: float, tipo: int) -> dict:
     """Calcula los componentes de riesgo de una zona para un tipo de pérdida (1-4)."""
     A_D = areas.area_estructura_completa(estructura.L, estructura.W, estructura.H, estructura.H_p)
@@ -177,7 +190,7 @@ def evaluar_zona(zona, estructura, lineas, N_G: float, tipo: int) -> dict:
             )
             N_DJ = frecuencias.n_dj(N_G, A_DJ, ln.C_DJ, ln.C_T)
 
-        P_DPS_list = [si.P_DPS for si in zona.sistemas_internos if si.linea == ln.nombre] or [1.0]
+        P_DPS_list = _p_dps_de_linea(zona, ln.nombre)
 
         P_U = probabilidades.p_u(zona.P_TU, ln.P_EB, ln.P_LD, ln.C_LD)
         P_V = probabilidades.p_v(ln.P_EB, ln.P_LD, ln.C_LD)
