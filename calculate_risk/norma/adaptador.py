@@ -12,6 +12,7 @@ Diferencias conocidas frente a `calculate_risk.calculo.calcular_riesgo`:
   - L4: el cálculo viejo multiplica L_B4 por h4; la ec. (C.12) no lleva h_z.
   - P_C: el cálculo viejo usa P_DPS solo; la ec. (B.2) es P_DPS × C_LD.
 """
+from calculate_risk.norma import areas, frecuencias, riesgos
 from calculate_risk.norma.modelo import Estructura, Linea, SistemaInterno, Zona
 
 LONGITUD_LINEA_PANTALLA = 1000.0   # la pantalla no pregunta L_L (limitación H16)
@@ -122,3 +123,58 @@ def caso_desde_pantalla(datos: dict, tipo: int = 1) -> dict:
         "N_G": datos["DDT"],
         "tipos": (tipo,),
     }
+
+
+
+
+# ---------------------------------------------------------------------------
+# Paso 37: resultados con las mismas llaves que espera la pantalla y el informe
+# ---------------------------------------------------------------------------
+
+# Componentes que suma cada grupo de la pantalla: "directos" (rayo en la
+# estructura) e "indirectos" (rayo cerca o en las líneas).
+DIRECTOS = ("R_A", "R_B", "R_C")
+INDIRECTOS = ("R_M", "R_U", "R_V", "R_W", "R_Z")
+
+
+def _intermedios(datos: dict) -> dict:
+    """Áreas y frecuencias que el informe muestra aparte de los riesgos."""
+    L_L = LONGITUD_LINEA_PANTALLA
+    return {
+        "N_g": datos["DDT"],
+        "A_d": areas.area_estructura_completa(datos["L"], datos["W"], datos["H"], datos["H_P"]),
+        "A_m": areas.area_descargas_cercanas(datos["L"], datos["W"]),
+        "A_c1": areas.area_linea_descargas_directas(L_L),
+        "A_c2": areas.area_linea_descargas_directas(L_L),
+        "A_l1": areas.area_linea_descargas_cercanas(L_L),
+        "A_l2": areas.area_linea_descargas_cercanas(L_L),
+        "N_L1": frecuencias.n_l(datos["DDT"], L_L, C_I_AEREA, datos["C_e"], datos["C_t1"]),
+        "N_L2": frecuencias.n_l(datos["DDT"], L_L, C_I_SUBTERRANEA, datos["C_e"], datos["C_t2"]),
+        "N_I1": frecuencias.n_i(datos["DDT"], L_L, C_I_AEREA, datos["C_e"], datos["C_t1"]),
+        "N_I2": frecuencias.n_i(datos["DDT"], L_L, C_I_SUBTERRANEA, datos["C_e"], datos["C_t2"]),
+    }
+
+
+def resultados_pantalla(datos: dict) -> dict:
+    """Calcula R1-R4 con el motor nuevo y devuelve las llaves que la pantalla
+    y el informe ya leen (R_A1, R_B1, ..., R_d1, R_i1, R_1, ... R_4)."""
+    resultados = _intermedios(datos)
+    resultados["N_D"] = frecuencias.n_d(datos["DDT"], resultados["A_d"], datos["C_d"])
+    resultados["N_M"] = frecuencias.n_m(datos["DDT"], datos["L"], datos["W"])
+
+    for tipo in (1, 2, 3, 4):
+        caso = caso_desde_pantalla(datos, tipo=tipo)
+        r = riesgos.evaluar(
+            caso["estructura"], caso["lineas"], caso["zonas"], caso["N_G"], tipos=(tipo,)
+        )[tipo]
+
+        for componente in riesgos.COMPONENTES:
+            # "R_A" + "1" -> "R_A1", como las llaves de la pantalla vieja
+            resultados[f"{componente}{tipo}"] = r[componente]
+
+        resultados[f"R_d{tipo}"] = sum(r[c] for c in DIRECTOS)
+        resultados[f"R_i{tipo}"] = sum(r[c] for c in INDIRECTOS)
+        resultados[f"R_{tipo}"] = r["total"]
+        resultados[f"R_T{tipo}"] = r["R_T"]
+
+    return resultados
