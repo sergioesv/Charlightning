@@ -87,3 +87,83 @@ def test_los_costos_se_pasan_aparte_porque_la_norma_no_los_trae():
                   for m in medidas.catalogo(costos={"spcr:spcr_nivel_IV": 12_000_000})}
     assert con_costos["spcr:spcr_nivel_IV"] == 12_000_000
     assert con_costos["dps:npr_I"] == 0.0
+
+
+
+
+
+# ---------------------------------------------------------------------------
+# Paso 38b: barrido de combinaciones
+# ---------------------------------------------------------------------------
+
+def test_combinaciones_toma_a_lo_sumo_una_medida_por_familia():
+    cat = medidas.catalogo()
+    combos = list(medidas.combinaciones(cat))
+
+    esperadas = 1
+    for lista in medidas.familias(cat).values():
+        esperadas *= len(lista) + 1        # +1 = no instalar nada de esa familia
+    assert len(combos) == esperadas
+
+    assert () in combos                    # la combinacion vacia esta
+    for combo in combos:
+        familias_usadas = [m.familia for m in combo]
+        assert len(familias_usadas) == len(set(familias_usadas))
+
+
+def test_el_barrido_encuentra_las_dos_soluciones_publicadas_de_la_norma():
+    estructura, lineas, zonas, N_G = _casa_rural()
+
+    soluciones = medidas.explorar(estructura, lineas, zonas, N_G, tipo=1,
+                                  solo_familias={"spcr", "dps"})
+    por_nombre = {s.nombres: s for s in soluciones}
+
+    # Solucion a) del Anexo E.2: DPS coordinados NPR IV -> 0,223e-5
+    sola_dps = por_nombre[("dps:npr_III_IV",)]
+    assert sola_dps.riesgo == approx(0.223e-5, rel=0.01)
+    assert sola_dps.cumple
+
+    # Solucion b): SPCR clase IV + esos mismos DPS -> 0,141e-5
+    spcr_y_dps = por_nombre[("spcr:spcr_nivel_IV", "dps:npr_III_IV")]
+    assert spcr_y_dps.riesgo == approx(0.141e-5, rel=0.01)
+    assert spcr_y_dps.cumple
+
+
+def test_el_barrido_descarta_lo_que_no_cumple():
+    estructura, lineas, zonas, N_G = _casa_rural()
+
+    cumplen = medidas.explorar(estructura, lineas, zonas, N_G, tipo=1,
+                               solo_familias={"spcr"})
+    todas = medidas.explorar(estructura, lineas, zonas, N_G, tipo=1,
+                             solo_familias={"spcr"}, solo_las_que_cumplen=False)
+
+    assert all(s.cumple for s in cumplen)
+    assert len(todas) > len(cumplen)
+    # Sin ninguna medida la casa rural no cumple (2,51e-5 > 1e-5)
+    sin_nada = next(s for s in todas if s.medidas == ())
+    assert not sin_nada.cumple and sin_nada.riesgo == approx(2.51e-5, rel=0.01)
+
+
+def test_las_soluciones_salen_ordenadas_por_costo():
+    estructura, lineas, zonas, N_G = _casa_rural()
+    # Hay que ponerle precio a TODAS las medidas de las familias que se usen:
+    # una medida sin precio cuenta como gratis y se iria de primeras.
+    precios = {
+        "dps:npr_III_IV": 1_000_000, "dps:npr_II": 2_000_000, "dps:npr_I": 4_000_000,
+        "spcr:spcr_nivel_IV": 5_000_000, "spcr:spcr_nivel_III": 8_000_000,
+        "spcr:spcr_nivel_II": 12_000_000, "spcr:spcr_nivel_I": 20_000_000,
+        "spcr:captador_nivel_I_con_armadura_continua": 30_000_000,
+        "spcr:techo_metalico_o_captacion_completa_con_armadura": 40_000_000,
+    }
+
+    soluciones = medidas.explorar(
+        estructura, lineas, zonas, N_G, tipo=1,
+        catalogo_medidas=medidas.catalogo(costos=precios),
+        solo_familias={"spcr", "dps"},
+    )
+
+    costos = [s.costo for s in soluciones]
+    assert costos == sorted(costos)
+    # La mas barata que cumple es poner solo los DPS NPR IV (1 millon)
+    assert soluciones[0].nombres == ("dps:npr_III_IV",)
+    assert soluciones[0].costo == 1_000_000

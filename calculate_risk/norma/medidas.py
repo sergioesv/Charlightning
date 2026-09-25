@@ -1,5 +1,5 @@
 """
-Paso 38: medidas de protección (numeral 5 y Figura 1 de la NTC 4552-2:2023).
+medidas de protección (numeral 5 y Figura 1 de la NTC 4552-2:2023).
 
 La Figura 1 describe el procedimiento: se evalúa R; si R > R_T hay que instalar
 medidas de protección y volver a evaluar, hasta que R <= R_T. Este módulo es la
@@ -17,9 +17,10 @@ El costo NO viene de la norma (depende del proyecto): se pasa aparte, como un
 diccionario {nombre de la medida: costo}.
 """
 import copy
+import itertools
 from dataclasses import dataclass, replace
 
-from calculate_risk.norma import tablas
+from calculate_risk.norma import riesgos, tablas
 
 
 @dataclass(frozen=True)
@@ -138,3 +139,66 @@ def aplicar(estructura, lineas, zonas, medidas):
                 raise ValueError(f"Destino desconocido: {efecto.destino}")
 
     return estructura, lineas, zonas
+
+
+
+
+# ---------------------------------------------------------------------------
+# Paso 38b: barrido de combinaciones (el ciclo de la Figura 1, automatizado)
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class Solucion:
+    """Una combinación de medidas ya evaluada."""
+    medidas: tuple
+    riesgo: float
+    R_T: float
+    cumple: bool
+    costo: float
+
+    @property
+    def nombres(self) -> tuple:
+        return tuple(m.nombre for m in self.medidas)
+
+
+def combinaciones(medidas):
+    """Todas las combinaciones posibles tomando a lo sumo UNA medida por familia.
+
+    Incluye la combinación vacía (no instalar nada), que es el punto de partida.
+    """
+    opciones = [[None] + lista for lista in familias(medidas).values()]
+    for elegidas in itertools.product(*opciones):
+        yield tuple(m for m in elegidas if m is not None)
+
+
+def explorar(estructura, lineas, zonas, N_G, tipo=1, catalogo_medidas=None,
+             solo_familias=None, solo_las_que_cumplen=True) -> list:
+    """Prueba combinaciones de medidas y devuelve las soluciones evaluadas.
+
+    Es el ciclo de la Figura 1 hecho de una vez: en vez de instalar, recalcular
+    y repetir a mano, se calcula R para cada combinación posible.
+
+    solo_familias: nombres de familia a considerar (None = todas).
+    Las soluciones salen ordenadas: primero las de menor costo; a igual costo,
+    las que usan menos medidas; y a igualdad de todo, las de menor riesgo.
+    """
+    medidas_disponibles = catalogo_medidas if catalogo_medidas is not None else catalogo()
+    if solo_familias is not None:
+        medidas_disponibles = [m for m in medidas_disponibles if m.familia in solo_familias]
+
+    soluciones = []
+    for combinacion in combinaciones(medidas_disponibles):
+        e, l, z = aplicar(estructura, lineas, zonas, combinacion)
+        r = riesgos.evaluar(e, l, z, N_G, tipos=(tipo,))[tipo]
+        if solo_las_que_cumplen and not r["cumple"]:
+            continue
+        soluciones.append(Solucion(
+            medidas=combinacion,
+            riesgo=r["total"],
+            R_T=r["R_T"],
+            cumple=r["cumple"],
+            costo=sum(m.costo for m in combinacion),
+        ))
+
+    soluciones.sort(key=lambda s: (s.costo, len(s.medidas), s.riesgo))
+    return soluciones
