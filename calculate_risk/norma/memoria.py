@@ -183,9 +183,12 @@ def _tabla_soluciones(soluciones, cuantas=10) -> str:
     filas = ""
     for s in soluciones[:cuantas]:
         nombres = escapar(" + ".join(s.nombres) or "(sin medidas)")
-        filas += f"{nombres} & ${numero(s.riesgo)}$ & {s.costo:,.0f}".replace(",", " ")
+        # OJO: el separador de miles se cambia SOLO en el dinero. Si se aplica
+        # a toda la fila, se come la coma decimal de numero() ("2{,}233").
+        costo = f"{s.costo:,.0f}".replace(",", "~")
+        filas += f"{nombres} & ${numero(s.riesgo)}$ & {costo}"
         if con_economia:
-            filas += f" & {s.S_M:,.0f}".replace(",", " ")
+            filas += " & " + f"{s.S_M:,.0f}".replace(",", "~")
         filas += " \\\\\n"
 
     return (
@@ -214,11 +217,102 @@ def _figuras(figuras) -> str:
     return "\\section{Análisis de sensibilidad}\n" + bloques
 
 
+
+# Cada componente: su ecuación en la norma y de qué factores sale.
+# R = N x P x L
+DESARROLLO = {
+    "R_A": ("6", "N_D", "P_A", "L_A"),
+    "R_B": ("7", "N_D", "P_B", "L_B"),
+    "R_C": ("8", "N_D", "P_C", "L_C"),
+    "R_M": ("9", "N_M", "P_M", "L_M"),
+    "R_U": ("10", "N_L + N_{DJ}", "P_U", "L_U"),
+    "R_V": ("11", "N_L + N_{DJ}", "P_V", "L_V"),
+    "R_W": ("12", "N_L + N_{DJ}", "P_W", "L_W"),
+    "R_Z": ("13", "N_I", "P_Z", "L_Z"),
+}
+
+
+def _valor_factor(nombre, detalle, linea):
+    """Busca un factor en el detalle: primero en la zona, luego en la línea."""
+    if nombre == "N_L + N_{DJ}":
+        return linea["N_L"] + linea["N_DJ"]
+    if nombre in detalle:
+        return detalle[nombre]
+    return linea[nombre]
+
+
+def _desarrollo(detalle, R, tipo) -> str:
+    """El cálculo paso a paso: la fórmula de cada componente con sus números.
+
+    Esto es lo que diferencia una memoria de cálculo de una hoja de
+    resultados: se ve de dónde sale cada valor.
+    """
+    lineas = list(detalle["lineas"].items())
+    nombre_linea, linea = lineas[0] if lineas else (None, {})
+
+    texto = (
+        "\\section{Desarrollo del cálculo}\n"
+        "Cada componente es el producto de tres factores: la frecuencia de "
+        "eventos $N$, la probabilidad de daño $P$ y la pérdida $L$.\n\n"
+    )
+    if nombre_linea and len(lineas) > 1:
+        texto += (f"Los componentes de línea se desarrollan para "
+                  f"\\textit{{{escapar(nombre_linea)}}}; el valor final suma "
+                  f"las {len(lineas)} líneas.\n\n")
+
+    for componente, (ec, n, p, l) in DESARROLLO.items():
+        letra = componente[2]
+        if componente not in detalle["aplica"]:
+            texto += (f"$R_{{{letra}}}$ no interviene en $R_{tipo}$ "
+                      f"(numeral 4.3).\n\n")
+            continue
+        try:
+            vn = _valor_factor(n, detalle, linea)
+            vp = _valor_factor(p, detalle, linea)
+            vl = _valor_factor(l, detalle, linea)
+        except KeyError:
+            continue
+        texto += (
+            f"$R_{{{letra}}}$ — ecuación ({ec}):\n"
+            "\\begin{equation*}\n"
+            f"R_{{{letra}}} = ({n}) \\times {p} \\times {l}"
+            f" = {numero(vn)} \\times {numero(vp)} \\times {numero(vl)}"
+            f" = \\mathbf{{{numero(R[componente])}}}\n"
+            "\\end{equation*}\n\n"
+        )
+    return texto
+
+
+def _de_donde_viene(R, tipo) -> str:
+    """Qué componente aporta cuánto: lo primero que mira un diseñador."""
+    total = R["total"]
+    if not total:
+        return ""
+    ordenados = sorted(
+        ((c, v) for c, v in R.items() if c in NOMBRES_COMPONENTES and v),
+        key=lambda cv: -cv[1],
+    )
+    filas = ""
+    for componente, valor in ordenados:
+        porcentaje = valor / total * 100
+        filas += (f"${componente.replace('_', '_{')}}}$ & "
+                  f"${numero(valor)}$ & ${porcentaje:.1f}$\\,\\% \\\\\n")
+    return (
+        f"\\subsection*{{De dónde viene $R_{tipo}$}}\n"
+        "\\begin{tabular}{@{}lrr@{}}\n\\toprule\n"
+        "Componente & Valor & Participación \\\\\n\\midrule\n"
+        f"{filas}"
+        "\\bottomrule\n\\end{tabular}\n\n"
+    )
+
+
+
 PREAMBULO = r"""\documentclass[11pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[spanish,es-noshorthands,es-tabla]{babel}
 \usepackage{lmodern}
+\usepackage{amsmath}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage[margin=2.5cm]{geometry}
@@ -228,7 +322,8 @@ PREAMBULO = r"""\documentclass[11pt,a4paper]{article}
 
 
 def memoria_tex(datos, resultados, proyecto=None, soluciones=None, figuras=None,
-                tipos=(1, 2, 3, 4)) -> str:
+                tipos=(1, 2, 3, 4), detalle=None, R_zona=None,
+                tipo_desarrollado=1) -> str:
     """Arma el documento LaTeX completo y lo devuelve como texto.
 
     datos: el diccionario de la pantalla (VAR).
@@ -236,6 +331,9 @@ def memoria_tex(datos, resultados, proyecto=None, soluciones=None, figuras=None,
     proyecto: {"Proyecto": ..., "Dirección": ...} (opcional).
     soluciones: lo que devuelve medidas.explorar() (opcional).
     figuras: [(ruta_png, pie_de_figura), ...] (opcional).
+    detalle, R_zona: el "_detalle" y los componentes de una zona, para escribir
+        el desarrollo del cálculo (lo que hace que sea una memoria y no una
+        hoja de resultados). Salen de riesgos.evaluar(...)[tipo]["zonas"][nombre].
     """
     cuerpo = (
         _tabla_datos_proyecto(proyecto)
@@ -243,6 +341,9 @@ def memoria_tex(datos, resultados, proyecto=None, soluciones=None, figuras=None,
         + _tabla_areas(resultados)
         + _tabla_componentes(resultados, tipos)
         + _tabla_veredicto(resultados, tipos)
+        + (_desarrollo(detalle, R_zona, tipo_desarrollado)
+           if detalle and R_zona else "")
+        + (_de_donde_viene(R_zona, tipo_desarrollado) if R_zona else "")
         + _tabla_soluciones(soluciones)
         + _figuras(figuras)
     )

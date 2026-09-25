@@ -146,3 +146,82 @@ def test_las_frecuencias_del_documento_son_las_calculadas():
 
     assert res["N_D"] == approx(1.031e-2, rel=0.01)
     assert memoria.numero(res["N_D"]) in tex
+
+
+
+
+
+# ---------------------------------------------------------------------------
+# Paso 40b: el desarrollo del calculo (lo que hace que sea una memoria)
+# ---------------------------------------------------------------------------
+
+def _zona_casa_rural(tipo=1):
+    from calculate_risk.norma import riesgos
+    c = caso_desde_pantalla(CASA_RURAL, tipo=tipo)
+    r = riesgos.evaluar(c["estructura"], c["lineas"], c["zonas"], c["N_G"],
+                        tipos=(tipo,))[tipo]
+    return r["zonas"]["pantalla"]
+
+
+def test_el_motor_devuelve_los_valores_intermedios():
+    zona = _zona_casa_rural()
+    d = zona["_detalle"]
+
+    # Los de la estructura, contra la Tabla E.7 de la norma
+    assert d["A_D"] == approx(2.578e3, rel=0.001)
+    assert d["N_D"] == approx(1.03e-2, rel=0.01)
+    # Los de cada linea, por separado
+    assert set(d["lineas"]) == {"potencia_subterranea", "servicio_aereo"}
+    assert d["lineas"]["potencia_subterranea"]["N_L"] == approx(8.00e-2, rel=0.01)
+    assert d["lineas"]["servicio_aereo"]["N_L"] == approx(1.60e-1, rel=0.01)
+
+
+def test_el_desarrollo_muestra_la_formula_con_los_numeros():
+    zona = _zona_casa_rural()
+    res = resultados_pantalla(CASA_RURAL)
+    tex = memoria.memoria_tex(CASA_RURAL, res, detalle=zona["_detalle"],
+                              R_zona=zona, tipo_desarrollado=1)
+
+    assert "Desarrollo del cálculo" in tex
+    # R_B = N_D x P_B x L_B, con los tres numeros y el resultado
+    assert "R_{B} = (N_D) \\times P_B \\times L_B" in tex
+    assert memoria.numero(zona["_detalle"]["N_D"]) in tex
+    assert memoria.numero(zona["R_B"]) in tex
+
+
+def test_el_desarrollo_dice_que_componentes_no_aplican():
+    # En la casa rural L_o1 = 0, asi que R_C, R_M, R_W y R_Z no intervienen
+    # en R1 (numeral 4.3). Eso hay que decirlo, no dejarlo en blanco.
+    zona = _zona_casa_rural()
+    res = resultados_pantalla(CASA_RURAL)
+    tex = memoria.memoria_tex(CASA_RURAL, res, detalle=zona["_detalle"],
+                              R_zona=zona, tipo_desarrollado=1)
+
+    for letra in ("C", "M", "W", "Z"):
+        assert f"$R_{{{letra}}}$ no interviene en $R_1$" in tex
+
+
+def test_la_participacion_coincide_con_lo_que_dice_la_norma():
+    # La norma dice de la casa rural: domina R_V (~96 %), luego R_B (~4 %).
+    zona = _zona_casa_rural()
+    res = resultados_pantalla(CASA_RURAL)
+    tex = memoria.memoria_tex(CASA_RURAL, res, R_zona=zona, tipo_desarrollado=1)
+
+    assert "De dónde viene $R_1$" in tex
+    assert zona["R_V"] / zona["total"] == approx(0.958, abs=0.005)
+    assert "$95.8$\\,\\%" in tex
+
+
+def test_el_separador_de_miles_no_se_come_la_coma_decimal():
+    # Bug real: el .replace(",", " ") del costo borraba la coma de
+    # numero() y "2{,}233 x 10^-6" salia como "2233 x 10^-6".
+    c = caso_desde_pantalla(CASA_RURAL, tipo=1)
+    soluciones = medidas.explorar(
+        c["estructura"], c["lineas"], c["zonas"], c["N_G"], tipo=1,
+        catalogo_medidas=medidas.catalogo(costos={"dps:npr_III_IV": 1_000_000}),
+        solo_familias={"dps"})
+    res = resultados_pantalla(CASA_RURAL)
+    tex = memoria.memoria_tex(CASA_RURAL, res, soluciones=soluciones)
+
+    assert "2{,}233 \\times 10^{-6}" in tex
+    assert "1~000~000" in tex
