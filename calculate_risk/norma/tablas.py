@@ -178,3 +178,21 @@ PEB = {
     "npr_II": 0.02,
     "npr_I": 0.01,
 }
+
+
+# ============================================================
+# TABLA B.4 - FACTORES CLD Y CLI (blindaje, puesta a tierra, aislamiento)
+# ============================================================
+
+CLD_CLI = {
+    "aerea_sin_blindaje": {"CLD": 1, "CLI": 1},
+    "enterrada_sin_blindaje": {"CLD": 1, "CLI": 1},
+    "potencia_multi_puesta_a_tierra_neutro": {"CLD": 1, "CLI": 0.2},
+    "subterranea_blindada_sin_conectar_barra": {"CLD": 1, "CLI": 0.3},
+    "aerea_apantallada_sin_conectar_barra": {"CLD": 1, "CLI": 0.1},
+    "subterranea_apantallada_conectada_barra": {"CLD": 1, "CLI": 0},
+    "aerea_apantallada_conectada_barra": {"CLD": 1, "CLI": 0},
+    "cable_en_conducto_metalico_conectado_barra": {"CLD": 0, "CLI": 0},
+    "sin_conexion_lineas_externas": {"CLD": 0, "CLI": 0},
+    "interfaz_aislamiento_IEC62305_4": {"CLD": 0, "CLI": 0},
+}
