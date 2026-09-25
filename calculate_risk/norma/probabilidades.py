@@ -29,11 +29,6 @@ def k_s4(u_w: float) -> float:
 
 
 def p_ms(k_s1_: float, k_s2_: float, k_s3: float, k_s4_: float) -> float:
-    """P_MS: falla por descarga cerca de la estructura, con SPCI (ec. B.4)."""
-    return (k_s1_ * k_s2_ * k_s3 * k_s4_) ** 2
-
-
-def p_ms(k_s1_: float, k_s2_: float, k_s3: float, k_s4_: float) -> float:
     """P_MS: falla por descarga cerca de la estructura, con SPCI (ec. B.4, tope 1)."""
     return min((k_s1_ * k_s2_ * k_s3 * k_s4_) ** 2, 1)
 
@@ -70,13 +65,3 @@ def combinar(probabilidades) -> float:
     return 1.0 - resultado
 
 
-def combinar(probabilidades) -> float:
-    """Combina varias probabilidades de sistemas internos en una zona:
-    P = 1 - producto(1 - P_i) (ec. 14, 15)."""
-    ps = list(probabilidades)
-    if not ps:
-        return 0.0
-    resultado = 1.0
-    for p in ps:
-        resultado *= (1.0 - p)
-    return 1.0 - resultado
