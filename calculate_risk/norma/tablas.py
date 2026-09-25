@@ -286,3 +286,68 @@ HZ = {
     "panico_medio_o_dificultad_evacuacion": 5,
     "panico_alto": 10,
 }
+
+
+
+# ============================================================
+# TABLA C.2 - VALORES TÍPICOS LT, LF, LO PARA L1 (vidas humanas)
+# ============================================================
+
+LT_L1 = 1e-2  # D1, todos los tipos de estructura
+
+LF_L1 = {
+    "riesgo_explosion": 1e-1,
+    "hospital_hotel_escuela_edificio_publico": 1e-1,
+    "evento_publico_iglesia_museo": 5e-2,
+    "industrial_comercial": 2e-2,
+    "otros": 1e-2,
+}
+
+LO_L1 = {
+    "riesgo_explosion": 1e-1,
+    "hospital_uci_quirofano": 1e-2,
+    "hospital_otras_partes": 1e-3,
+}
+
+
+# ============================================================
+# TABLA C.8 - VALORES TÍPICOS LF, LO PARA L2 (servicio público)
+# ============================================================
+
+LF_L2 = {
+    "gas_agua_electricidad": 1e-1,
+    "tv_telecomunicacion": 1e-2,
+}
+
+LO_L2 = {
+    "gas_agua_electricidad": 1e-2,
+    "tv_telecomunicacion": 1e-3,
+}
+
+
+# ============================================================
+# TABLA C.10 - VALOR TÍPICO LF PARA L3 (patrimonio cultural)
+# ============================================================
+
+LF_L3 = 1e-1  # museos, galerías
+
+
+# ============================================================
+# TABLA C.12 - VALORES TÍPICOS LT, LF, LO PARA L4 (económica)
+# ============================================================
+
+LT_L4 = 1e-2  # D1, solo estructuras con animales
+
+LF_L4 = {
+    "riesgo_explosion": 1,
+    "hospital_industria_museo_agricultura": 0.5,
+    "hotel_escuela_oficina_iglesia_evento_publico_comercio": 0.2,
+    "otros": 1e-1,
+}
+
+LO_L4 = {
+    "riesgo_explosion": 1e-1,
+    "hospital_industria_oficina_hotel_comercio": 1e-2,
+    "museo_agricultura_escuela_iglesia_evento_publico": 1e-3,
+    "otros": 1e-4,
+}
