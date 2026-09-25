@@ -85,6 +85,8 @@ class Zona:
     c_b: float = 0.0         # valor del edificio (L4)
     c_c: float = 0.0         # valor del contenido (L4)
     c_s: float = 0.0         # valor de los sistemas internos (L4)
+    c_e: float = 0.0         # valor de bienes en sitios peligrosos FUERA (L4, ec. C.15)
+    L_FE: float = 1.0        # pérdida típica por daño físico fuera (L4, ec. C.15; 1 si se desconoce)
 
     exterior_sin_personas: bool = False   # anula R_A y R_U (numeral B.6)
 
