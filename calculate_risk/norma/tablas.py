@@ -7,7 +7,7 @@ No realiza cálculos ni depende de la interfaz gráfica.
 
 
 # ============================================================
-# RIESGO TOLERABLE - TABLA A.1
+# RIESGO TOLERABLE - TABLA 4
 # ============================================================
 
 RT = {
@@ -46,20 +46,6 @@ def area_equivalente_estructura(L: float, W: float, H: float) -> float:
 
     return L * W + 6 * H * (L + W) + 9 * math.pi * H**2
 
-
-def area_equivalente_minima() -> float:
-    """
-    Área mínima equivalente de captación.
-
-    Corresponde a ADmin = π · (3H)² cuando se considera
-    la condición de protrusión del objeto.
-
-    Esta función se deja separada porque la aplicación de
-    max(ADmin, A'D) depende de la geometría del caso.
-    """
-    raise NotImplementedError(
-        "La altura H es necesaria para calcular ADmin."
-    )
 
 
 def area_equivalente_protrusion(H: float) -> float:
