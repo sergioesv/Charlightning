@@ -196,3 +196,42 @@ CLD_CLI = {
     "sin_conexion_lineas_externas": {"CLD": 0, "CLI": 0},
     "interfaz_aislamiento_IEC62305_4": {"CLD": 0, "CLI": 0},
 }
+
+
+# ============================================================
+# TABLA B.5 - FACTOR KS3 (características del cableado interno)
+# ============================================================
+
+KS3 = {
+    "sin_blindar_sin_precauciones": 1,
+    "sin_blindar_precauciones_bucles_grandes": 0.2,
+    "sin_blindar_precauciones_bucles": 0.01,
+    "con_blindaje_o_conducto_metalico": 0.0001,
+}
+
+
+# ============================================================
+# TABLA B.9 - PROBABILIDAD PLI (según Uw del equipamiento)
+# ============================================================
+
+PLI = {
+    "potencia": {1: 1, 1.5: 0.6, 2.5: 0.3, 4: 0.16, 6: 0.1},
+    "telecomunicacion": {1: 1, 1.5: 0.5, 2.5: 0.2, 4: 0.08, 6: 0.04},
+}
+
+
+
+# ============================================================
+# TABLA B.8 - PROBABILIDAD PLD (según Rs del blindaje y Uw del equipamiento)
+# NOTA: la norma imprime "10 Ω/km < Rs ≤ 5 Ω/km" en la fila media, errata
+# confirmada (rango imposible); se usa "1 Ω/km < Rs ≤ 5 Ω/km".
+# ============================================================
+
+PLD = {
+    "sin_conectar_barra_equipotencial": {1: 1, 1.5: 1, 2.5: 1, 4: 1, 6: 1},
+    "conectada_barra_equipotencial": {
+        "5_a_20_ohm_km": {1: 1, 1.5: 1, 2.5: 0.95, 4: 0.9, 6: 0.8},
+        "1_a_5_ohm_km": {1: 0.9, 1.5: 0.8, 2.5: 0.6, 4: 0.3, 6: 0.1},
+        "hasta_1_ohm_km": {1: 0.6, 1.5: 0.4, 2.5: 0.2, 4: 0.04, 6: 0.02},
+    },
+}
