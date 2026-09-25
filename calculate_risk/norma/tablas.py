@@ -67,3 +67,49 @@ def area_equivalente_protrusion(H: float) -> float:
     import math
 
     return math.pi * (3 * H) ** 2
+
+
+    
+# ============================================================
+# TABLA A.1 - FACTOR DE LOCALIZACIÓN DE LA ESTRUCTURA CD
+# ============================================================
+
+CD = {
+    "rodeada_objetos_mas_altos": 0.25,
+    "rodeada_objetos_misma_altura_o_inferior": 0.5,
+    "aislada": 1,
+    "aislada_colina_o_monticulo": 2,
+}
+
+
+# ============================================================
+# TABLA A.2 - FACTOR DE INSTALACIÓN DE LÍNEA CI
+# ============================================================
+
+CI = {
+    "aerea": 1,
+    "subterranea": 0.5,
+    "subterranea_bajo_malla_puesta_a_tierra": 0.01,
+}
+
+
+# ============================================================
+# TABLA A.3 - FACTOR TIPO DE LÍNEA CT
+# ============================================================
+
+CT = {
+    "bt_datos_telecomunicacion": 1,
+    "at_con_transformador": 0.2,
+}
+
+
+# ============================================================
+# TABLA A.4 - FACTOR MEDIOAMBIENTAL DE LA LÍNEA CE
+# ============================================================
+
+CE = {
+    "rural": 1,
+    "suburbano": 0.5,
+    "urbano": 0.1,
+    "urbano_edificios_altos": 0.01,
+}
