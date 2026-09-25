@@ -113,10 +113,18 @@ def _perdidas_zona(zona, tipo: int, n_t: float, c_t: float) -> tuple:
         L_B = perdidas.l_b3(zona.r_p, zona.r_f, zona.L_F, zona.c_z, c_t)
         L_C = 0.0
     elif tipo == 4:
-        L_A = perdidas.l_a4(zona.r_t, zona.L_T, zona.c_a, c_t)
         L_F_total = perdidas.l_ft(zona.L_F, zona.L_FE, zona.c_e, c_t)
-        L_B = perdidas.l_b4(zona.r_p, zona.r_f, L_F_total, zona.c_a, zona.c_b, zona.c_c, zona.c_s, c_t)
-        L_C = perdidas.l_c4(zona.L_O, zona.c_s, c_t)
+        if zona.razones_l4_unitarias:
+            # Nota "a" de la Tabla C.11: las tres razones c/c_t valen 1.
+            L_A = perdidas.l_a4(zona.r_t, zona.L_T, ca=1.0, ct=1.0)
+            L_B = perdidas.l_b4(zona.r_p, zona.r_f, L_F_total,
+                                ca=1.0, cb=0.0, cc=0.0, cs=0.0, ct=1.0)
+            L_C = perdidas.l_c4(zona.L_O, cs=1.0, ct=1.0)
+        else:
+            L_A = perdidas.l_a4(zona.r_t, zona.L_T, zona.c_a, c_t)
+            L_B = perdidas.l_b4(zona.r_p, zona.r_f, L_F_total,
+                                zona.c_a, zona.c_b, zona.c_c, zona.c_s, c_t)
+            L_C = perdidas.l_c4(zona.L_O, zona.c_s, c_t)
     else:
         raise ValueError("El tipo de pérdida debe ser 1, 2, 3 o 4")
     return L_A, L_B, L_C
