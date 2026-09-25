@@ -235,3 +235,54 @@ PLD = {
         "hasta_1_ohm_km": {1: 0.6, 1.5: 0.4, 2.5: 0.2, 4: 0.04, 6: 0.02},
     },
 }
+
+
+
+# ============================================================
+# TABLA C.3 - FACTOR REDUCTOR n (según superficie del terreno)
+# ============================================================
+
+N_SUPERFICIE = {
+    "agricola_hormigon": 1e-2,
+    "marmol_ceramica": 1e-3,
+    "grava_tapetes_alfombra": 1e-4,
+    "asfalto_linoleo_madera": 1e-5,
+}
+
+
+# ============================================================
+# TABLA C.4 - FACTOR REDUCTOR rp (medidas contra incendio)
+# ============================================================
+
+RP = {
+    "sin_medidas": 1,
+    "extintores_alarma_manual_o_evacuacion": 0.5,
+    "extincion_o_alarma_automatica": 0.2,
+}
+
+
+# ============================================================
+# TABLA C.5 - FACTOR REDUCTOR rf (riesgo de incendio o explosión)
+# ============================================================
+
+RF = {
+    "explosion_zonas_0_20": 1,
+    "explosion_zonas_1_21": 0.1,
+    "explosion_zona_2_22": 0.001,
+    "fuego_alto": 0.1,
+    "fuego_normal": 0.01,
+    "fuego_bajo": 0.001,
+    "sin_riesgo": 0,
+}
+
+
+# ============================================================
+# TABLA C.6 - FACTOR AMPLIFICADOR hz (daño especial: pánico)
+# ============================================================
+
+HZ = {
+    "sin_dano_especial": 1,
+    "panico_bajo": 2,
+    "panico_medio_o_dificultad_evacuacion": 5,
+    "panico_alto": 10,
+}
