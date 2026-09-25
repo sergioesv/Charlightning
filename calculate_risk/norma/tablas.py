@@ -113,3 +113,68 @@ CE = {
     "urbano": 0.1,
     "urbano_edificios_altos": 0.01,
 }
+
+
+
+# ============================================================
+# TABLA B.1 - PROBABILIDAD PTA (medidas contra tensión de paso/contacto)
+# ============================================================
+
+PTA = {
+    "sin_medidas": 1,
+    "avisos_de_peligro": 0.1,
+    "aislamiento_electrico": 0.01,
+    "equipotencializacion_terreno": 0.01,
+    "restricciones_fisicas_o_armadura_bajada": 0,
+}
+
+
+# ============================================================
+# TABLA B.2 - PROBABILIDAD PB (daño físico según SPCR)
+# ============================================================
+
+PB = {
+    "sin_spcr": 1,
+    "spcr_nivel_IV": 0.2,
+    "spcr_nivel_III": 0.1,
+    "spcr_nivel_II": 0.05,
+    "spcr_nivel_I": 0.02,
+    "captador_nivel_I_con_armadura_continua": 0.01,
+    "techo_metalico_o_captacion_completa_con_armadura": 0.001,
+}
+
+
+# ============================================================
+# TABLA B.3 - PROBABILIDAD PDPS (según NPR del sistema de DPS)
+# ============================================================
+
+PDPS = {
+    "sin_dps_coordinado": 1,
+    "npr_III_IV": 0.05,
+    "npr_II": 0.02,
+    "npr_I": 0.01,
+}
+
+
+# ============================================================
+# TABLA B.6 - PROBABILIDAD PTU (medidas contra tensión de contacto por línea)
+# ============================================================
+
+PTU = {
+    "sin_medidas": 1,
+    "avisos": 0.1,
+    "aislamiento_electrico": 0.01,
+    "restricciones_fisicas": 0,
+}
+
+
+# ============================================================
+# TABLA B.7 - PROBABILIDAD PEB (equipotencialidad según NPR del DPS)
+# ============================================================
+
+PEB = {
+    "sin_dps": 1,
+    "npr_III_IV": 0.05,
+    "npr_II": 0.02,
+    "npr_I": 0.01,
+}
