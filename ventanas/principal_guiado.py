@@ -25,7 +25,7 @@ from variables.globales import papo
 from variables.variable_generales import VAR
 from calculate_risk.collect_entry_data_risk import DataEntryRiskTable
 from calculate_risk.norma import memoria
-from calculate_risk.norma.adaptador import resultados_pantalla
+from calculate_risk.norma import memoria
 from calculate_risk.opciones import VALORES_OPCIONES
 
 from pathlib import Path
@@ -1043,13 +1043,12 @@ class Principal_guiado(Panel):
         }
         # VAR trae los datos de entrada Y los resultados: calcular_funciones()
         # ya hizo VAR.update(resultados_pantalla(VAR)).
-        ruta_tex = str(CARPETA_PROYECTO / "Memoria de calculo.tex")
-        memoria.memoria_desde_pantalla(ruta_tex, VAR, proyecto=proyecto)
+        ruta_tex, ruta_pdf = memoria.informe_completo(
+            CARPETA_PROYECTO, VAR, proyecto=proyecto)
 
-        try:
-            ruta_pdf = memoria.compilar(ruta_tex)
+        if ruta_pdf:
             mensaje = f"Memoria de cálculo generada:\n{ruta_pdf}"
-        except RuntimeError:
+        else:
             mensaje = ("Se generó la memoria en LaTeX:\n"
                        f"{ruta_tex}\n\n"
                        "Para obtener el PDF hace falta tener LaTeX instalado.")

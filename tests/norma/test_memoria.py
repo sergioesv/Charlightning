@@ -225,3 +225,41 @@ def test_el_separador_de_miles_no_se_come_la_coma_decimal():
 
     assert "2{,}233 \\times 10^{-6}" in tex
     assert "1~000~000" in tex
+
+
+
+# ---------------------------------------------------------------------------
+# Paso 40d: el informe completo que genera el boton de la pantalla
+# ---------------------------------------------------------------------------
+
+def test_si_ninguna_medida_alcanza_el_informe_lo_dice():
+    # Callarlo seria peor que no ponerlo: daria a entender que no hacen falta.
+    res = resultados_pantalla(CASA_RURAL)
+
+    sin_pedir = memoria.memoria_tex(CASA_RURAL, res, soluciones=None)
+    ninguna = memoria.memoria_tex(CASA_RURAL, res, soluciones=[])
+
+    assert "Medidas de protección recomendadas" not in sin_pedir
+    assert "Ninguna combinación de las medidas contempladas" in ninguna
+
+
+def test_informe_completo_deja_el_tex_las_figuras_y_el_csv(tmp_path):
+    ruta_tex, ruta_pdf = memoria.informe_completo(
+        tmp_path, CASA_RURAL, proyecto={"Proyecto": "Prueba"})
+
+    assert open(ruta_tex, encoding="utf-8").read().startswith("\\documentclass")
+    assert (tmp_path / "memoria_sensibilidad.png").exists()
+    assert (tmp_path / "memoria_medidas.csv").exists()
+    # El PDF solo sale si hay LaTeX; el .tex queda escrito de todas formas.
+    if ruta_pdf is not None:
+        with open(ruta_pdf, "rb") as f:
+            assert f.read(5) == b"%PDF-"
+
+
+def test_el_informe_completo_trae_medidas_y_figuras(tmp_path):
+    ruta_tex, _ = memoria.informe_completo(tmp_path, CASA_RURAL)
+    tex = open(ruta_tex, encoding="utf-8").read()
+
+    assert "Medidas de protección recomendadas" in tex
+    assert "Desarrollo del cálculo" in tex
+    assert "memoria_sensibilidad.png" in tex

@@ -173,8 +173,17 @@ def _tabla_veredicto(resultados, tipos=(1, 2, 3, 4)) -> str:
 
 
 def _tabla_soluciones(soluciones, cuantas=10) -> str:
-    if not soluciones:
+    if soluciones is None:            # no se pidieron
         return ""
+    if not soluciones:                # se pidieron y NO hay: hay que decirlo,
+        return (                      # callarlo haria pensar que no hacen falta
+            "\\section{Medidas de protección recomendadas}\n"
+            "\\textbf{Ninguna combinación de las medidas contempladas lleva el "
+            "riesgo por debajo del valor tolerable.} Hay que revisar el caso: "
+            "reducir la longitud o la exposición de las líneas, dividir la "
+            "estructura en zonas, o reconsiderar los valores de pérdida "
+            "adoptados.\n\n"
+        )
     con_economia = soluciones[0].S_M is not None
     columnas = "@{}p{8cm}rrr@{}" if con_economia else "@{}p{9cm}rr@{}"
     cabecera = ("Medidas & $R$ & Costo & $S_M$ \\\\" if con_economia
@@ -409,3 +418,72 @@ def memoria_desde_pantalla(ruta, datos, proyecto=None, tipo_desarrollado=1,
                             detalle=zona["_detalle"], R_zona=zona,
                             tipo_desarrollado=tipo_desarrollado,
                             soluciones=soluciones, figuras=figuras)
+
+
+
+
+# ---------------------------------------------------------------------------
+# El informe completo, de un solo llamado (lo que usa el botón de la pantalla)
+# ---------------------------------------------------------------------------
+
+# Densidades de descarga para la curva de sensibilidad: de muy baja a muy alta
+# actividad, para ver con cuánto margen cumple (o deja de cumplir) el caso.
+N_G_SENSIBILIDAD = (0.5, 1, 2, 4, 8, 16, 32)
+
+
+def informe_completo(carpeta, datos, proyecto=None, nombre="Memoria de calculo",
+                     tipo=1, precios=None):
+    """Genera el informe entero: figuras, medidas recomendadas, .tex y PDF.
+
+    Devuelve (ruta_tex, ruta_pdf). ruta_pdf es None si no hay LaTeX instalado:
+    el .tex queda escrito igual y se puede compilar en otro lado.
+
+    precios: {nombre de la medida: costo}. Sin precios, las medidas salen
+    igual pero ordenadas por cantidad en vez de por plata.
+    """
+    import os as _os
+
+    from calculate_risk.norma import barridos, graficos, medidas, riesgos
+    from calculate_risk.norma.adaptador import caso_desde_pantalla, resultados_pantalla
+
+    carpeta = str(carpeta)
+    resultados = resultados_pantalla(datos)
+    caso = caso_desde_pantalla(datos, tipo=tipo)
+    args = (caso["estructura"], caso["lineas"], caso["zonas"], caso["N_G"])
+
+    r = riesgos.evaluar(*args, tipos=(tipo,))[tipo]
+    zona = r["zonas"][caso["zonas"][0].nombre]
+
+    # Medidas que llevarían el riesgo por debajo del tolerable
+    soluciones = medidas.explorar(
+        *args, tipo=tipo, catalogo_medidas=medidas.catalogo(costos=precios))
+
+    # Figuras: la curva de sensibilidad y el costo frente al riesgo
+    figuras = []
+    puntos = barridos.barrer(*args, valores=N_G_SENSIBILIDAD, destino="N_G", tipo=tipo)
+    ruta_curva = _os.path.join(carpeta, "memoria_sensibilidad.png")
+    graficos.curva_sensibilidad(
+        puntos, ruta_curva, etiqueta_x="$N_G$  [descargas/km$^2\\cdot$año]",
+        titulo="Riesgo frente a la densidad de descargas", tipo=tipo, escala_x="log")
+    figuras.append(("memoria_sensibilidad.png",
+                    "Riesgo frente a la densidad de descargas del sitio"))
+
+    if soluciones:
+        ruta_costo = _os.path.join(carpeta, "memoria_costo_riesgo.png")
+        graficos.dispersion_costo_riesgo(soluciones, ruta_costo, tipo=tipo)
+        figuras.append(("memoria_costo_riesgo.png",
+                        "Costo de las medidas frente al riesgo residual"))
+
+    # También la tabla de soluciones a CSV, por si se quiere revisar completa
+    barridos.exportar_soluciones(
+        soluciones, _os.path.join(carpeta, "memoria_medidas.csv"))
+
+    ruta_tex = escribir_memoria(
+        _os.path.join(carpeta, f"{nombre}.tex"), datos, resultados,
+        proyecto=proyecto, soluciones=soluciones, figuras=figuras,
+        detalle=zona["_detalle"], R_zona=zona, tipo_desarrollado=tipo)
+
+    try:
+        return ruta_tex, compilar(ruta_tex)
+    except RuntimeError:
+        return ruta_tex, None
