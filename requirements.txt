@@ -1,2 +1,3 @@
 netCDF4
-fpdf
+fpdf2
+matplotlib

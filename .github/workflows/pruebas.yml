@@ -12,7 +12,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Instalar pytest y netCDF4
-        run: pip install pytest netCDF4
+      - name: Instalar dependencias de prueba
+        run: pip install pytest netCDF4 matplotlib
       - name: Ejecutar pruebas
         run: pytest -v
