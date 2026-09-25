@@ -729,7 +729,7 @@ class Principal_guiado(Panel):
         self.Entry_var_max_loss_esencial_service.grid(column='1', row='2')
         self.Entry_var_max_loss_cultural = ttk.Entry(self.Labelframe13)
         self.Entry_var_max_loss_cultural.configure(width='10')
-        _text_ = '''1.00E-3'''
+        _text_ = '''1.00E-4'''
         self.Entry_var_max_loss_cultural.insert('0', _text_)
         self.Entry_var_max_loss_cultural['state'] = 'readonly'
         self.Entry_var_max_loss_cultural.grid(column='1', row='3')
@@ -1013,6 +1013,11 @@ class Principal_guiado(Panel):
         self.Entry5.insert('0', round(VAR["A_d"], 3))
         
         casillas = [
+            # Riesgo tolerable: Tabla 4 de la norma, el mismo que usa el motor
+            (self.Entry_var_max_human_Loss, "R_T1"),
+            (self.Entry_var_max_loss_esencial_service, "R_T2"),
+            (self.Entry_var_max_loss_cultural, "R_T3"),
+            (self.Entry_var_max_loss_economic, "R_T4"),
             (self.Entry16, "R_d1"),
             (self.Entry17, "R_d2"),
             (self.Entry18, "R_d3"),

@@ -67,8 +67,8 @@ def test_grupos_directo_e_indirecto_suman_el_total():
 
 
 def test_trae_el_riesgo_tolerable_de_cada_tipo():
-    # La pantalla hoy tiene R_T4 fijo en 1,00E-3; ahora el valor real viaja
-    # en los resultados y se puede enganchar cuando se quiera.
+    # Estos cuatro valores son los que la pantalla muestra en la columna del
+    # riesgo tolerable (Paso 41c). 
     r = resultados_pantalla(EDIFICIO_EJEMPLO)
 
     assert r["R_T1"] == 1e-5
