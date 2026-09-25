@@ -1,0 +1,28 @@
+{
+  "N_G": 4.0,
+  "tipos": [1],
+  "estructura": {"L": 15.0, "W": 20.0, "H": 6.0, "C_D": 1.0, "n_t": 5.0},
+  "lineas": [
+    {
+      "nombre": "potencia", "L_L": 1000.0, "C_I": 0.5, "C_T": 1.0, "C_E": 1.0, "U_W": 2.5,
+      "C_LD": 1.0, "C_LI": 1.0, "P_LD": 1.0, "P_LI": 0.3, "P_EB": 1.0
+    },
+    {
+      "nombre": "telecomunicacion", "L_L": 1000.0, "C_I": 1.0, "C_T": 1.0, "C_E": 1.0, "U_W": 1.5,
+      "C_LD": 1.0, "C_LI": 1.0, "P_LD": 1.0, "P_LI": 0.5, "P_EB": 1.0
+    }
+  ],
+  "zonas": [
+    {
+      "nombre": "Z2_interior",
+      "P_TA": 1.0, "P_TU": 1.0, "P_B": 1.0, "K_S1": 1.0, "K_S2": 1.0,
+      "sistemas_internos": [
+        {"nombre": "pot", "linea": "potencia", "K_S3": 0.2, "U_W": 2.5, "P_DPS": 1.0},
+        {"nombre": "tel", "linea": "telecomunicacion", "K_S3": 1.0, "U_W": 1.5, "P_DPS": 1.0}
+      ],
+      "r_t": 1e-5, "r_p": 1.0, "r_f": 1e-3, "h_z": 1.0,
+      "L_T": 1e-2, "L_F": 1e-1, "L_O": 0.0,
+      "n_z": 5.0, "t_z": 8760.0
+    }
+  ]
+}
