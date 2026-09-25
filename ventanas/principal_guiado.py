@@ -16,7 +16,6 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import tkinter as tk
-import PDF_Creator
 from tkinter import ttk
 from tkinter import messagebox
 
@@ -25,6 +24,7 @@ from calculo_ddt_plot.ventana_calculo_ddt import Calculo_DDT
 from variables.globales import papo
 from variables.variable_generales import VAR
 from calculate_risk.collect_entry_data_risk import DataEntryRiskTable
+from calculate_risk.norma import memoria
 from calculate_risk.norma.adaptador import resultados_pantalla
 from calculate_risk.opciones import VALORES_OPCIONES
 
@@ -1033,52 +1033,25 @@ class Principal_guiado(Panel):
             casilla['state'] = 'readonly'
 
     def calcular_informe(self):
-        # Combina VAR (resultados numéricos) + papo (datos del proyecto)
-        datos = {**VAR, **papo}
+        """Genera la memoria de cálculo en LaTeX (y el PDF si hay pdflatex)."""
+        proyecto = {
+            "Proyecto": papo["proyecto"],
+            "Diseñador": papo["disenador"],
+            "Dirección": papo["direccion"],
+            "Teléfono": papo["telefono"],
+            "Descripción": papo["descripcion"],
+        }
+        # VAR trae los datos de entrada Y los resultados: calcular_funciones()
+        # ya hizo VAR.update(resultados_pantalla(VAR)).
+        ruta_tex = str(CARPETA_PROYECTO / "Memoria de calculo.tex")
+        memoria.memoria_desde_pantalla(ruta_tex, VAR, proyecto=proyecto)
 
-        # Textos seleccionados en los comboboxes (lo que ve el usuario)
-        datos["Combobox1"]  = self.Combobox_r_f.get()
-        datos["Combobox2"]  = self.Combobox_external_effectiveness.get()
-        datos["Combobox3"]  = self.Combobox3.get()
-        datos["Combobox4"]  = self.Combobox_height_factor_surrounding.get()
-        datos["Combobox5"]  = self.Combobox_factor_line_density_C_e.get()
-        datos["Combobox6"]  = self.Combobox6.get()
-        datos["Combobox7"]  = self.Combobox7.get()
-        datos["Combobox8"]  = self.Combobox8.get()
-        datos["Combobox9"]  = self.Combobox9.get()
-        datos["Combobox10"] = self.Combobox10.get()
-        datos["Combobox11"] = self.Combobox11.get()
-        datos["Combobox12"] = self.Combobox12.get()
-        datos["Combobox13"] = self.Combobox13.get()
-        datos["Combobox14"] = self.Combobox14.get()
-        datos["Combobox15"] = self.Combobox15.get()
-        datos["Combobox16"] = self.Combobox16.get()
-        datos["Combobox17"] = self.Combobox17.get()
-        datos["Combobox18"] = self.Combobox18.get()
-        datos["Combobox19"] = self.Combobox19.get()
-        datos["Combobox20"] = self.Combobox20.get()
-        datos["Combobox21"] = self.Combobox21.get()
-        datos["Combobox22"] = self.Combobox22.get()
-        datos["Combobox23"] = self.Combobox23.get()
-        datos["Combobox24"] = self.Combobox24.get()
-        datos["Spinbox1"]   = self.Spinbox1.get()
-        datos["Spinbox2"]   = self.Spinbox2.get()
-
-        # Formatea los valores de riesgo en notacion cientifica para el informe
-        risk_keys = [
-            "R_d1", "R_i1", "R_1",
-            "R_d2", "R_i2", "R_2",
-            "R_d3", "R_i3", "R_3",
-            "R_d4", "R_i4", "R_4",
-            "R_A1", "R_B1", "R_C1", "R_M1", "R_U1", "R_V1", "R_W1", "R_Z1",
-            "R_B2", "R_C2", "R_M2", "R_V2", "R_W2", "R_Z2",
-            "R_B3", "R_V3",
-            "R_A4", "R_B4", "R_C4", "R_M4", "R_U4", "R_V4", "R_W4", "R_Z4",
-        ]
-        for k in risk_keys:
-            if k in datos and isinstance(datos[k], (int, float)):
-                datos[k] = "{:.2e}".format(datos[k])
-
-        PDF_Creator.crear(datos)
-
+        try:
+            ruta_pdf = memoria.compilar(ruta_tex)
+            mensaje = f"Memoria de cálculo generada:\n{ruta_pdf}"
+        except RuntimeError:
+            mensaje = ("Se generó la memoria en LaTeX:\n"
+                       f"{ruta_tex}\n\n"
+                       "Para obtener el PDF hace falta tener LaTeX instalado.")
+        messagebox.showinfo(message=mensaje, title="Memoria de cálculo")
 

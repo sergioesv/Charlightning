@@ -387,3 +387,25 @@ def compilar(ruta_tex, salida=None) -> str:
 
     return os.path.join(carpeta,
                         os.path.basename(ruta_tex).replace(".tex", ".pdf"))
+
+
+def memoria_desde_pantalla(ruta, datos, proyecto=None, tipo_desarrollado=1,
+                           soluciones=None, figuras=None) -> str:
+    """Escribe la memoria directamente desde el diccionario de la pantalla.
+
+    Hace por dentro los tres pasos (resultados, caso, detalle de la zona) para
+    que la pantalla solo tenga que llamar a una función.
+    """
+    from calculate_risk.norma import riesgos
+    from calculate_risk.norma.adaptador import caso_desde_pantalla, resultados_pantalla
+
+    resultados = resultados_pantalla(datos)
+    caso = caso_desde_pantalla(datos, tipo=tipo_desarrollado)
+    r = riesgos.evaluar(caso["estructura"], caso["lineas"], caso["zonas"],
+                        caso["N_G"], tipos=(tipo_desarrollado,))[tipo_desarrollado]
+    zona = r["zonas"][caso["zonas"][0].nombre]
+
+    return escribir_memoria(ruta, datos, resultados, proyecto=proyecto,
+                            detalle=zona["_detalle"], R_zona=zona,
+                            tipo_desarrollado=tipo_desarrollado,
+                            soluciones=soluciones, figuras=figuras)
