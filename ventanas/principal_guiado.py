@@ -25,7 +25,7 @@ from variables.globales import papo
 from variables.variable_generales import VAR
 from calculate_risk.collect_entry_data_risk import DataEntryRiskTable
 from calculate_risk.norma import memoria
-from calculate_risk.norma import memoria
+from calculate_risk.norma.adaptador import resultados_pantalla
 from calculate_risk.opciones import VALORES_OPCIONES
 
 from pathlib import Path
