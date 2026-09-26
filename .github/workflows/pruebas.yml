@@ -22,6 +22,7 @@ jobs:
       - name: Instalar dependencias de prueba
         run: pip install pytest netCDF4 matplotlib
       - name: Avisar si no hay tkinter
-        run: python -c "import tkinter" || echo "sin tkinter: las pruebas de pantalla se saltan"
+        run: |
+          python -c "import tkinter" || echo "sin tkinter, las pruebas de pantalla se saltan"
       - name: Ejecutar pruebas
         run: xvfb-run -a pytest -v
