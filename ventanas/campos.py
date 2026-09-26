@@ -48,9 +48,10 @@ class _Campo:
 class CampoNumero(_Campo):
     """Casilla de número. Acepta coma o punto como separador decimal."""
 
-    def __init__(self, padre, etiqueta, fila, valor=None, unidad="",
+    def __init__(self, padre, etiqueta, fila, valor=None, unidad="", positivo=False,
                  minimo=None, maximo=None, ancho=12):
         super().__init__(padre, etiqueta, fila)
+        self.positivo = positivo
         self.minimo = minimo
         self.maximo = maximo
         self.entrada = ttk.Entry(padre, width=ancho)
@@ -73,6 +74,8 @@ class CampoNumero(_Campo):
             numero = float(crudo.replace(",", "."))
         except ValueError:
             self._fallar(f"{self.etiqueta}: «{crudo}» no es un número")
+        if self.positivo and numero <= 0:
+            self._fallar(f"{self.etiqueta} tiene que ser mayor que cero")
         if self.minimo is not None and numero < self.minimo:
             self._fallar(f"{self.etiqueta} no puede ser menor que {self.minimo}")
         if self.maximo is not None and numero > self.maximo:
@@ -90,7 +93,16 @@ class CampoTabla(_Campo):
 
     El valor NUNCA se escribe aquí: sale de tablas.py a través de
     etiquetas.opciones(). Con CLD_CLI el valor es el par {"CLD":…, "CLI":…}.
+
+    Arranca SIN NADA ELEGIDO y, si no se elige, avisa igual que una casilla
+    numérica vacía. No es un capricho: si arrancara en la primera fila, la
+    Tabla A.1 dejaría C_D = 0,25 puesto solo, que es la fila más favorable y
+    da cuatro veces menos N_D que la casa rural del Anexo E. Un factor que el
+    usuario nunca eligió no puede entrar en el cálculo. Con inicial="llave"
+    se puede arrancar en una fila concreta cuando sí se sabe cuál va.
     """
+
+    SIN_ELEGIR = "— elegir —"
 
     def __init__(self, padre, tabla, fila, etiqueta=None, inicial=None, ancho=52):
         super().__init__(padre, etiqueta or etiquetas.NOMBRES[tabla][1], fila)
@@ -100,18 +112,33 @@ class CampoTabla(_Campo):
         self.llaves = etiquetas.llaves(tabla)
 
         self.combo = ttk.Combobox(padre, state="readonly", width=ancho,
-                                  values=self.textos)
+                                  values=[self.SIN_ELEGIR] + self.textos)
         self.combo.grid(row=fila, column=1, columnspan=2, padx=3, pady=2, sticky="w")
-        self.poner_llave(inicial if inicial is not None else self.llaves[0])
+        self.combo.current(0)
+        if inicial is not None:
+            self.poner_llave(inicial)
+
+    def _fila_elegida(self) -> int:
+        """Índice en la tabla, o -1 si todavía no se ha elegido nada."""
+        return self.combo.current() - 1
 
     def valor(self):
-        return self.valores[self.combo.current()]
+        fila = self._fila_elegida()
+        if fila < 0:
+            self.marcar(True)
+            raise DatoFaltante(f"Falta elegir: {self.etiqueta}")
+        self.marcar(False)
+        return self.valores[fila]
 
     def llave(self) -> str:
-        return self.llaves[self.combo.current()]
+        fila = self._fila_elegida()
+        if fila < 0:
+            self.marcar(True)
+            raise DatoFaltante(f"Falta elegir: {self.etiqueta}")
+        return self.llaves[fila]
 
     def poner_llave(self, llave: str):
-        self.combo.current(self.llaves.index(llave))
+        self.combo.current(self.llaves.index(llave) + 1)
         self.marcar(False)
 
     def poner_valor(self, valor):
@@ -125,7 +152,7 @@ class CampoTabla(_Campo):
         """
         for indice, candidato in enumerate(self.valores):
             if candidato == valor:
-                self.combo.current(indice)
+                self.combo.current(indice + 1)
                 self.marcar(False)
                 return
         self.marcar(True)
@@ -133,7 +160,6 @@ class CampoTabla(_Campo):
             f"{self.etiqueta}: {valor} no es ninguna fila de "
             f"{etiquetas.NOMBRES[self.tabla][0]}"
         )
-
 
 class CampoSiNo(_Campo):
     """Casilla de verificación, para las banderas del modelo."""

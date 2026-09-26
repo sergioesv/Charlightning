@@ -87,7 +87,18 @@ def test_la_lista_muestra_las_filas_de_la_tabla(raiz):
     campo = campos.CampoTabla(raiz, "CE", fila=0)
 
     assert list(campo.combo.cget("values")) == [
+        campos.CampoTabla.SIN_ELEGIR,
         "Rural", "Suburbano", "Urbano", "Urbano con edificios altos"]
+
+
+def test_sin_elegir_avisa_igual_que_una_casilla_vacia(raiz):
+    # Si arrancara en la primera fila, la Tabla A.1 dejaría C_D = 0,25 puesto
+    # solo: la fila más favorable, cuatro veces menos N_D que la casa rural.
+    campo = campos.CampoTabla(raiz, "CD", fila=0)
+
+    with pytest.raises(campos.DatoFaltante, match="Falta elegir"):
+        campo.valor()
+    assert campo.en_error
 
 
 def test_elegir_una_fila_devuelve_el_valor_de_esa_fila(raiz):
@@ -95,11 +106,10 @@ def test_elegir_una_fila_devuelve_el_valor_de_esa_fila(raiz):
 
     campo = campos.CampoTabla(raiz, "CE", fila=0)
     for indice, llave in enumerate(campo.llaves):
-        campo.combo.current(indice)
+        campo.combo.current(indice + 1)     # el 0 es "— elegir —"
 
         assert campo.valor() == tablas.CE[llave]
         assert campo.llave() == llave
-
 
 def test_el_urbano_con_edificios_altos_vale_lo_que_dice_la_tabla(raiz):
     # La pantalla vieja ponía 0 aquí y anulaba N_L y N_I.

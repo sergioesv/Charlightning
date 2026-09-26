@@ -21,3 +21,4 @@ jobs:
           python -c "import tkinter" || echo "sin tkinter, las pruebas de pantalla se saltan"
       - name: Ejecutar pruebas
         run: xvfb-run -a pytest -v
+        
