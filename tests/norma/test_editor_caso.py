@@ -196,3 +196,52 @@ def test_lo_que_falta_dice_en_que_zona_es(editor):
     mensaje = str(fallo.value)
     assert "Zona 2" in mensaje
     assert "Nombre de la zona" in mensaje
+
+
+# ---------------------------------------------------------------------------
+# Paso 48: el caso va y vuelve por un archivo
+# ---------------------------------------------------------------------------
+
+def test_guardar_y_volver_a_abrir_deja_el_mismo_riesgo(editor, tmp_path):
+    antes = _evaluar(editor.casos_por_tipo(tipos=(1,))[1])["total"]
+    ruta = tmp_path / "caso.json"
+    editor.guardar(ruta, tipos=(1,))
+
+    editor.abrir(ruta)
+
+    assert _evaluar(editor.casos_por_tipo(tipos=(1,))[1])["total"] == approx(antes)
+
+
+def test_un_caso_de_dos_zonas_sobrevive_al_archivo(editor, caso, tmp_path):
+    original = caso["zonas"][0]
+    editor.zonas.formularios[0].comun.campos["nombre"].poner("planta_baja")
+    segunda = editor.zonas.anadir({1: original})
+    segunda.comun.campos["nombre"].poner("planta_alta")
+    ruta = tmp_path / "dos_zonas.json"
+    editor.guardar(ruta, tipos=(1,))
+
+    editor.abrir(ruta)
+
+    assert editor.zonas.nombres() == ["planta_baja", "planta_alta"]
+    assert len(editor.casos_por_tipo(tipos=(1,))[1]["zonas"]) == 2
+
+
+def test_no_se_guarda_un_caso_al_que_le_falta_algo(editor, tmp_path):
+    editor.zonas.anadir()          # una zona nueva, vacía
+    ruta = tmp_path / "no.json"
+
+    with pytest.raises(campos.DatoFaltante):
+        editor.guardar(ruta, tipos=(1,))
+
+    assert not ruta.exists()
+
+
+def test_se_puede_abrir_el_caso_del_repositorio(raiz):
+    vacio = editor_caso.EditorCaso(raiz)
+
+    vacio.abrir(RUTA_CASA_RURAL)
+
+    assert vacio.N_G.valor() == 4.0
+    assert vacio.lineas.nombres() == ["potencia", "telecomunicacion"]
+    assert _evaluar(vacio.casos_por_tipo(tipos=(1,))[1])["total"] == approx(
+        2.506e-5, rel=0.01)

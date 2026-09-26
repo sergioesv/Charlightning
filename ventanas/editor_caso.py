@@ -16,6 +16,7 @@ tipo de riesgo (ver el reparto COMUNES / POR_TIPO de formularios.py).
 """
 from tkinter import ttk
 
+from calculate_risk.norma import casos
 from ventanas import campos, formularios, listas
 
 
@@ -104,3 +105,14 @@ class EditorCaso(ttk.Frame):
             {tipo: casos[tipo]["zonas"][indice] for tipo in casos}
             for indice in range(len(alguno["zonas"]))
         ])
+
+
+    # -- archivo -----------------------------------------------------------
+
+    def guardar(self, ruta, tipos=(1, 2, 3, 4)) -> str:
+        """Escribe el caso en un archivo JSON. Avisa si falta algo antes."""
+        return casos.guardar_caso(ruta, self.casos_por_tipo(tipos))
+
+    def abrir(self, ruta):
+        """Abre un archivo JSON, del formato que sea."""
+        self.poner(casos.cargar_casos(ruta))
