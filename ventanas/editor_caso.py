@@ -17,7 +17,7 @@ tipo de riesgo (ver el reparto COMUNES / POR_TIPO de formularios.py).
 from tkinter import ttk
 
 from calculate_risk.norma import casos, riesgos
-from ventanas import campos, formularios, listas
+from ventanas import campos, dialogo_densidad, formularios, listas
 
 
 class EditorCaso(ttk.Frame):
@@ -31,6 +31,10 @@ class EditorCaso(ttk.Frame):
         self.N_G = campos.CampoNumero(
             cabecera, "Densidad de descargas a tierra (N_G)", 0,
             unidad="rayos/km² año", positivo=True)
+        # El botón que tenía la pantalla vieja: N_G desde lat/lon.
+        self.boton_densidad = ttk.Button(cabecera, text="Calcular con lat/lon",
+                                         command=self.pedir_densidad)
+        self.boton_densidad.grid(row=0, column=3, padx=8)
 
         self.cuaderno = ttk.Notebook(self)
         self.cuaderno.grid(row=1, column=0, sticky="nsew")
@@ -51,6 +55,11 @@ class EditorCaso(ttk.Frame):
         self.cuaderno.add(self.lineas, text="Líneas")
 
     # -- lectura -----------------------------------------------------------
+
+    def pedir_densidad(self):
+        """Abre el diálogo de la climatología y deja el N_G que devuelva."""
+        self.dialogo = dialogo_densidad.DialogoDensidad(self, self.N_G.poner)
+        return self.dialogo
 
     def casos_por_tipo(self, tipos=(1, 2, 3, 4)) -> dict:
         """{tipo: {"estructura":…, "lineas":[…], "zonas":[…], "N_G":…}}.
