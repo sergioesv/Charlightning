@@ -13,14 +13,25 @@ def p_c(p_dps: float, c_ld: float) -> float:
     return p_dps * c_ld
 
 
+FACTOR_MALLA = 0.12   # ec. (B.5) y (B.6): K_S = 0,12 x w_m
+
+
 def k_s1(w_m1: float) -> float:
     """K_S1: eficacia del blindaje en el límite de zona 0/1 (ec. B.5, tope 1)."""
-    return min(0.12 * w_m1, 1)
+    return min(FACTOR_MALLA * w_m1, 1)
 
 
 def k_s2(w_m2: float) -> float:
     """K_S2: eficacia del blindaje en el límite de zona X/Y (ec. B.6, tope 1)."""
-    return min(0.12 * w_m2, 1)
+    return min(FACTOR_MALLA * w_m2, 1)
+
+
+def w_m_desde_k_s(k_s: float) -> float:
+    """El ancho de malla que da ese K_S: inversa de las ec. (B.5) y (B.6).
+
+    Hace falta para volver a llenar la pantalla desde un caso guardado, que
+    guarda K_S y no el ancho de la malla."""
+    return k_s / FACTOR_MALLA
 
 
 def k_s4(u_w: float) -> float:

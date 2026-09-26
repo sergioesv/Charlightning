@@ -88,6 +88,34 @@ class CampoNumero(_Campo):
         raise DatoFaltante(mensaje)
 
 
+class CampoTexto(_Campo):
+    """Casilla de texto, para los nombres (de la zona, de la línea…).
+
+    Un nombre en blanco no rompe el cálculo, pero sí el informe y el árbol
+    del caso, donde la zona quedaría sin cómo llamarse. Por eso también avisa.
+    """
+
+    def __init__(self, padre, etiqueta, fila, valor="", ancho=28, obligatorio=True):
+        super().__init__(padre, etiqueta, fila)
+        self.obligatorio = obligatorio
+        self.entrada = ttk.Entry(padre, width=ancho)
+        self.entrada.grid(row=fila, column=1, columnspan=2, padx=3, pady=2, sticky="w")
+        self.poner(valor)
+
+    def poner(self, valor):
+        self.entrada.delete(0, "end")
+        self.entrada.insert(0, str(valor))
+        self.marcar(False)
+
+    def valor(self) -> str:
+        texto = self.entrada.get().strip()
+        if self.obligatorio and not texto:
+            self.marcar(True)
+            raise DatoFaltante(f"Falta {self.etiqueta}")
+        self.marcar(False)
+        return texto
+
+
 class CampoTabla(_Campo):
     """Lista desplegable con las filas de una tabla de la norma.
 
