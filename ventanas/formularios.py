@@ -335,12 +335,21 @@ class FormularioZona(ttk.Frame):
     def nombre(self) -> str:
         return self.comun.campos["nombre"].crudo()
 
-    def zonas_por_tipo(self) -> dict:
-        """{1: Zona, 2: Zona, 3: Zona, 4: Zona} con lo común repetido.
+    def leer(self, tipos=None) -> dict:
+        """Alias de zonas_por_tipo(), para que una lista pueda manejar zonas."""
+        return self.zonas_por_tipo(tipos)
 
-        Si falta algo, junta lo que falta de la parte común y de las cuatro
-        pestañas en un solo aviso, diciendo de qué riesgo es cada cosa.
+    def zonas_por_tipo(self, tipos=None) -> dict:
+        """{tipo: Zona} con lo común repetido, una zona por riesgo pedido.
+
+        Con tipos=None se leen los cuatro. Pidiendo solo algunos, las
+        pestañas de los otros ni se miran: quien solo evalúa R1 no tiene por
+        qué llenar las pérdidas económicas.
+
+        Si falta algo, junta lo que falta de la parte común y de las pestañas
+        en un solo aviso, diciendo de qué riesgo es cada cosa.
         """
+        tipos = sorted(POR_TIPO) if tipos is None else tuple(tipos)
         problemas = []
         try:
             self.comun.sistemas_internos = self.sistemas.leer()
@@ -353,9 +362,9 @@ class FormularioZona(ttk.Frame):
             problemas.append(str(error))
 
         perdidas = {}
-        for tipo, pestana in self.pestanas.items():
+        for tipo in tipos:
             try:
-                perdidas[tipo] = pestana.leer()
+                perdidas[tipo] = self.pestanas[tipo].leer()
             except campos.DatoFaltante as error:
                 problemas.append(f"{self.TITULOS[tipo]}:\n{error}")
 

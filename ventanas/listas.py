@@ -73,13 +73,18 @@ class ListaDeFormularios(ttk.LabelFrame):
             self.lista.selection_set(min(indice, len(self.formularios) - 1))
         self.mostrar_seleccionado()
 
-    def leer(self) -> list:
-        """Lee todos los elementos; si falta algo, junta todo en un aviso."""
+    def leer(self, *argumentos, **nombrados) -> list:
+        """Lee todos los elementos; si falta algo, junta todo en un aviso.
+
+        Lo que se le pase se reenvía tal cual al leer() de cada formulario:
+        así el editor puede pedir "solo R1" y la lista no necesita saber qué
+        significa eso.
+        """
         objetos = []
         problemas = []
         for numero, formulario in enumerate(self.formularios, start=1):
             try:
-                objetos.append(formulario.leer())
+                objetos.append(formulario.leer(*argumentos, **nombrados))
             except campos.DatoFaltante as error:
                 problemas.append(f"{self.singular.capitalize()} {numero}:\n{error}")
         if problemas:
