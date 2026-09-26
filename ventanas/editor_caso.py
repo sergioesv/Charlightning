@@ -16,7 +16,7 @@ tipo de riesgo (ver el reparto COMUNES / POR_TIPO de formularios.py).
 """
 from tkinter import ttk
 
-from calculate_risk.norma import casos
+from calculate_risk.norma import casos, riesgos
 from ventanas import campos, formularios, listas
 
 
@@ -107,6 +107,20 @@ class EditorCaso(ttk.Frame):
         ])
 
 
+    def evaluar(self, tipos=(1, 2, 3, 4)) -> dict:
+        """{tipo: resultado} corriendo el motor con las zonas de cada riesgo.
+
+        No basta con una sola llamada a riesgos.evaluar con tipos=(1,2,3,4):
+        las zonas de cada riesgo son objetos distintos, porque sus pérdidas
+        lo son. Por eso el bucle.
+        """
+        resultados = {}
+        for tipo, caso in self.casos_por_tipo(tipos).items():
+            resultados[tipo] = riesgos.evaluar(
+                caso["estructura"], caso["lineas"], caso["zonas"],
+                caso["N_G"], tipos=(tipo,))[tipo]
+        return resultados
+        
     # -- archivo -----------------------------------------------------------
 
     def guardar(self, ruta, tipos=(1, 2, 3, 4)) -> str:
