@@ -15,7 +15,7 @@ Los valores iniciales salen de las propias dataclasses, no se copian aquí.
 from dataclasses import fields
 from tkinter import ttk
 
-from calculate_risk.norma import probabilidades
+from calculate_risk.norma import probabilidades, tablas
 from calculate_risk.norma.modelo import Estructura, SistemaInterno, Zona
 from ventanas import campos
 
@@ -198,3 +198,164 @@ class FormularioZonaComun(ttk.LabelFrame):
         if hay:
             self.w_m1.poner(probabilidades.w_m_desde_k_s(zona.K_S1))
             self.w_m2.poner(probabilidades.w_m_desde_k_s(zona.K_S2))
+
+
+class _PestanaPerdidas(ttk.Frame):
+    """Las pérdidas de una zona para UN tipo de riesgo.
+
+    Cada tipo tiene su propia tabla en el Anexo C, y por eso hay una pestaña
+    por riesgo en vez de un solo juego de casillas. Lo que no aplica se deja
+    en "no aplica" y vale 0: una zona puede no prestar servicio público, no
+    tener patrimonio cultural y no tener sistemas vitales, y eso es una
+    respuesta, no un olvido (numeral 4.3).
+    """
+
+    def __init__(self, padre, tipo: int):
+        super().__init__(padre, padding=8)
+        self.tipo = tipo
+        d = por_defecto(Zona)
+        self.campos = {}
+        self.banderas = {}
+
+        if tipo == 1:
+            self.campos["L_T"] = campos.CampoNumero(
+                self, "Pérdida por lesiones (L_T)", 0,
+                valor=tablas.LT_L1, minimo=0, maximo=1, unidad="Tabla C.2")
+            self.campos["L_F"] = campos.CampoTabla(
+                self, "LF_L1", 1, etiqueta="Pérdida por daño físico (L_F)")
+            self.campos["L_O"] = campos.CampoTabla(
+                self, "LO_L1", 2, etiqueta="Pérdida por falla de sistemas (L_O)",
+                opcional=True)
+            self.campos["h_z"] = campos.CampoTabla(
+                self, "HZ", 3, etiqueta="Daño especial (h_z)")
+
+        elif tipo == 2:
+            self.campos["L_F"] = campos.CampoTabla(
+                self, "LF_L2", 0, etiqueta="Pérdida por daño físico (L_F)",
+                opcional=True)
+            self.campos["L_O"] = campos.CampoTabla(
+                self, "LO_L2", 1, etiqueta="Pérdida por falla de sistemas (L_O)",
+                opcional=True)
+
+        elif tipo == 3:
+            self.banderas["L_F"] = (
+                campos.CampoSiNo(self, "Hay patrimonio cultural irremplazable", 0),
+                tablas.LF_L3)
+            self.campos["c_z"] = campos.CampoNumero(
+                self, "Valor del patrimonio en la zona (c_z)", 1,
+                valor=d["c_z"], minimo=0)
+
+        elif tipo == 4:
+            self.banderas["L_T"] = (
+                campos.CampoSiNo(self, "Hay animales en la zona", 0),
+                tablas.LT_L4)
+            self.campos["L_F"] = campos.CampoTabla(
+                self, "LF_L4", 1, etiqueta="Pérdida por daño físico (L_F)")
+            self.campos["L_O"] = campos.CampoTabla(
+                self, "LO_L4", 2, etiqueta="Pérdida por falla de sistemas (L_O)",
+                opcional=True)
+            self.campos["c_a"] = campos.CampoNumero(
+                self, "Valor de los animales (c_a)", 3, valor=d["c_a"], minimo=0)
+            self.campos["c_b"] = campos.CampoNumero(
+                self, "Valor del edificio (c_b)", 4, valor=d["c_b"], minimo=0)
+            self.campos["c_c"] = campos.CampoNumero(
+                self, "Valor del contenido (c_c)", 5, valor=d["c_c"], minimo=0)
+            self.campos["c_s"] = campos.CampoNumero(
+                self, "Valor de los sistemas internos (c_s)", 6,
+                valor=d["c_s"], minimo=0)
+            self.campos["c_e"] = campos.CampoNumero(
+                self, "Valor de los bienes en sitios peligrosos fuera (c_e)", 7,
+                valor=d["c_e"], minimo=0)
+            self.campos["L_FE"] = campos.CampoNumero(
+                self, "Pérdida típica por daño físico fuera (L_FE)", 8,
+                valor=d["L_FE"], minimo=0, maximo=1)
+            # Nota "a" de la Tabla C.11: si R4 se compara contra el valor
+            # representativo (1e-3) las razones c/c_t se reemplazan por 1.
+            # Arranca en SÍ, al revés que la dataclass, porque es lo que hace
+            # la pantalla: el Anexo D con valores reales se pide aparte.
+            self.campos["razones_l4_unitarias"] = campos.CampoSiNo(
+                self, "Comparar R4 contra el valor representativo (nota «a», Tabla C.11)",
+                9, valor=True)
+        else:
+            raise ValueError("El tipo de riesgo debe ser 1, 2, 3 o 4")
+
+    def leer(self) -> dict:
+        valores = campos.recoger(self.campos)
+        for nombre, (bandera, valor_si) in self.banderas.items():
+            valores[nombre] = valor_si if bandera.valor() else 0
+        return valores
+
+    def poner(self, zona: Zona):
+        for nombre, campo in self.campos.items():
+            _poner_en(campo, getattr(zona, nombre))
+        for nombre, (bandera, valor_si) in self.banderas.items():
+            bandera.poner(getattr(zona, nombre) == valor_si)
+
+
+class FormularioZona(ttk.Frame):
+    """La zona completa: lo común arriba y una pestaña por riesgo abajo.
+
+    zonas_por_tipo() devuelve CUATRO objetos Zona, uno por riesgo, porque el
+    modelo guarda las pérdidas de un solo tipo por zona. Es la misma división
+    que hace _zona(datos, tipo) en el adaptador, pero ahora con los datos que
+    el usuario eligió en vez de con valores por defecto.
+    """
+
+    TITULOS = {1: "R1 Vidas humanas", 2: "R2 Servicio público",
+               3: "R3 Patrimonio", 4: "R4 Económica"}
+
+    def __init__(self, padre, zonas=None, titulo="Zona"):
+        super().__init__(padre, padding=4)
+        self.comun = FormularioZonaComun(self, titulo=titulo)
+        self.comun.grid(row=0, column=0, sticky="ew", padx=4, pady=4)
+
+        self.cuaderno = ttk.Notebook(self)
+        self.cuaderno.grid(row=1, column=0, sticky="ew", padx=4, pady=4)
+        self.pestanas = {}
+        for tipo in sorted(POR_TIPO):
+            pestana = _PestanaPerdidas(self.cuaderno, tipo)
+            self.cuaderno.add(pestana, text=self.TITULOS[tipo])
+            self.pestanas[tipo] = pestana
+
+        if zonas is not None:
+            self.poner(zonas)
+
+    @property
+    def sistemas_internos(self):
+        return self.comun.sistemas_internos
+
+    @sistemas_internos.setter
+    def sistemas_internos(self, valor):
+        self.comun.sistemas_internos = list(valor)
+
+    def zonas_por_tipo(self) -> dict:
+        """{1: Zona, 2: Zona, 3: Zona, 4: Zona} con lo común repetido.
+
+        Si falta algo, junta lo que falta de la parte común y de las cuatro
+        pestañas en un solo aviso, diciendo de qué riesgo es cada cosa.
+        """
+        problemas = []
+        try:
+            comun = self.comun.leer()
+        except campos.DatoFaltante as error:
+            comun = None
+            problemas.append(str(error))
+
+        perdidas = {}
+        for tipo, pestana in self.pestanas.items():
+            try:
+                perdidas[tipo] = pestana.leer()
+            except campos.DatoFaltante as error:
+                problemas.append(f"{self.TITULOS[tipo]}:\n{error}")
+
+        if problemas:
+            raise campos.DatoFaltante("\n".join(problemas))
+        return {tipo: Zona(**comun, **perdidas[tipo]) for tipo in perdidas}
+
+    def poner(self, zonas: dict):
+        """Llena el formulario desde {tipo: Zona}; lo común sale de la primera."""
+        primera = zonas[sorted(zonas)[0]]
+        self.comun.poner(primera)
+        for tipo, pestana in self.pestanas.items():
+            if tipo in zonas:
+                pestana.poner(zonas[tipo])

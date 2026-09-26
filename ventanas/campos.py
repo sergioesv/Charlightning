@@ -131,16 +131,21 @@ class CampoTabla(_Campo):
     """
 
     SIN_ELEGIR = "— elegir —"
+    NO_APLICA = "— no aplica —"
 
-    def __init__(self, padre, tabla, fila, etiqueta=None, inicial=None, ancho=52):
+    def __init__(self, padre, tabla, fila, etiqueta=None, inicial=None, ancho=52,
+                 opcional=False, valor_vacio=0):
         super().__init__(padre, etiqueta or etiquetas.NOMBRES[tabla][1], fila)
         self.tabla = tabla
+        self.opcional = opcional
+        self.valor_vacio = valor_vacio
         self.textos = [texto for texto, _ in etiquetas.opciones(tabla)]
         self.valores = [valor for _, valor in etiquetas.opciones(tabla)]
         self.llaves = etiquetas.llaves(tabla)
 
+        marcador = self.NO_APLICA if opcional else self.SIN_ELEGIR
         self.combo = ttk.Combobox(padre, state="readonly", width=ancho,
-                                  values=[self.SIN_ELEGIR] + self.textos)
+                                  values=[marcador] + self.textos)
         self.combo.grid(row=fila, column=1, columnspan=2, padx=3, pady=2, sticky="w")
         self.combo.current(0)
         if inicial is not None:
@@ -153,10 +158,16 @@ class CampoTabla(_Campo):
     def valor(self):
         fila = self._fila_elegida()
         if fila < 0:
+            if self.opcional:
+                # "No aplica" es una respuesta, no un olvido: hay zonas sin
+                # servicio publico, sin patrimonio y sin sistemas vitales.
+                self.marcar(False)
+                return self.valor_vacio
             self.marcar(True)
             raise DatoFaltante(f"Falta elegir: {self.etiqueta}")
         self.marcar(False)
         return self.valores[fila]
+
 
     def llave(self) -> str:
         fila = self._fila_elegida()
@@ -178,6 +189,13 @@ class CampoTabla(_Campo):
         puede cambiar el texto que se muestra. Si ninguna fila lo tiene, avisa
         — eso significa que el caso trae un valor que no está en la norma.
         """
+        if self.opcional and valor == self.valor_vacio:
+            self.combo.current(0)
+            self.marcar(False)
+            return
+        for indice, candidato in enumerate(self.valores):
+
+
         for indice, candidato in enumerate(self.valores):
             if candidato == valor:
                 self.combo.current(indice + 1)
