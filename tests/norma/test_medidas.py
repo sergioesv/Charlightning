@@ -10,19 +10,7 @@ import pytest
 from pytest import approx
 
 from calculate_risk.norma import costos, medidas, riesgos, tablas
-from calculate_risk.norma import costos, medidas, riesgos, tablas
-from calculate_risk.norma.adaptador import caso_desde_pantalla
-from tests.datos_pantalla import CASA_RURAL, EDIFICIO_EJEMPLO
-
-
-def casa_rural():
-    c = caso_desde_pantalla(CASA_RURAL, tipo=1)
-    return c["estructura"], c["lineas"], c["zonas"], c["N_G"]
-
-
-def casa_rural():
-    c = caso_desde_pantalla(CASA_RURAL, tipo=1)
-    return c["estructura"], c["lineas"], c["zonas"], c["N_G"]
+from tests.norma.casos_de_prueba import casa_rural, edificio
 
 
 def _r1(estructura, lineas, zonas, N_G):
@@ -73,7 +61,7 @@ def test_aplicar_no_modifica_el_caso_original():
     assert lineas[0].P_EB == 1.0
 
 
-def testcasa_rural_con_spcr_iv_y_dps_da_la_solucion_b_de_la_norma():
+def test_casa_rural_con_spcr_iv_y_dps_da_la_solucion_b_de_la_norma():
     estructura, lineas, zonas, N_G = casa_rural()
     assert not _r1(estructura, lineas, zonas, N_G)["cumple"]
 
