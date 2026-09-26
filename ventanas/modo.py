@@ -77,6 +77,9 @@ class Modo(Panel):
         self.Button6 = ttk.Button(self.Frame17)
         self.Button6.configure(text='Guiado', command=self.guiado)
         self.Button6.pack(side='top')
+        self.Button7 = ttk.Button(self.Frame17)
+        self.Button7.configure(text='Norma completa', command=self.norma)
+        self.Button7.pack(pady='6', side='top')
         self.Frame17.configure(height='200', width='200')
         self.Frame17.grid(column='0', row='1', sticky='n')
         self.Frame15.columnconfigure('0', minsize='100')
@@ -120,17 +123,21 @@ class Modo(Panel):
 
 
 
-    def guiado(self):
+    def leer_proyecto(self):
         papo['proyecto'] = self.extraer_entry36.get()
         papo['disenador'] = self.extraer_entry37.get()
         papo['direccion'] = self.extraer_entry38.get()
         papo['telefono'] = self.extraer_entry39.get()
-        papo['descripcion'] = self.extraer_text1.get()
+        # Text1 es un tk.Text y no esta atado a extraer_text1: por eso la
+        # descripcion salia siempre vacia. Hay que leerla del widget.
+        papo['descripcion'] = self.Text1.get('1.0', 'end').strip()
 
-
-        
-
+    def guiado(self):
+        self.leer_proyecto()
         self.siguienteguiado()
 
+    def norma(self):
+        self.leer_proyecto()
+        self.siguientenorma()
         
 
