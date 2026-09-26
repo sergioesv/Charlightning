@@ -176,6 +176,18 @@ def test_el_informe_escribe_la_memoria(pantalla, tmp_path, avisos):
     assert "Z2\\_interior" in contenido
     assert avisos            # dice dónde quedó
 
+def test_el_informe_deja_las_figuras_y_el_csv_junto_al_tex(pantalla, tmp_path, avisos):
+    # Paso 51c: el informe de la pantalla nueva ya no es solo el .tex. Los PNG
+    # tienen que quedar en la MISMA carpeta o LaTeX no los encuentra al compilar.
+    pantalla.calcular()
+
+    pantalla.informe(tmp_path / "memoria.tex")
+
+    assert (tmp_path / "memoria_sensibilidad.png").exists()
+    assert (tmp_path / "memoria_medidas.csv").exists()
+    assert "memoria_sensibilidad.png" in open(tmp_path / "memoria.tex",
+                                              encoding="utf-8").read()
+
 
 def test_el_informe_calcula_solo_si_hace_falta(pantalla, tmp_path):
     # Sin haber pulsado Calcular, el Informe tiene que calcular por su cuenta.

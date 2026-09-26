@@ -678,3 +678,75 @@ def escribir_memoria_caso(ruta, casos, por_tipo, **kwargs) -> str:
     with open(ruta, "w", encoding="utf-8") as f:
         f.write(memoria_tex_caso(casos, por_tipo, **kwargs))
     return str(ruta)
+
+
+def _figuras_de(carpeta, puntos, soluciones, tipo) -> list:
+    """Las figuras PNG del informe. Sin matplotlib devuelve [] y sigue.
+
+    El programa se instala en PCs que no tienen por qué tener matplotlib.
+    Perder las figuras es aceptable; perder la memoria entera, no.
+    """
+    try:
+        from calculate_risk.norma import graficos
+    except ImportError:
+        return []
+
+    ruta = os.path.join(carpeta, "memoria_sensibilidad.png")
+    graficos.curva_sensibilidad(
+        puntos, ruta, etiqueta_x="$N_G$  [descargas/km$^2\\cdot$año]",
+        titulo="Riesgo frente a la densidad de descargas", tipo=tipo,
+        escala_x="log")
+    figuras = [(ruta, "Riesgo frente a la densidad de descargas del sitio")]
+
+    if soluciones:
+        ruta = os.path.join(carpeta, "memoria_costo_riesgo.png")
+        graficos.dispersion_costo_riesgo(soluciones, ruta, tipo=tipo)
+        figuras.append((ruta, "Costo de las medidas frente al riesgo residual"))
+    return figuras
+
+
+def informe_completo_caso(carpeta, casos, por_tipo, proyecto=None,
+                          nombre="Memoria de calculo", tipo=None, precios=None):
+    """El informe entero a partir de un caso del modelo: .tex, PDF, figuras y CSV.
+
+    Es el equivalente de informe_completo() para la pantalla nueva. Devuelve
+    (ruta_tex, ruta_pdf); ruta_pdf es None si no hay LaTeX instalado, y el
+    .tex queda escrito igual para compilarlo en otro lado.
+
+    tipo: el riesgo que se desarrolla paso a paso y sobre el que se buscan
+        medidas. Por omisión, el más bajo de los evaluados.
+    precios: {nombre de la medida: costo}. Sin precios las medidas salen
+        igual, pero ordenadas por cantidad en vez de por plata.
+
+    Las medidas solo se buscan si ese riesgo NO cumple: recorrer el catálogo
+    entero tarda, y en un caso que ya cumple la tabla no diría nada.
+    """
+    from calculate_risk.norma import barridos, medidas
+
+    carpeta = str(carpeta)
+    tipo = sorted(por_tipo)[0] if tipo is None else tipo
+    caso = casos[tipo]
+    args = (caso["estructura"], caso["lineas"], caso["zonas"], caso["N_G"])
+
+    soluciones = None
+    if not por_tipo[tipo]["cumple"]:
+        soluciones = medidas.explorar(
+            *args, tipo=tipo, catalogo_medidas=medidas.catalogo(costos=precios))
+        barridos.exportar_soluciones(
+            soluciones, os.path.join(carpeta, "memoria_medidas.csv"))
+
+    puntos = barridos.barrer(*args, valores=N_G_SENSIBILIDAD, destino="N_G",
+                             tipo=tipo)
+    barridos.exportar_barrido(
+        puntos, os.path.join(carpeta, "memoria_sensibilidad.csv"), "N_G")
+
+    ruta_tex = escribir_memoria_caso(
+        os.path.join(carpeta, f"{nombre}.tex"), casos, por_tipo,
+        proyecto=proyecto, soluciones=soluciones,
+        figuras=_figuras_de(carpeta, puntos, soluciones, tipo),
+        tipo_desarrollado=tipo)
+
+    try:
+        return ruta_tex, compilar(ruta_tex)
+    except RuntimeError:
+        return ruta_tex, None

@@ -165,3 +165,80 @@ def test_un_caso_de_dos_zonas_compila_de_verdad(tmp_path, dos_zonas):
 
     with open(pdf, "rb") as f:
         assert f.read(5) == b"%PDF-"
+
+
+# ---------------------------------------------------------------------------
+# Paso 51c: el informe completo (figuras y CSV) desde el caso del modelo
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def cumple(caso):
+    """El mismo caso en un sitio casi sin rayos: R1 queda por debajo de R_T."""
+    manso = {**caso, "N_G": 0.01}
+    return {1: manso}, _evaluar(manso)
+
+
+def test_el_informe_completo_deja_el_tex_las_figuras_y_los_csv(tmp_path, una_zona):
+    ruta_tex, ruta_pdf = memoria.informe_completo_caso(
+        tmp_path, *una_zona, proyecto={"Proyecto": "Prueba"})
+
+    assert open(ruta_tex, encoding="utf-8").read().startswith("\\documentclass")
+    assert (tmp_path / "memoria_sensibilidad.png").exists()
+    assert (tmp_path / "memoria_sensibilidad.csv").exists()
+    assert (tmp_path / "memoria_medidas.csv").exists()
+    if ruta_pdf is not None:                  # solo si hay LaTeX instalado
+        with open(ruta_pdf, "rb") as f:
+            assert f.read(5) == b"%PDF-"
+
+
+def test_el_informe_completo_trae_las_medidas_y_las_figuras(tmp_path, una_zona):
+    ruta_tex, _ = memoria.informe_completo_caso(tmp_path, *una_zona)
+
+    tex = open(ruta_tex, encoding="utf-8").read()
+    assert "Medidas de protección recomendadas" in tex
+    assert "Análisis de sensibilidad" in tex
+    assert "memoria_sensibilidad.png" in tex
+    assert "memoria_costo_riesgo.png" in tex
+
+
+def test_el_barrido_de_n_g_sale_proporcional(tmp_path, una_zona):
+    # N_D, N_M, N_L y N_I son todos proporcionales a N_G (Anexo A), así que
+    # duplicar N_G duplica el riesgo. Si la curva no sale recta en log-log,
+    # algo se está saltando el barrido.
+    memoria.informe_completo_caso(tmp_path, *una_zona)
+
+    filas = open(tmp_path / "memoria_sensibilidad.csv", encoding="utf-8").read()
+    valores = [float(f.split(",")[1]) for f in filas.splitlines()[1:]]
+    assert valores[1] == approx(2 * valores[0], rel=1e-9)
+
+
+def test_un_caso_que_cumple_no_busca_medidas(tmp_path, cumple):
+    # Recorrer el catálogo entero tarda; si ya cumple, la tabla no diría nada.
+    ruta_tex, _ = memoria.informe_completo_caso(tmp_path, *cumple)
+
+    tex = open(ruta_tex, encoding="utf-8").read()
+    assert "Medidas de protección recomendadas" not in tex
+    assert not (tmp_path / "memoria_medidas.csv").exists()
+    assert (tmp_path / "memoria_sensibilidad.png").exists()   # la curva sí
+
+
+def test_sin_matplotlib_la_memoria_sale_igual_pero_sin_figuras(tmp_path, monkeypatch,
+                                                               cumple):
+    # El programa se instala en PCs sin matplotlib: ahí se pierden las figuras,
+    # no el informe.
+    import sys
+    from calculate_risk import norma
+    monkeypatch.setitem(sys.modules, "matplotlib", None)
+    # Hay que borrar las dos: sys.modules y el atributo del paquete, porque
+    # "from paquete import modulo" mira primero el atributo y se lo lleva sin
+    # volver a importar nada.
+    monkeypatch.delitem(sys.modules, "calculate_risk.norma.graficos", raising=False)
+    monkeypatch.delattr(norma, "graficos", raising=False)
+
+    ruta_tex, _ = memoria.informe_completo_caso(tmp_path, *cumple)
+
+    tex = open(ruta_tex, encoding="utf-8").read()
+    assert tex.startswith("\\documentclass")
+    assert "Análisis de sensibilidad" not in tex
+    assert not (tmp_path / "memoria_sensibilidad.png").exists()
+    assert (tmp_path / "memoria_sensibilidad.csv").exists()   # los datos sí

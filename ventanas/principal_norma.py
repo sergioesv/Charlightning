@@ -12,6 +12,7 @@ Arriba se elige qué riesgos se evalúan. Arranca solo con R1 porque es lo que
 pide casi todo proyecto, y porque obligar a llenar las pérdidas económicas
 para ver el riesgo de vidas humanas no tiene sentido.
 """
+import os
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
@@ -113,7 +114,11 @@ class PrincipalNorma(Panel):
             return None
 
     def informe(self, ruta=None):
-        """Escribe la memoria de cálculo. Compila el PDF si hay LaTeX."""
+        """Escribe la memoria completa: .tex, PDF, figuras y CSV de medidas.
+
+        Las figuras y el CSV quedan en la misma carpeta que el .tex, que es
+        lo que LaTeX necesita para encontrar los PNG al compilar.
+        """
         if self.ultimo_calculo is None and self.calcular() is None:
             return None
         ruta = ruta or filedialog.asksaveasfilename(
@@ -124,19 +129,22 @@ class PrincipalNorma(Panel):
             return None
 
         tipos = self.tipos()
-        ruta_tex = memoria.escribir_memoria_caso(
-            ruta, self.editor.casos_por_tipo(tipos), self.ultimo_calculo,
-            proyecto=self._datos_proyecto(), tipo_desarrollado=tipos[0])
-        try:
-            ruta_pdf = memoria.compilar(ruta_tex)
+        carpeta, archivo = os.path.split(str(ruta))
+        nombre = os.path.splitext(archivo)[0] or "Memoria de calculo"
+        ruta_tex, ruta_pdf = memoria.informe_completo_caso(
+            carpeta or ".", self.editor.casos_por_tipo(tipos),
+            self.ultimo_calculo, proyecto=self._datos_proyecto(),
+            nombre=nombre, tipo=tipos[0])
+
+        if ruta_pdf:
             messagebox.showinfo(title="Memoria de cálculo",
                                 message=f"Memoria generada:\n{ruta_pdf}")
             return ruta_pdf
-        except RuntimeError as error:
-            messagebox.showinfo(
-                title="Memoria de cálculo",
-                message=f"Se escribió el LaTeX:\n{ruta_tex}\n\n{error}")
-            return ruta_tex
+        messagebox.showinfo(
+            title="Memoria de cálculo",
+            message=(f"Se escribió el LaTeX:\n{ruta_tex}\n\n"
+                     "Para obtener el PDF hace falta tener LaTeX instalado."))
+        return ruta_tex
 
     def buscar_medidas(self):
         """Busca combinaciones de medidas para el primer riesgo que no cumple."""
