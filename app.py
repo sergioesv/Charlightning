@@ -2,7 +2,7 @@ from ventanas.modo import Modo
 from ventanas.principal_guiado import Principal_guiado
 from ventanas.principal_norma import PrincipalNorma
 
-from tkinter import ttk
+import tkinter as tk
 
 class App(tk.Frame):
     """Clase principal que crea los diferentes paneles y los "conecta" entre
