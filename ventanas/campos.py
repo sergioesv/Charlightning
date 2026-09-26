@@ -206,6 +206,48 @@ class CampoTabla(_Campo):
         )
 
 
+class CampoLista(_Campo):
+    """Lista desplegable con opciones que NO son una tabla entera.
+
+    Sirve para lo que la norma tabula con dos entradas: la tension soportada
+    U_W de las Tablas B.8 y B.9, el blindaje de la linea y el tipo de linea.
+    Ahi la lista no elige el valor final sino una de las dos entradas, y el
+    valor lo calcula despues probabilidades.p_ld() o p_li().
+
+    Las opciones se pasan como [(texto, valor)]; quien llama las arma desde
+    tablas.py y etiquetas.py, nunca a mano.
+    """
+
+    SIN_ELEGIR = "— elegir —"
+
+    def __init__(self, padre, etiqueta, fila, opciones, inicial=None, ancho=52):
+        super().__init__(padre, etiqueta, fila)
+        self.textos = [texto for texto, _ in opciones]
+        self.valores = [valor for _, valor in opciones]
+
+        self.combo = ttk.Combobox(padre, state="readonly", width=ancho,
+                                  values=[self.SIN_ELEGIR] + self.textos)
+        self.combo.grid(row=fila, column=1, columnspan=2, padx=3, pady=2, sticky="w")
+        self.combo.current(0)
+        if inicial is not None:
+            self.poner(inicial)
+
+    def valor(self):
+        fila = self.combo.current() - 1
+        if fila < 0:
+            self.marcar(True)
+            raise DatoFaltante(f"Falta elegir: {self.etiqueta}")
+        self.marcar(False)
+        return self.valores[fila]
+
+    def poner(self, valor):
+        if valor not in self.valores:
+            self.marcar(True)
+            raise DatoFaltante(f"{self.etiqueta}: {valor} no es una opción válida")
+        self.combo.current(self.valores.index(valor) + 1)
+        self.marcar(False)
+
+
 class CampoSiNo(_Campo):
     """Casilla de verificación, para las banderas del modelo."""
 
