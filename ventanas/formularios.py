@@ -359,3 +359,177 @@ class FormularioZona(ttk.Frame):
         for tipo, pestana in self.pestanas.items():
             if tipo in zonas:
                 pestana.poner(zonas[tipo])
+
+
+def _opciones_tension() -> list:
+    """Las cinco tensiones que tabulan las Tablas B.8 y B.9."""
+    return [(f"{u} kV", u) for u in probabilidades.tensiones_soportadas()]
+
+
+def _opciones_de(tabla: str, llaves) -> list:
+    """[(texto, llave)] para una lista que elige una fila, no un valor."""
+    return [(etiquetas.texto(tabla, llave), llave) for llave in llaves]
+
+
+def _blindaje_de(p_ld: float, u_w: float) -> str:
+    """Qué fila de la Tabla B.8 da ese P_LD con esa U_W (para abrir un caso)."""
+    for blindaje in probabilidades.BLINDAJES:
+        if probabilidades.p_ld(blindaje, u_w) == p_ld:
+            return blindaje
+    raise campos.DatoFaltante(
+        f"P_LD = {p_ld} no está en la Tabla B.8 para U_W = {u_w} kV")
+
+
+def _tipo_linea_de(p_li: float, u_w: float) -> str:
+    """Qué fila de la Tabla B.9 da ese P_LI con esa U_W."""
+    for tipo in probabilidades.TIPOS_DE_LINEA:
+        if probabilidades.p_li(tipo, u_w) == p_li:
+            return tipo
+    raise campos.DatoFaltante(
+        f"P_LI = {p_li} no está en la Tabla B.9 para U_W = {u_w} kV")
+
+
+class _FormularioAdyacente(ttk.LabelFrame):
+    """La estructura del extremo lejano de la línea (ec. A.5).
+
+    Solo se le piden las dimensiones: de esa estructura, el cálculo de N_DJ
+    únicamente usa L, W, H y H_p (más C_DJ, que va en la línea). Todo lo
+    demás de la Estructura —personas, valor, banderas— es de la estructura
+    que se está evaluando, no de la vecina.
+    """
+
+    def __init__(self, padre):
+        super().__init__(padre, text="Estructura del extremo lejano", padding=8)
+        d = por_defecto(Estructura)
+        self.campos = {
+            "L": campos.CampoNumero(self, "Longitud (L)", 0, unidad="m", positivo=True),
+            "W": campos.CampoNumero(self, "Ancho (W)", 1, unidad="m", positivo=True),
+            "H": campos.CampoNumero(self, "Altura (H)", 2, unidad="m", positivo=True),
+            "H_p": campos.CampoNumero(self, "Altura del saliente (H_p)", 3,
+                                      valor=d["H_p"], unidad="m", minimo=0),
+        }
+
+    def leer(self) -> Estructura:
+        return Estructura(**campos.recoger(self.campos))
+
+    def poner(self, estructura: Estructura):
+        for nombre, campo in self.campos.items():
+            campo.poner(getattr(estructura, nombre))
+
+
+class FormularioLinea(ttk.Frame):
+    """Los trece campos de modelo.Linea.
+
+    Aquí caen dos limitaciones de la pantalla vieja:
+
+    H16 - la longitud L_L es una casilla libre en metros. El adaptador la
+          tenía clavada en 1000 m, y como A_L y A_I son proporcionales a
+          L_L, eso decidía el 96 % del riesgo de la casa rural.
+    H18 - la línea puede llegar a otra estructura, que es lo que mete N_DJ
+          en R_U, R_V y R_W por la ec. (A.5). La pantalla vieja no lo
+          preguntaba, así que N_DJ era siempre 0.
+
+    P_LD y P_LI no se escriben: se buscan en las Tablas B.8 y B.9 con el
+    blindaje o el tipo de línea y la tensión soportada U_W.
+    """
+
+    def __init__(self, padre, linea=None, titulo="Línea"):
+        super().__init__(padre, padding=4)
+        d = por_defecto(Linea)
+
+        self.marco = ttk.LabelFrame(self, text=titulo, padding=8)
+        self.marco.grid(row=0, column=0, sticky="ew")
+        m = self.marco
+
+        self.campos = {
+            "nombre": campos.CampoTexto(m, "Nombre de la línea", 0),
+            "L_L": campos.CampoNumero(m, "Longitud de la sección (L_L)", 1,
+                                      valor=d["L_L"], unidad="m", positivo=True),
+            "C_I": campos.CampoTabla(m, "CI", 2, etiqueta="Instalación (C_I)"),
+            "C_T": campos.CampoTabla(m, "CT", 3, etiqueta="Tipo de línea (C_T)"),
+            "C_E": campos.CampoTabla(m, "CE", 4, etiqueta="Entorno (C_E)"),
+            "U_W": campos.CampoLista(m, "Tensión soportada del equipo (U_W)", 5,
+                                     _opciones_tension()),
+            "P_EB": campos.CampoTabla(m, "PEB", 6,
+                                      etiqueta="Equipotencialización con DPS (P_EB)"),
+        }
+
+        # Los que dan más de un valor o salen de una tabla de doble entrada
+        self.derivados = {
+            "cld_cli": campos.CampoTabla(m, "CLD_CLI", 7,
+                                         etiqueta="Blindaje y puesta a tierra (C_LD y C_LI)"),
+            "blindaje": campos.CampoLista(
+                m, "Conexión del blindaje (P_LD)", 8,
+                _opciones_de("PLD", probabilidades.BLINDAJES)),
+            "tipo_linea": campos.CampoLista(
+                m, "Servicio que transporta (P_LI)", 9,
+                _opciones_de("PLI", probabilidades.TIPOS_DE_LINEA)),
+        }
+
+        # H18: la estructura del extremo lejano
+        self.hay_adyacente = campos.CampoSiNo(
+            m, "La línea llega a otra estructura (N_DJ)", 10)
+        self.C_DJ = campos.CampoTabla(m, "CD", 11,
+                                      etiqueta="Localización de esa estructura (C_DJ)")
+        self.adyacente = _FormularioAdyacente(self)
+        self.adyacente.grid(row=1, column=0, sticky="ew", pady=4)
+
+        if linea is not None:
+            self.poner(linea)
+
+    def leer(self) -> Linea:
+        """Devuelve la Línea, o avisa con TODO lo que falte."""
+        todos = dict(self.campos)
+        todos.update(self.derivados)
+        problemas = []
+        try:
+            valores = campos.recoger(todos)
+        except campos.DatoFaltante as error:
+            valores = None
+            problemas.append(str(error))
+
+        adyacente = None
+        c_dj = None
+        if self.hay_adyacente.valor():
+            # Las medidas de la estructura vecina y su C_DJ se piden juntos,
+            # para que falten juntos y no de a uno.
+            grupo = dict(self.adyacente.campos)
+            grupo["C_DJ"] = self.C_DJ
+            try:
+                medidas = campos.recoger(grupo)
+                c_dj = medidas.pop("C_DJ")
+                adyacente = Estructura(**medidas)
+            except campos.DatoFaltante as error:
+                problemas.append(str(error))
+
+        if problemas:
+            raise campos.DatoFaltante("\n".join(problemas))
+
+        par = valores.pop("cld_cli")
+        valores["C_LD"], valores["C_LI"] = par["CLD"], par["CLI"]
+        u_w = valores["U_W"]
+        valores["P_LD"] = probabilidades.p_ld(valores.pop("blindaje"), u_w)
+        valores["P_LI"] = probabilidades.p_li(valores.pop("tipo_linea"), u_w)
+        valores["adyacente"] = adyacente
+        if adyacente is not None:
+            valores["C_DJ"] = c_dj
+        return Linea(**valores)
+
+    def poner(self, linea: Linea):
+        """Llena el formulario desde una línea guardada.
+
+        P_LD y P_LI vienen como número, así que hay que averiguar de qué fila
+        de la tabla salieron. Con la U_W de la línea la búsqueda es directa;
+        si varias filas dan el mismo número (P_LD = 1 sale en dos) queda la
+        primera, y el cálculo es idéntico.
+        """
+        for nombre, campo in self.campos.items():
+            _poner_en(campo, getattr(linea, nombre))
+        self.derivados["cld_cli"].poner_valor({"CLD": linea.C_LD, "CLI": linea.C_LI})
+        self.derivados["blindaje"].poner(_blindaje_de(linea.P_LD, linea.U_W))
+        self.derivados["tipo_linea"].poner(_tipo_linea_de(linea.P_LI, linea.U_W))
+
+        self.hay_adyacente.poner(linea.adyacente is not None)
+        if linea.adyacente is not None:
+            self.adyacente.poner(linea.adyacente)
+            self.C_DJ.poner_valor(linea.C_DJ)
