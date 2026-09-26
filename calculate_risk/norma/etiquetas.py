@@ -283,3 +283,8 @@ def opciones(tabla: str) -> list:
         )
     valores = getattr(tablas, tabla)
     return [(ETIQUETAS[tabla][llave], valor) for llave, valor in valores.items()]
+
+
+def llaves(tabla: str) -> list:
+    """Las llaves de la tabla, en el mismo orden que opciones()."""
+    return list(getattr(tablas, tabla))

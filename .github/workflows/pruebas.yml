@@ -12,7 +12,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar Xvfb (pantalla falsa para las pruebas de widgets)
+        run: sudo apt-get update && sudo apt-get install -y xvfb
       - name: Instalar dependencias de prueba
         run: pip install pytest netCDF4 matplotlib
+      - name: Avisar si no hay tkinter
+        run: python -c "import tkinter" || echo "sin tkinter: las pruebas de pantalla se saltan"
       - name: Ejecutar pruebas
-        run: pytest -v
+        run: xvfb-run -a pytest -v

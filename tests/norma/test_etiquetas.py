@@ -1,5 +1,4 @@
 """
-
 Lo que de verdad se prueba aquí es que etiquetas.py y tablas.py NO se puedan
 separar: toda llave tiene que tener texto, no puede sobrar ninguno, y en
 etiquetas.py no puede aparecer ningún número. Esa es la prueba que le faltaba
@@ -120,6 +119,15 @@ def test_los_valores_de_opciones_salen_de_tablas():
         valores = [valor for _, valor in etiquetas.opciones(nombre)]
 
         assert valores == list(getattr(tablas, nombre).values())
+
+
+def test_llaves_va_en_el_mismo_orden_que_opciones():
+    for nombre in etiquetas.SIMPLES:
+        llaves = etiquetas.llaves(nombre)
+        textos = [texto for texto, _ in etiquetas.opciones(nombre)]
+
+        assert llaves == list(getattr(tablas, nombre))
+        assert [etiquetas.texto(nombre, k) for k in llaves] == textos
 
 
 def test_el_urbano_con_edificios_altos_ya_no_puede_valer_cero():
