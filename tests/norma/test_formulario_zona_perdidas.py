@@ -119,8 +119,10 @@ def test_lo_obligatorio_de_r1_si_avisa(formulario):
         formulario.pestanas[1].leer()
 
     mensaje = str(fallo.value)
-    assert "Pérdida por daño físico (L_F)" in mensaje
     assert "Daño especial (h_z)" in mensaje
+    # L_F ya no es obligatorio: una zona exterior no tiene daño físico que
+    # perder, y sin eso no se pueden plantear las zonas Z1 y Z2 del E.3.
+    assert "Pérdida por daño físico (L_F)" not in mensaje
 
 
 # ---------------------------------------------------------------------------
@@ -180,8 +182,10 @@ def test_lo_que_falta_dice_de_que_riesgo_es(formulario):
 
     mensaje = str(fallo.value)
     assert "Nombre de la zona" in mensaje          # de la parte común
-    assert "R1 Vidas humanas" in mensaje           # y de la pestaña
-    assert "R4 Económica" in mensaje
+    assert "R1 Vidas humanas" in mensaje           # y de la pestaña, por h_z
+    # R4 no aparece: todas sus pérdidas admiten "no aplica", así que una zona
+    # sin nada económico que perder es una respuesta completa.
+    assert "R4 Económica" not in mensaje
 
 
 def test_las_cuatro_zonas_van_y_vuelven(formulario, caso_casa_rural):

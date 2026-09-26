@@ -225,8 +225,12 @@ class _PestanaPerdidas(ttk.Frame):
             self.campos["L_T"] = campos.CampoNumero(
                 self, "Pérdida por lesiones (L_T)", 0,
                 valor=tablas.LT_L1, minimo=0, maximo=1, unidad="Tabla C.2")
+            # Opcional como L_O: una zona exterior (un patio, un parqueadero)
+            # no tiene daño físico que perder. Sin esto no se pueden plantear
+            # las zonas Z1 y Z2 del ejemplo E.3 ni la Z1 del E.4.
             self.campos["L_F"] = campos.CampoTabla(
-                self, "LF_L1", 1, etiqueta="Pérdida por daño físico (L_F)")
+                self, "LF_L1", 1, etiqueta="Pérdida por daño físico (L_F)",
+                opcional=True)
             self.campos["L_O"] = campos.CampoTabla(
                 self, "LO_L1", 2, etiqueta="Pérdida por falla de sistemas (L_O)",
                 opcional=True)
@@ -254,7 +258,8 @@ class _PestanaPerdidas(ttk.Frame):
                 campos.CampoSiNo(self, "Hay animales en la zona", 0),
                 tablas.LT_L4)
             self.campos["L_F"] = campos.CampoTabla(
-                self, "LF_L4", 1, etiqueta="Pérdida por daño físico (L_F)")
+                self, "LF_L4", 1, etiqueta="Pérdida por daño físico (L_F)",
+                opcional=True)
             self.campos["L_O"] = campos.CampoTabla(
                 self, "LO_L4", 2, etiqueta="Pérdida por falla de sistemas (L_O)",
                 opcional=True)
