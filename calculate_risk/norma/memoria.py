@@ -95,47 +95,6 @@ def _tabla_datos_proyecto(proyecto) -> str:
     )
 
 
-def _tabla_entrada(datos) -> str:
-    filas = (
-        _fila("Longitud de la estructura $L$ [m]", f"${plano(datos['L'])}$")
-        + _fila("Ancho de la estructura $W$ [m]", f"${plano(datos['W'])}$")
-        + _fila("Altura de la estructura $H$ [m]", f"${plano(datos['H'])}$")
-        + _fila("Altura del saliente $H_P$ [m]", f"${plano(datos['H_P'])}$")
-        + _fila("Densidad de descargas $N_G$ [1/km$^2\\cdot$año]", f"${plano(datos['DDT'])}$")
-        + _fila("Factor de localización $C_D$ (Tabla A.1)", f"${plano(datos['C_d'])}$")
-        + _fila("Factor ambiental $C_E$ (Tabla A.4)", f"${plano(datos['C_e'])}$")
-        + _fila("Probabilidad $P_B$ (Tabla B.2, según el SPCR)", f"${plano(1 - datos['E'])}$")
-    )
-    return (
-        "\\section{Datos de entrada}\n"
-        "\\begin{tabular}{@{}lr@{}}\n\\toprule\n"
-        f"{filas}"
-        "\\bottomrule\n\\end{tabular}\n\n"
-    )
-
-
-def _tabla_areas(resultados) -> str:
-    filas = (
-        _fila("$A_D$ — colección de la estructura (ec. A.2) [m$^2$]",
-              f"${plano(resultados['A_d'], 2)}$")
-        + _fila("$A_M$ — descargas cerca de la estructura (ec. A.7) [m$^2$]",
-                f"${plano(resultados['A_m'], 2)}$")
-        + _fila("$N_D$ — descargas en la estructura (ec. A.4) [1/año]",
-                f"${numero(resultados['N_D'])}$")
-        + _fila("$N_M$ — descargas cerca de la estructura (ec. A.6) [1/año]",
-                f"${numero(resultados['N_M'])}$")
-        + _fila("$N_L$ — descargas en la línea aérea (ec. A.8) [1/año]",
-                f"${numero(resultados['N_L1'])}$")
-        + _fila("$N_I$ — descargas cerca de la línea aérea (ec. A.10) [1/año]",
-                f"${numero(resultados['N_I1'])}$")
-    )
-    return (
-        "\\section{Áreas de colección y frecuencia de eventos}\n"
-        "\\begin{tabular}{@{}lr@{}}\n\\toprule\n"
-        f"{filas}"
-        "\\bottomrule\n\\end{tabular}\n\n"
-    )
-
 
 def _tabla_componentes(resultados, tipos=(1, 2, 3, 4)) -> str:
     cabecera = " & ".join(f"$R_{t}$" for t in tipos)
@@ -330,49 +289,6 @@ PREAMBULO = r"""\documentclass[11pt,a4paper]{article}
 """
 
 
-def memoria_tex(datos, resultados, proyecto=None, soluciones=None, figuras=None,
-                tipos=(1, 2, 3, 4), detalle=None, R_zona=None,
-                tipo_desarrollado=1) -> str:
-    """Arma el documento LaTeX completo y lo devuelve como texto.
-
-    datos: el diccionario de la pantalla (VAR).
-    resultados: lo que devuelve adaptador.resultados_pantalla(datos).
-    proyecto: {"Proyecto": ..., "Dirección": ...} (opcional).
-    soluciones: lo que devuelve medidas.explorar() (opcional).
-    figuras: [(ruta_png, pie_de_figura), ...] (opcional).
-    detalle, R_zona: el "_detalle" y los componentes de una zona, para escribir
-        el desarrollo del cálculo (lo que hace que sea una memoria y no una
-        hoja de resultados). Salen de riesgos.evaluar(...)[tipo]["zonas"][nombre].
-    """
-    cuerpo = (
-        _tabla_datos_proyecto(proyecto)
-        + _tabla_entrada(datos)
-        + _tabla_areas(resultados)
-        + _tabla_componentes(resultados, tipos)
-        + _tabla_veredicto(resultados, tipos)
-        + (_desarrollo(detalle, R_zona, tipo_desarrollado)
-           if detalle and R_zona else "")
-        + (_de_donde_viene(R_zona, tipo_desarrollado) if R_zona else "")
-        + _tabla_soluciones(soluciones)
-        + _figuras(figuras)
-    )
-    return (
-        PREAMBULO
-        + "\\title{Memoria de cálculo de riesgo por rayo\\\\"
-          "\\large NTC 4552-2:2023}\n\\date{\\today}\n"
-          "\\begin{document}\n\\maketitle\n\n"
-        + cuerpo
-        + "\\end{document}\n"
-    )
-
-
-def escribir_memoria(ruta, datos, resultados, **kwargs) -> str:
-    """Escribe el .tex en disco y devuelve su ruta."""
-    with open(ruta, "w", encoding="utf-8") as f:
-        f.write(memoria_tex(datos, resultados, **kwargs))
-    return str(ruta)
-
-
 def compilar(ruta_tex, salida=None) -> str:
     """Compila el .tex a PDF con pdflatex. Devuelve la ruta del PDF.
 
@@ -398,95 +314,9 @@ def compilar(ruta_tex, salida=None) -> str:
                         os.path.basename(ruta_tex).replace(".tex", ".pdf"))
 
 
-def memoria_desde_pantalla(ruta, datos, proyecto=None, tipo_desarrollado=1,
-                           soluciones=None, figuras=None) -> str:
-    """Escribe la memoria directamente desde el diccionario de la pantalla.
-
-    Hace por dentro los tres pasos (resultados, caso, detalle de la zona) para
-    que la pantalla solo tenga que llamar a una función.
-    """
-    from calculate_risk.norma import riesgos
-    from calculate_risk.norma.adaptador import caso_desde_pantalla, resultados_pantalla
-
-    resultados = resultados_pantalla(datos)
-    caso = caso_desde_pantalla(datos, tipo=tipo_desarrollado)
-    r = riesgos.evaluar(caso["estructura"], caso["lineas"], caso["zonas"],
-                        caso["N_G"], tipos=(tipo_desarrollado,))[tipo_desarrollado]
-    zona = r["zonas"][caso["zonas"][0].nombre]
-
-    return escribir_memoria(ruta, datos, resultados, proyecto=proyecto,
-                            detalle=zona["_detalle"], R_zona=zona,
-                            tipo_desarrollado=tipo_desarrollado,
-                            soluciones=soluciones, figuras=figuras)
-
-
-
-
-# ---------------------------------------------------------------------------
-# El informe completo, de un solo llamado (lo que usa el botón de la pantalla)
-# ---------------------------------------------------------------------------
-
-# Densidades de descarga para la curva de sensibilidad: de muy baja a muy alta
-# actividad, para ver con cuánto margen cumple (o deja de cumplir) el caso.
+# Densidades de descarga para la curva de sensibilidad del informe: de muy baja
+# a muy alta actividad, para ver con cuánto margen cumple (o deja de cumplir).
 N_G_SENSIBILIDAD = (0.5, 1, 2, 4, 8, 16, 32)
-
-
-def informe_completo(carpeta, datos, proyecto=None, nombre="Memoria de calculo",
-                     tipo=1, precios=None):
-    """Genera el informe entero: figuras, medidas recomendadas, .tex y PDF.
-
-    Devuelve (ruta_tex, ruta_pdf). ruta_pdf es None si no hay LaTeX instalado:
-    el .tex queda escrito igual y se puede compilar en otro lado.
-
-    precios: {nombre de la medida: costo}. Sin precios, las medidas salen
-    igual pero ordenadas por cantidad en vez de por plata.
-    """
-    import os as _os
-
-    from calculate_risk.norma import barridos, graficos, medidas, riesgos
-    from calculate_risk.norma.adaptador import caso_desde_pantalla, resultados_pantalla
-
-    carpeta = str(carpeta)
-    resultados = resultados_pantalla(datos)
-    caso = caso_desde_pantalla(datos, tipo=tipo)
-    args = (caso["estructura"], caso["lineas"], caso["zonas"], caso["N_G"])
-
-    r = riesgos.evaluar(*args, tipos=(tipo,))[tipo]
-    zona = r["zonas"][caso["zonas"][0].nombre]
-
-    # Medidas que llevarían el riesgo por debajo del tolerable
-    soluciones = medidas.explorar(
-        *args, tipo=tipo, catalogo_medidas=medidas.catalogo(costos=precios))
-
-    # Figuras: la curva de sensibilidad y el costo frente al riesgo
-    figuras = []
-    puntos = barridos.barrer(*args, valores=N_G_SENSIBILIDAD, destino="N_G", tipo=tipo)
-    ruta_curva = _os.path.join(carpeta, "memoria_sensibilidad.png")
-    graficos.curva_sensibilidad(
-        puntos, ruta_curva, etiqueta_x="$N_G$  [descargas/km$^2\\cdot$año]",
-        titulo="Riesgo frente a la densidad de descargas", tipo=tipo, escala_x="log")
-    figuras.append(("memoria_sensibilidad.png",
-                    "Riesgo frente a la densidad de descargas del sitio"))
-
-    if soluciones:
-        ruta_costo = _os.path.join(carpeta, "memoria_costo_riesgo.png")
-        graficos.dispersion_costo_riesgo(soluciones, ruta_costo, tipo=tipo)
-        figuras.append(("memoria_costo_riesgo.png",
-                        "Costo de las medidas frente al riesgo residual"))
-
-    # También la tabla de soluciones a CSV, por si se quiere revisar completa
-    barridos.exportar_soluciones(
-        soluciones, _os.path.join(carpeta, "memoria_medidas.csv"))
-
-    ruta_tex = escribir_memoria(
-        _os.path.join(carpeta, f"{nombre}.tex"), datos, resultados,
-        proyecto=proyecto, soluciones=soluciones, figuras=figuras,
-        detalle=zona["_detalle"], R_zona=zona, tipo_desarrollado=tipo)
-
-    try:
-        return ruta_tex, compilar(ruta_tex)
-    except RuntimeError:
-        return ruta_tex, None
 
 # ---------------------------------------------------------------------------
 # Paso 50: la memoria desde un caso del modelo, con varias zonas y líneas
