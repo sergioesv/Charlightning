@@ -9,15 +9,9 @@ memoria, y que los casos borde no revienten.
 import matplotlib.pyplot as plt
 
 from calculate_risk.norma import barridos, graficos, medidas
-from calculate_risk.norma.adaptador import caso_desde_pantalla
-from tests.datos_pantalla import CASA_RURAL
+from tests.norma.casos_de_prueba import casa_rural
 
 FIRMA_PNG = b"\x89PNG\r\n\x1a\n"
-
-
-def _casa_rural():
-    c = caso_desde_pantalla(CASA_RURAL, tipo=1)
-    return c["estructura"], c["lineas"], c["zonas"], c["N_G"]
 
 
 def _es_png(ruta):
@@ -26,7 +20,7 @@ def _es_png(ruta):
 
 
 def test_curva_de_sensibilidad_genera_un_png(tmp_path):
-    puntos = barridos.barrer(*_casa_rural(), valores=[1, 2, 4, 8], destino="N_G")
+    puntos = barridos.barrer(*casa_rural(), valores=[1, 2, 4, 8], destino="N_G")
     ruta = graficos.curva_sensibilidad(puntos, tmp_path / "ng.png",
                                        etiqueta_x="N_G", titulo="Prueba")
 
@@ -35,7 +29,7 @@ def test_curva_de_sensibilidad_genera_un_png(tmp_path):
 
 
 def test_la_curva_acepta_escala_logaritmica(tmp_path):
-    puntos = barridos.barrer(*_casa_rural(), valores=[0.5, 1, 2, 4, 8, 16],
+    puntos = barridos.barrer(*casa_rural(), valores=[0.5, 1, 2, 4, 8, 16],
                              destino="N_G")
     ruta = graficos.curva_sensibilidad(puntos, tmp_path / "log.png",
                                        escala_x="log")
@@ -44,7 +38,7 @@ def test_la_curva_acepta_escala_logaritmica(tmp_path):
 
 
 def test_dispersion_costo_riesgo_genera_un_png(tmp_path):
-    estructura, lineas, zonas, N_G = _casa_rural()
+    estructura, lineas, zonas, N_G = casa_rural()
     soluciones = medidas.explorar(estructura, lineas, zonas, N_G, tipo=1,
                                   solo_familias={"spcr", "dps"},
                                   solo_las_que_cumplen=False)
@@ -56,7 +50,7 @@ def test_dispersion_costo_riesgo_genera_un_png(tmp_path):
 def test_la_dispersion_funciona_aunque_todas_cumplan(tmp_path):
     # Si se filtran solo las que cumplen, no hay puntos naranjas: la figura
     # tiene que salir igual, sin reventar por una lista vacia.
-    estructura, lineas, zonas, N_G = _casa_rural()
+    estructura, lineas, zonas, N_G = casa_rural()
     soluciones = medidas.explorar(estructura, lineas, zonas, N_G, tipo=1,
                                   solo_familias={"spcr", "dps"})
 
@@ -69,7 +63,7 @@ def test_no_quedan_figuras_abiertas(tmp_path):
     # barrido largo se come la memoria.
     abiertas_antes = len(plt.get_fignums())
 
-    puntos = barridos.barrer(*_casa_rural(), valores=[1, 2], destino="N_G")
+    puntos = barridos.barrer(*casa_rural(), valores=[1, 2], destino="N_G")
     for i in range(3):
         graficos.curva_sensibilidad(puntos, tmp_path / f"f{i}.png")
 

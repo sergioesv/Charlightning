@@ -10,11 +10,17 @@ import pytest
 from pytest import approx
 
 from calculate_risk.norma import costos, medidas, riesgos, tablas
+from calculate_risk.norma import costos, medidas, riesgos, tablas
 from calculate_risk.norma.adaptador import caso_desde_pantalla
 from tests.datos_pantalla import CASA_RURAL, EDIFICIO_EJEMPLO
 
 
-def _casa_rural():
+def casa_rural():
+    c = caso_desde_pantalla(CASA_RURAL, tipo=1)
+    return c["estructura"], c["lineas"], c["zonas"], c["N_G"]
+
+
+def casa_rural():
     c = caso_desde_pantalla(CASA_RURAL, tipo=1)
     return c["estructura"], c["lineas"], c["zonas"], c["N_G"]
 
@@ -58,7 +64,7 @@ def test_las_familias_son_alternativas_entre_si():
 
 
 def test_aplicar_no_modifica_el_caso_original():
-    estructura, lineas, zonas, N_G = _casa_rural()
+    estructura, lineas, zonas, N_G = casa_rural()
     spcr = next(m for m in medidas.catalogo() if m.nombre == "spcr:spcr_nivel_I")
 
     medidas.aplicar(estructura, lineas, zonas, [spcr])
@@ -67,8 +73,8 @@ def test_aplicar_no_modifica_el_caso_original():
     assert lineas[0].P_EB == 1.0
 
 
-def test_casa_rural_con_spcr_iv_y_dps_da_la_solucion_b_de_la_norma():
-    estructura, lineas, zonas, N_G = _casa_rural()
+def testcasa_rural_con_spcr_iv_y_dps_da_la_solucion_b_de_la_norma():
+    estructura, lineas, zonas, N_G = casa_rural()
     assert not _r1(estructura, lineas, zonas, N_G)["cumple"]
 
     cat = {m.nombre: m for m in medidas.catalogo()}
@@ -113,7 +119,7 @@ def test_combinaciones_toma_a_lo_sumo_una_medida_por_familia():
 
 
 def test_el_barrido_encuentra_las_dos_soluciones_publicadas_de_la_norma():
-    estructura, lineas, zonas, N_G = _casa_rural()
+    estructura, lineas, zonas, N_G = casa_rural()
 
     soluciones = medidas.explorar(estructura, lineas, zonas, N_G, tipo=1,
                                   solo_familias={"spcr", "dps"})
@@ -131,7 +137,7 @@ def test_el_barrido_encuentra_las_dos_soluciones_publicadas_de_la_norma():
 
 
 def test_el_barrido_descarta_lo_que_no_cumple():
-    estructura, lineas, zonas, N_G = _casa_rural()
+    estructura, lineas, zonas, N_G = casa_rural()
 
     cumplen = medidas.explorar(estructura, lineas, zonas, N_G, tipo=1,
                                solo_familias={"spcr"})
@@ -146,7 +152,7 @@ def test_el_barrido_descarta_lo_que_no_cumple():
 
 
 def test_las_soluciones_salen_ordenadas_por_costo():
-    estructura, lineas, zonas, N_G = _casa_rural()
+    estructura, lineas, zonas, N_G = casa_rural()
     # Hay que ponerle precio a TODAS las medidas de las familias que se usen:
     # una medida sin precio cuenta como gratis y se iria de primeras.
     precios = {
@@ -188,12 +194,11 @@ PRECIOS = {
 
 
 def _edificio_con_economia():
-    """El EDIFICIO_EJEMPLO, con su caso de L4 aparte para el Anexo D."""
-    c1 = caso_desde_pantalla(EDIFICIO_EJEMPLO, tipo=1)
-    c4 = caso_desde_pantalla(EDIFICIO_EJEMPLO, tipo=4)
-    economia = dict(ECONOMIA,
-                    caso_l4=(c4["estructura"], c4["lineas"], c4["zonas"]))
-    return (c1["estructura"], c1["lineas"], c1["zonas"], c1["N_G"]), economia
+    """El edificio de prueba, con su caso de L4 aparte para el Anexo D."""
+    estructura, lineas, zonas, N_G = edificio(1)
+    est4, lin4, zon4, _ = edificio(4)
+    economia = dict(ECONOMIA, caso_l4=(est4, lin4, zon4))
+    return (estructura, lineas, zonas, N_G), economia
 
 
 def _explorar_con_economia():

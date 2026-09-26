@@ -13,13 +13,7 @@ import pytest
 from pytest import approx
 
 from calculate_risk.norma import barridos, medidas
-from calculate_risk.norma.adaptador import caso_desde_pantalla
-from tests.datos_pantalla import CASA_RURAL
-
-
-def _casa_rural():
-    c = caso_desde_pantalla(CASA_RURAL, tipo=1)
-    return c["estructura"], c["lineas"], c["zonas"], c["N_G"]
+from tests.norma.casos_de_prueba import casa_rural
 
 
 def _leer(ruta):
@@ -32,7 +26,7 @@ def _leer(ruta):
 # ---------------------------------------------------------------------------
 
 def test_el_riesgo_es_proporcional_a_N_G():
-    puntos = barridos.barrer(*_casa_rural(), valores=[1, 2, 4, 8], destino="N_G")
+    puntos = barridos.barrer(*casa_rural(), valores=[1, 2, 4, 8], destino="N_G")
 
     base = puntos[0].riesgo                      # N_G = 1
     for p in puntos:
@@ -44,7 +38,7 @@ def test_el_riesgo_es_proporcional_a_N_G():
 
 def test_subir_la_altura_sube_el_riesgo():
     # A_D crece con H (ec. A.2), asi que N_D y el riesgo tambien.
-    puntos = barridos.barrer(*_casa_rural(), valores=[3, 6, 12, 25, 50],
+    puntos = barridos.barrer(*casa_rural(), valores=[3, 6, 12, 25, 50],
                              destino="estructura", campo="H")
 
     riesgos_ = [p.riesgo for p in puntos]
@@ -54,7 +48,7 @@ def test_subir_la_altura_sube_el_riesgo():
 
 def test_alargar_la_linea_sube_el_riesgo():
     # A_L = 40*L_L y A_I = 4000*L_L (ecs. A.9 y A.11)
-    puntos = barridos.barrer(*_casa_rural(), valores=[100, 500, 1000, 2000],
+    puntos = barridos.barrer(*casa_rural(), valores=[100, 500, 1000, 2000],
                              destino="linea", campo="L_L")
 
     riesgos_ = [p.riesgo for p in puntos]
@@ -64,7 +58,7 @@ def test_alargar_la_linea_sube_el_riesgo():
 
 
 def test_el_barrido_no_modifica_el_caso_original():
-    estructura, lineas, zonas, N_G = _casa_rural()
+    estructura, lineas, zonas, N_G = casa_rural()
 
     barridos.barrer(estructura, lineas, zonas, N_G, valores=[50],
                     destino="estructura", campo="H")
@@ -76,7 +70,7 @@ def test_el_barrido_no_modifica_el_caso_original():
 
 
 def test_destino_o_campo_invalidos_avisan():
-    estructura, lineas, zonas, N_G = _casa_rural()
+    estructura, lineas, zonas, N_G = casa_rural()
 
     with pytest.raises(ValueError, match="destino"):
         barridos.barrer(estructura, lineas, zonas, N_G, valores=[1], destino="otro")
@@ -90,7 +84,7 @@ def test_destino_o_campo_invalidos_avisan():
 # ---------------------------------------------------------------------------
 
 def test_exportar_barrido(tmp_path):
-    puntos = barridos.barrer(*_casa_rural(), valores=[1, 2, 4], destino="N_G")
+    puntos = barridos.barrer(*casa_rural(), valores=[1, 2, 4], destino="N_G")
     ruta = barridos.exportar_barrido(puntos, tmp_path / "ng.csv", "N_G")
 
     filas = _leer(ruta)
@@ -101,7 +95,7 @@ def test_exportar_barrido(tmp_path):
 
 
 def test_exportar_soluciones(tmp_path):
-    estructura, lineas, zonas, N_G = _casa_rural()
+    estructura, lineas, zonas, N_G = casa_rural()
     soluciones = medidas.explorar(estructura, lineas, zonas, N_G, tipo=1,
                                   solo_familias={"spcr", "dps"})
 
