@@ -107,8 +107,12 @@ class CampoTexto(_Campo):
         self.entrada.insert(0, str(valor))
         self.marcar(False)
 
+    def crudo(self) -> str:
+        """Lo que hay escrito, sin validar. Para rotular listas mientras se edita."""
+        return self.entrada.get().strip()
+
     def valor(self) -> str:
-        texto = self.entrada.get().strip()
+        texto = self.crudo()
         if self.obligatorio and not texto:
             self.marcar(True)
             raise DatoFaltante(f"Falta {self.etiqueta}")

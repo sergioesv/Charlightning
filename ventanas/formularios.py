@@ -17,7 +17,7 @@ from tkinter import ttk
 
 from calculate_risk.norma import etiquetas, probabilidades, tablas
 from calculate_risk.norma.modelo import Estructura, Linea, SistemaInterno, Zona
-from ventanas import campos
+from ventanas import campos, listas
 
 
 # Reparto de los campos de Zona. Lo común se pregunta una vez; las pérdidas
@@ -117,6 +117,10 @@ class FormularioSistemaInterno(ttk.LabelFrame):
         }
         if sistema is not None:
             self.poner(sistema)
+
+    def nombre(self) -> str:
+        """Para rotular la lista mientras se edita, sin exigir que esté lleno."""
+        return self.campos["nombre"].crudo()
 
     def leer(self) -> SistemaInterno:
         return SistemaInterno(**campos.recoger(self.campos))
@@ -317,16 +321,19 @@ class FormularioZona(ttk.Frame):
             self.cuaderno.add(pestana, text=self.TITULOS[tipo])
             self.pestanas[tipo] = pestana
 
+            self.pestanas[tipo] = pestana
+
+        # Los sistemas internos son varios por zona: van en su propia lista.
+        self.sistemas = listas.ListaDeFormularios(
+            self.cuaderno, FormularioSistemaInterno,
+            titulo="Sistemas internos de la zona", singular="sistema")
+        self.cuaderno.add(self.sistemas, text="Sistemas internos")
+
         if zonas is not None:
             self.poner(zonas)
 
-    @property
-    def sistemas_internos(self):
-        return self.comun.sistemas_internos
-
-    @sistemas_internos.setter
-    def sistemas_internos(self, valor):
-        self.comun.sistemas_internos = list(valor)
+    def nombre(self) -> str:
+        return self.comun.campos["nombre"].crudo()
 
     def zonas_por_tipo(self) -> dict:
         """{1: Zona, 2: Zona, 3: Zona, 4: Zona} con lo común repetido.
@@ -335,6 +342,10 @@ class FormularioZona(ttk.Frame):
         pestañas en un solo aviso, diciendo de qué riesgo es cada cosa.
         """
         problemas = []
+        try:
+            self.comun.sistemas_internos = self.sistemas.leer()
+        except campos.DatoFaltante as error:
+            problemas.append(f"Sistemas internos:\n{error}")
         try:
             comun = self.comun.leer()
         except campos.DatoFaltante as error:
@@ -356,6 +367,7 @@ class FormularioZona(ttk.Frame):
         """Llena el formulario desde {tipo: Zona}; lo común sale de la primera."""
         primera = zonas[sorted(zonas)[0]]
         self.comun.poner(primera)
+        self.sistemas.poner(primera.sistemas_internos)
         for tipo, pestana in self.pestanas.items():
             if tipo in zonas:
                 pestana.poner(zonas[tipo])
@@ -476,6 +488,9 @@ class FormularioLinea(ttk.Frame):
 
         if linea is not None:
             self.poner(linea)
+
+    def nombre(self) -> str:
+        return self.campos["nombre"].crudo()
 
     def leer(self) -> Linea:
         """Devuelve la Línea, o avisa con TODO lo que falte."""
