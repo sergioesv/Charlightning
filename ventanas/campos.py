@@ -193,8 +193,6 @@ class CampoTabla(_Campo):
             self.combo.current(0)
             self.marcar(False)
             return
-        for indice, candidato in enumerate(self.valores):
-
 
         for indice, candidato in enumerate(self.valores):
             if candidato == valor:
@@ -206,6 +204,7 @@ class CampoTabla(_Campo):
             f"{self.etiqueta}: {valor} no es ninguna fila de "
             f"{etiquetas.NOMBRES[self.tabla][0]}"
         )
+
 
 class CampoSiNo(_Campo):
     """Casilla de verificación, para las banderas del modelo."""
