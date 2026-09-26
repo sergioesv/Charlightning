@@ -487,3 +487,194 @@ def informe_completo(carpeta, datos, proyecto=None, nombre="Memoria de calculo",
         return ruta_tex, compilar(ruta_tex)
     except RuntimeError:
         return ruta_tex, None
+
+# ---------------------------------------------------------------------------
+# Paso 50: la memoria desde un caso del modelo, con varias zonas y líneas
+# ---------------------------------------------------------------------------
+
+def _llaves_planas(por_tipo: dict) -> dict:
+    """{tipo: resultado} -> las llaves planas que usan las tablas de arriba.
+
+    Las tablas de componentes y de veredicto nacieron leyendo el diccionario
+    de la pantalla vieja (R_A1, R_1, R_T1...). En vez de reescribirlas, se
+    traduce: el contenido es el mismo.
+    """
+    planas = {}
+    for tipo, r in por_tipo.items():
+        for componente in riesgos.COMPONENTES:
+            planas[f"{componente}{tipo}"] = r[componente]
+        planas[f"R_{tipo}"] = r["total"]
+        planas[f"R_T{tipo}"] = r["R_T"]
+    return planas
+
+
+def _tabla_estructura(estructura, N_G) -> str:
+    filas = (
+        _fila("Longitud de la estructura $L$ [m]", f"${plano(estructura.L)}$")
+        + _fila("Ancho de la estructura $W$ [m]", f"${plano(estructura.W)}$")
+        + _fila("Altura de la estructura $H$ [m]", f"${plano(estructura.H)}$")
+        + _fila("Altura del saliente $H_P$ [m]", f"${plano(estructura.H_p)}$")
+        + _fila("Densidad de descargas $N_G$ [1/km$^2\\cdot$año]", f"${plano(N_G)}$")
+        + _fila("Factor de localización $C_D$ (Tabla A.1)", f"${plano(estructura.C_D)}$")
+        + _fila("Personas en la estructura $n_t$", f"${plano(estructura.n_t)}$")
+    )
+    return (
+        "\\section{Datos de entrada}\n\\subsection*{Estructura}\n"
+        "\\begin{tabular}{@{}lr@{}}\n\\toprule\n"
+        f"{filas}"
+        "\\bottomrule\n\\end{tabular}\n\n"
+    )
+
+
+def _tabla_zonas(zonas) -> str:
+    """Una fila por zona. Con una sola zona sigue teniendo sentido."""
+    filas = ""
+    for zona in zonas:
+        filas += (f"{escapar(zona.nombre)} & ${plano(zona.n_z)}$ & "
+                  f"${plano(zona.t_z)}$ & ${numero(zona.P_B)}$ & "
+                  f"${numero(zona.r_f)}$ & ${numero(zona.r_p)}$ & "
+                  f"${numero(zona.L_F)}$ \\\\\n")
+    return (
+        f"\\subsection*{{Zonas ({len(zonas)})}}\n"
+        "\\begin{tabular}{@{}lrrrrrr@{}}\n\\toprule\n"
+        "Zona & $n_z$ & $t_z$ [h] & $P_B$ & $r_f$ & $r_p$ & $L_F$ \\\\\n\\midrule\n"
+        f"{filas}"
+        "\\bottomrule\n\\end{tabular}\n\n"
+    )
+
+
+def _tabla_lineas(lineas) -> str:
+    if not lineas:
+        return ("\\subsection*{Líneas}\n"
+                "La estructura no tiene líneas de servicio conectadas, así que "
+                "los componentes $R_U$, $R_V$, $R_W$ y $R_Z$ no intervienen.\n\n")
+    filas = ""
+    for linea in lineas:
+        vecina = "sí" if linea.adyacente is not None else "no"
+        filas += (f"{escapar(linea.nombre)} & ${plano(linea.L_L)}$ & "
+                  f"${numero(linea.C_I)}$ & ${numero(linea.C_T)}$ & "
+                  f"${numero(linea.C_E)}$ & ${plano(linea.U_W)}$ & "
+                  f"${numero(linea.P_LD)}$ & ${numero(linea.P_LI)}$ & "
+                  f"{vecina} \\\\\n")
+    return (
+        f"\\subsection*{{Líneas ({len(lineas)})}}\n"
+        "\\begin{tabular}{@{}lrrrrrrrl@{}}\n\\toprule\n"
+        "Línea & $L_L$ [m] & $C_I$ & $C_T$ & $C_E$ & $U_W$ [kV] & "
+        "$P_{LD}$ & $P_{LI}$ & Vecina \\\\\n\\midrule\n"
+        f"{filas}"
+        "\\bottomrule\n\\end{tabular}\n\n"
+    )
+
+
+def _tabla_areas_caso(detalle) -> str:
+    """Áreas y frecuencias sacadas del _detalle que devuelve el motor.
+
+    Ahí ya están A_D, N_D y N_M de la estructura, y N_L, N_I y N_DJ de cada
+    línea por separado: no hay que suponer que hay una sola.
+    """
+    filas = (
+        _fila("$A_D$ — colección de la estructura (ec. A.2) [m$^2$]",
+              f"${plano(detalle['A_D'], 2)}$")
+        + _fila("$N_D$ — descargas en la estructura (ec. A.4) [1/año]",
+                f"${numero(detalle['N_D'])}$")
+        + _fila("$N_M$ — descargas cerca de la estructura (ec. A.6) [1/año]",
+                f"${numero(detalle['N_M'])}$")
+    )
+    por_linea = ""
+    for nombre, linea in detalle["lineas"].items():
+        por_linea += (f"{escapar(nombre)} & ${numero(linea['N_L'])}$ & "
+                      f"${numero(linea['N_I'])}$ & ${numero(linea['N_DJ'])}$ \\\\\n")
+    tabla_lineas = ""
+    if por_linea:
+        tabla_lineas = (
+            "\\begin{tabular}{@{}lrrr@{}}\n\\toprule\n"
+            "Línea & $N_L$ (ec. A.8) & $N_I$ (ec. A.10) & $N_{DJ}$ (ec. A.5) \\\\\n"
+            "\\midrule\n"
+            f"{por_linea}"
+            "\\bottomrule\n\\end{tabular}\n\n"
+        )
+    return (
+        "\\section{Áreas de colección y frecuencia de eventos}\n"
+        "\\begin{tabular}{@{}lr@{}}\n\\toprule\n"
+        f"{filas}"
+        "\\bottomrule\n\\end{tabular}\n\n"
+        f"{tabla_lineas}"
+    )
+
+
+def _tabla_por_zona(por_tipo: dict, tipos) -> str:
+    """Cuánto aporta cada zona a cada riesgo. Con una sola zona no aporta nada."""
+    primera = por_tipo[tipos[0]]
+    if len(primera["zonas"]) < 2:
+        return ""
+    cabecera = " & ".join(f"$R_{t}$" for t in tipos)
+    filas = ""
+    for nombre in primera["zonas"]:
+        valores = " & ".join(
+            f"${numero(por_tipo[t]['zonas'][nombre]['total'])}$" for t in tipos)
+        filas += f"{escapar(nombre)} & {valores} \\\\\n"
+    columnas = "l" + "r" * len(tipos)
+    return (
+        "\\subsection*{Aporte de cada zona}\n"
+        f"\\begin{{tabular}}{{@{{}}{columnas}@{{}}}}\n\\toprule\n"
+        f"Zona & {cabecera} \\\\\n\\midrule\n"
+        f"{filas}"
+        "\\bottomrule\n\\end{tabular}\n\n"
+    )
+
+
+def memoria_tex_caso(casos: dict, por_tipo: dict, proyecto=None, soluciones=None,
+                     figuras=None, tipo_desarrollado=1) -> str:
+    """El documento completo a partir de un caso del modelo.
+
+    casos: {tipo: {"estructura", "lineas", "zonas", "N_G"}}, lo que devuelve
+        EditorCaso.casos_por_tipo().
+    por_tipo: {tipo: resultado}, lo que devuelve EditorCaso.evaluar().
+
+    El contenido es el mismo que el de memoria_tex, pero las tablas de
+    entrada y de áreas ya no suponen una zona y una línea.
+    """
+    tipos = sorted(por_tipo)
+    caso = casos[tipos[0]]
+    planas = _llaves_planas(por_tipo)
+
+    desarrollada = por_tipo.get(tipo_desarrollado, por_tipo[tipos[0]])
+    nombre_zona = next(iter(desarrollada["zonas"]))
+    zona = desarrollada["zonas"][nombre_zona]
+
+    cuerpo = (
+        _tabla_datos_proyecto(proyecto)
+        + _tabla_estructura(caso["estructura"], caso["N_G"])
+        + _tabla_zonas(caso["zonas"])
+        + _tabla_lineas(caso["lineas"])
+        + _tabla_areas_caso(zona["_detalle"])
+        + _tabla_componentes(planas, tipos)
+        + _tabla_veredicto(planas, tipos)
+        + _tabla_por_zona(por_tipo, tipos)
+        + _desarrollo(zona["_detalle"], zona, tipo_desarrollado)
+        + _de_donde_viene(zona, tipo_desarrollado)
+        + _tabla_soluciones(soluciones)
+        + _figuras(figuras)
+    )
+    if len(caso["zonas"]) > 1:
+        cuerpo = cuerpo.replace(
+            "\\section{Desarrollo del cálculo}\n",
+            "\\section{Desarrollo del cálculo}\n"
+            f"Se desarrolla la zona \\textit{{{escapar(nombre_zona)}}}; "
+            f"el riesgo total suma las {len(caso['zonas'])} zonas.\n\n")
+
+    return (
+        PREAMBULO
+        + "\\title{Memoria de cálculo de riesgo por rayo\\\\"
+          "\\large NTC 4552-2:2023}\n\\date{\\today}\n"
+          "\\begin{document}\n\\maketitle\n\n"
+        + cuerpo
+        + "\\end{document}\n"
+    )
+
+
+def escribir_memoria_caso(ruta, casos, por_tipo, **kwargs) -> str:
+    """Escribe el .tex de un caso del modelo y devuelve su ruta."""
+    with open(ruta, "w", encoding="utf-8") as f:
+        f.write(memoria_tex_caso(casos, por_tipo, **kwargs))
+    return str(ruta)
