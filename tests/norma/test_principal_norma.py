@@ -280,6 +280,52 @@ def test_las_dos_soluciones_de_la_norma_estan_entre_las_encontradas(pantalla):
 
 
 # ---------------------------------------------------------------------------
+# De dónde viene el riesgo (Paso 56)
+# ---------------------------------------------------------------------------
+
+def test_el_boton_del_desglose_se_enciende_al_calcular(pantalla):
+    assert str(pantalla.resultados.boton_desglose.cget("state")) == "disabled"
+
+    pantalla.calcular()
+
+    assert str(pantalla.resultados.boton_desglose.cget("state")) == "normal"
+
+
+def test_sin_calcular_no_hay_desglose(pantalla):
+    assert pantalla.de_donde_viene() is None
+
+
+def test_el_desglose_abre_el_riesgo_elegido_en_el_panel(pantalla):
+    pantalla.marcas[3].set(True)
+    pantalla.calcular()
+    pantalla.resultados.arbol.selection_set("R3")
+
+    pantalla.de_donde_viene()
+
+    assert pantalla.ventana_desglose.tipo == 3
+
+
+def test_sin_elegir_nada_el_desglose_va_al_que_no_cumple(pantalla):
+    pantalla.marcas[3].set(True)      # R3 de la casa rural cumple; R1 no
+    pantalla.calcular()
+
+    aportes = pantalla.de_donde_viene()
+
+    assert pantalla.ventana_desglose.tipo == 1
+    assert aportes[0].componente == "R_V"
+
+
+def test_el_desglose_no_trabaja_con_un_riesgo_viejo(pantalla):
+    pantalla.calcular()
+    pantalla.editor.N_G.poner(0.01)      # ahora cumple
+
+    pantalla.de_donde_viene()
+
+    assert pantalla.ultimo_calculo[1]["cumple"] is True
+    assert "Cumple" in pantalla.ventana_desglose.titulo.cget("text")
+    
+
+# ---------------------------------------------------------------------------
 # Los datos del proyecto llegan al informe
 # ---------------------------------------------------------------------------
 

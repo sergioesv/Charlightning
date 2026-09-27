@@ -17,7 +17,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from calculate_risk.norma import medidas, memoria
-from ventanas import campos, editor_caso, resultados
+from ventanas import campos, desglose, editor_caso, resultados
 from ventanas.panel import Panel
 from variables.globales import papo
 
@@ -47,7 +47,7 @@ class PrincipalNorma(Panel):
         self.resultados = resultados.PanelResultados(self)
         self.resultados.pack(side="bottom", fill="x", padx=10, pady=6)
         self.resultados.boton_medidas.configure(command=self.buscar_medidas)
-
+        self.resultados.boton_desglose.configure(command=self.de_donde_viene)
         self.editor = editor_caso.EditorCaso(self)
         self.editor.pack(side="top", fill="both", expand=True, padx=10)
         self._vigilar_cambios()
@@ -181,16 +181,35 @@ class PrincipalNorma(Panel):
         """Busca combinaciones de medidas para el primer riesgo que no cumple."""
         if self.ultimo_calculo is None or self.al_dia() is None:
             return None
-        incumplen = [t for t, r in self.ultimo_calculo.items() if not r["cumple"]]
-        if not incumplen:
+        if all(r["cumple"] for r in self.ultimo_calculo.values()):
             return None
-        tipo = min(incumplen)
+        tipo = self._primero_que_no_cumple()
         caso = self.editor.casos_por_tipo((tipo,))[tipo]
 
         soluciones = medidas.explorar(caso["estructura"], caso["lineas"],
                                       caso["zonas"], caso["N_G"], tipo=tipo)
         self._mostrar_soluciones(tipo, soluciones)
         return soluciones
+
+    def de_donde_viene(self):
+        """Abre el desglose del riesgo elegido en el panel (Paso 56).
+
+        Si no hay ninguno elegido se toma el primero que no cumple, que es
+        el que le interesa a quien está diseñando la protección.
+        """
+        if self.ultimo_calculo is None or self.al_dia() is None:
+            return None
+        tipo = self.resultados.riesgo_elegido() or self._primero_que_no_cumple()
+        caso = self.editor.casos_por_tipo((tipo,))[tipo]
+        aportes = medidas.de_donde_viene(caso["estructura"], caso["lineas"],
+                                         caso["zonas"], caso["N_G"], tipo=tipo)
+        self.ventana_desglose = desglose.VentanaDesglose(
+            self, tipo, aportes, self.ultimo_calculo[tipo])
+        return aportes
+
+    def _primero_que_no_cumple(self) -> int:
+        incumplen = [t for t, r in self.ultimo_calculo.items() if not r["cumple"]]
+        return min(incumplen or self.ultimo_calculo)
 
     def volver(self):
         self.anterior_modo()

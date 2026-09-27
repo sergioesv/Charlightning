@@ -75,6 +75,9 @@ class PanelResultados(ttk.LabelFrame):
         self.boton_medidas = ttk.Button(pie, text="Buscar medidas de protección",
                                         state="disabled")
         self.boton_medidas.grid(row=0, column=1)
+        self.boton_desglose = ttk.Button(pie, text="¿De dónde viene el riesgo?",
+                                         state="disabled")
+        self.boton_desglose.grid(row=0, column=2, padx=(6, 0))
         self.obsoleto = False
 
     # -- contenido ---------------------------------------------------------
@@ -84,6 +87,7 @@ class PanelResultados(ttk.LabelFrame):
             self.arbol.delete(fila)
         self.aviso.configure(text="")
         self.boton_medidas.configure(state="disabled")
+        self.boton_desglose.configure(state="disabled")
         self._colorear(AZUL, NARANJA)
         self.obsoleto = False
 
@@ -107,6 +111,7 @@ class PanelResultados(ttk.LabelFrame):
             text="Los datos cambiaron: hay que volver a calcular.",
             foreground=GRIS)
         self.boton_medidas.configure(state="disabled")
+        self.boton_desglose.configure(state="disabled")
         return True
 
     def mostrar(self, resultados: dict):
@@ -131,6 +136,9 @@ class PanelResultados(ttk.LabelFrame):
         self._resumir(resultados)
 
     def _resumir(self, resultados):
+        # El desglose vale cumpla o no cumpla: saber de dónde viene el riesgo
+        # es tan útil cuando cumple (¿por qué?) como cuando no.
+        self.boton_desglose.configure(state="normal" if resultados else "disabled")
         incumplen = [tipo for tipo, r in resultados.items() if not r["cumple"]]
         if incumplen:
             cuales = ", ".join(f"R{tipo}" for tipo in sorted(incumplen))
@@ -143,6 +151,19 @@ class PanelResultados(ttk.LabelFrame):
                 text="Los riesgos evaluados están por debajo del tolerable.",
                 foreground=AZUL)
 
+    def riesgo_elegido(self):
+        """El tipo de riesgo seleccionado en el árbol, o None.
+
+        Da igual si lo que se pulsó fue el riesgo o una de sus zonas: de una
+        zona se sube al riesgo del que cuelga.
+        """
+        elegidos = self.arbol.selection()
+        if not elegidos:
+            return None
+        fila = elegidos[0]
+        fila = self.arbol.parent(fila) or fila
+        return int(fila.removeprefix("R"))
+        
     # -- para las pruebas y para el informe ---------------------------------
 
     def filas(self) -> list:
