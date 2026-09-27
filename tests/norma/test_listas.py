@@ -93,23 +93,82 @@ def test_quitar_saca_el_seleccionado(lista):
     assert lista.nombres() == ["a", "c"]
 
 
-def test_quitar_sin_seleccion_no_hace_nada(lista):
+def test_quitar_sin_seleccion_lo_dice_en_vez_de_callarse(lista):
     lista.anadir(SistemaInterno("a"))
     lista.lista.selection_clear(0, "end")
 
-    lista.quitar()
+    with pytest.raises(campos.DatoFaltante, match="qué sistema quitar"):
+        lista.quitar()
 
     assert len(lista.formularios) == 1
 
 
-def test_una_lista_con_minimo_no_se_queda_vacia(raiz):
-    con_minimo = listas.ListaDeFormularios(
-        raiz, formularios.FormularioSistemaInterno, singular="zona", minimo=1)
-    con_minimo.anadir(SistemaInterno("unica"))
-
+def test_una_lista_con_minimo_no_se_queda_vacia(con_minimo):
     with pytest.raises(campos.DatoFaltante, match="al menos 1 zona"):
         con_minimo.quitar()
 
+
+# ---------------------------------------------------------------------------
+# Paso 54: quitar nunca falla en silencio
+#
+# Antes, el botón llamaba directo a quitar(), que lanzaba DatoFaltante al
+# llegar al mínimo. Una excepción dentro de un callback de tkinter muere en
+# report_callback_exception: sale por la consola y el usuario no ve nada.
+# Era el «CUANDO LE DOY ZONAS NO ME DEJA BORRAR» de Sergio.
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def con_minimo(raiz):
+    lista = listas.ListaDeFormularios(
+        raiz, formularios.FormularioSistemaInterno, singular="zona", minimo=1)
+    lista.anadir(SistemaInterno("unica"))
+    return lista
+
+
+@pytest.fixture
+def avisos(monkeypatch):
+    """Lo que el programa le habría dicho al usuario."""
+    dichos = []
+    monkeypatch.setattr(listas.messagebox, "showinfo",
+                        lambda **kwargs: dichos.append(kwargs.get("message", "")))
+    return dichos
+
+
+def test_el_boton_arranca_apagado_porque_no_hay_nada_que_quitar(lista):
+    assert str(lista.boton_quitar.cget("state")) == "disabled"
+    assert lista.razon_quitar.cget("text") == "No hay nada que quitar."
+
+
+def test_en_el_minimo_el_boton_se_apaga_y_dice_por_que(con_minimo):
+    assert str(con_minimo.boton_quitar.cget("state")) == "disabled"
+    assert "al menos 1 zona" in con_minimo.razon_quitar.cget("text")
+
+
+def test_con_dos_el_boton_se_enciende_y_no_hay_nada_que_explicar(con_minimo):
+    con_minimo.anadir(SistemaInterno("otra"))
+
+    assert str(con_minimo.boton_quitar.cget("state")) == "normal"
+    assert con_minimo.razon_quitar.cget("text") == ""
+
+
+def test_el_boton_avisa_en_vez_de_morir_en_la_consola(con_minimo, avisos):
+    # Aunque el botón esté apagado, pulsarlo a la fuerza tiene que avisar:
+    # es la ruta por la que antes no se veía absolutamente nada.
+    con_minimo.pedir_quitar()
+
+    assert "al menos 1 zona" in avisos[-1]
+    assert len(con_minimo.formularios) == 1
+
+
+def test_el_boton_quita_cuando_si_se_puede(con_minimo, avisos):
+    con_minimo.anadir(SistemaInterno("otra"))
+
+    con_minimo.pedir_quitar()
+
+    assert con_minimo.nombres() == ["unica"]
+    assert not avisos
+    # y al quedarse en el mínimo vuelve a apagarse solo
+    assert str(con_minimo.boton_quitar.cget("state")) == "disabled"
 
 def test_poner_reemplaza_todo_lo_que_haya(lista, caso):
     lista.anadir(SistemaInterno("se_va"))

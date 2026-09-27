@@ -9,10 +9,10 @@ dos botones. Cada elemento tiene su propio formulario, creado por la fábrica
 que se le pasa; se muestran y se ocultan según lo que esté seleccionado.
 """
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox, ttk
 
 from ventanas import campos
-
+GRIS = "#8a8a8a"
 
 class ListaDeFormularios(ttk.LabelFrame):
     """Lista de elementos con su formulario.
@@ -58,8 +58,14 @@ class ListaDeFormularios(ttk.LabelFrame):
                                        command=self.anadir)
         self.boton_anadir.grid(row=0, column=0, sticky="ew", padx=(0, 3))
         self.boton_quitar = ttk.Button(botones, text=f"− {singular.capitalize()}",
-                                       command=self.quitar)
+                                       command=self.pedir_quitar)
         self.boton_quitar.grid(row=0, column=1, sticky="ew")
+        # Un botón apagado sin explicación es otra forma de no decir nada:
+        # debajo va SIEMPRE el motivo por el que no se puede quitar.
+        self.razon_quitar = ttk.Label(botones, text="", wraplength=200,
+                                      justify="left", foreground=GRIS)
+        self.razon_quitar.grid(row=1, column=0, columnspan=2, sticky="w",
+                               pady=(4, 0))
         botones.columnconfigure(0, weight=1)
         botones.columnconfigure(1, weight=1)
 
@@ -67,6 +73,7 @@ class ListaDeFormularios(ttk.LabelFrame):
         # se queda en su alto mínimo y las pestañas de abajo no se ven.
         self.columnconfigure(1, weight=1)
         self.rowconfigure(0, weight=1)
+        self._actualizar_botones()
 
     def _rueda(self, encendida):
         """Engancha o suelta la rueda del ratón sobre este lienzo."""
@@ -103,18 +110,48 @@ class ListaDeFormularios(ttk.LabelFrame):
         return formulario
 
     def quitar(self):
-        """Quita el elemento seleccionado, si queda por encima del mínimo."""
+        """Quita el elemento seleccionado. Si no se puede, DICE por qué.
+
+        Antes se iba en silencio cuando no había nada elegido, y lanzaba la
+        excepción sin recoger cuando se llegaba al mínimo: dentro de un
+        callback de tkinter eso muere en report_callback_exception, o sea
+        que se imprime en la consola y el usuario no ve absolutamente nada.
+        Ahora siempre avisa, y quien llama decide cómo enseñarlo.
+        """
+        if not self.puede_quitar():
+            raise campos.DatoFaltante(self.razon_para_no_quitar())
         indice = self.seleccionado()
-        if indice is None:
-            return
-        if len(self.formularios) <= self.minimo:
-            raise campos.DatoFaltante(
-                f"Tiene que quedar al menos {self.minimo} {self.singular}")
         self.formularios.pop(indice).destroy()
         self._refrescar_nombres()
         if self.formularios:
             self.lista.selection_set(min(indice, len(self.formularios) - 1))
         self.mostrar_seleccionado()
+
+    def pedir_quitar(self):
+        """Lo que hace el botón: quita, y si no se puede lo dice en pantalla."""
+        try:
+            self.quitar()
+        except campos.DatoFaltante as error:
+            messagebox.showinfo(title="No se puede quitar", message=str(error))
+
+    def razon_para_no_quitar(self) -> str:
+        """Por qué no se puede quitar ahora mismo; vacío si sí se puede."""
+        if not self.formularios:
+            return "No hay nada que quitar."
+        if len(self.formularios) <= self.minimo:
+            return (f"Tiene que quedar al menos {self.minimo} "
+                    f"{self.singular}.")
+        if self.seleccionado() is None:
+            return f"Elige en la lista qué {self.singular} quitar."
+        return ""
+
+    def puede_quitar(self) -> bool:
+        return not self.razon_para_no_quitar()
+
+    def _actualizar_botones(self):
+        razon = self.razon_para_no_quitar()
+        self.boton_quitar.configure(state="disabled" if razon else "normal")
+        self.razon_quitar.configure(text=razon)
 
     def leer(self, *argumentos, **nombrados) -> list:
         """Lee todos los elementos; si falta algo, junta todo en un aviso.
@@ -145,6 +182,7 @@ class ListaDeFormularios(ttk.LabelFrame):
         for objeto in objetos:
             self.anadir(objeto)
         self._refrescar_nombres()
+        self._actualizar_botones()
 
     # -- selección ---------------------------------------------------------
 
@@ -158,7 +196,8 @@ class ListaDeFormularios(ttk.LabelFrame):
         indice = self.seleccionado()
         if indice is not None:
             self.formularios[indice].grid(row=0, column=0, sticky="nsew")
-
+        self._actualizar_botones()
+        
     def nombres(self) -> list:
         return [f.nombre() or f"({self.singular} sin nombre)"
                 for f in self.formularios]
