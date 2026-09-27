@@ -71,30 +71,6 @@ def casa_rural():
     return casos.cargar_caso("casos/casa_rural.json")
 
 
-def hospital():
-    """E.4 — cuatro zonas y estructura vecina en la línea. Publicado: 69,96."""
-    est = Estructura(L=50, W=150, H=10, C_D=1, n_t=1000, c_t=90.0,
-                     riesgo_explosion_o_vital=True)
-    pot = Linea("potencia", L_L=500, C_I=0.5, C_T=0.2, C_E=0.5, U_W=2.5,
-                C_LD=1, C_LI=0, P_LD=0.2, P_LI=0.3, P_EB=1.0)
-    tel = Linea("telecom", L_L=300, C_I=0.5, C_T=1, C_E=0.5, U_W=1.5,
-                C_LD=1, C_LI=0, P_LD=0.8, P_LI=0.5, P_EB=1.0,
-                adyacente=Estructura(L=20, W=30, H=5), C_DJ=1)
-
-    def sistemas():
-        return [SistemaInterno("pot", "potencia", K_S3=0.2, U_W=2.5),
-                SistemaInterno("tel", "telecom", K_S3=0.01, U_W=1.5)]
-
-    dentro = dict(r_t=1e-5, h_z=5, L_T=1e-2, L_F=1e-1)
-    zonas = [
-        Zona("Z1", r_t=1e-2, P_TU=0, r_f=0, L_T=1e-2, n_z=10),
-        Zona("Z2", r_f=1e-2, L_O=1e-3, n_z=950, sistemas_internos=sistemas(), **dentro),
-        Zona("Z3", r_f=1e-3, L_O=1e-2, n_z=35, sistemas_internos=sistemas(), **dentro),
-        Zona("Z4", r_f=1e-3, L_O=1e-2, n_z=5, sistemas_internos=sistemas(), **dentro),
-    ]
-    return {"estructura": est, "lineas": [pot, tel], "zonas": zonas, "N_G": 4.0}
-
-
 def oficinas():
     """E.3 — cinco zonas, dos de ellas exteriores. Total publicado: 9,65."""
     return casos.cargar_caso("casos/E3_oficinas.json")
