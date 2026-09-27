@@ -52,7 +52,7 @@ class PanelResultados(ttk.LabelFrame):
     def __init__(self, padre, titulo="Resultados"):
         super().__init__(padre, text=titulo, padding=8)
 
-        self.arbol = ttk.Treeview(self, columns=self.COLUMNAS, height=12)
+        self.arbol = ttk.Treeview(self, columns=self.COLUMNAS, height=6)
         self.arbol.heading("#0", text="Riesgo y zonas", anchor="w")
         self.arbol.column("#0", width=280, anchor="w")
         for columna in self.COLUMNAS:

@@ -33,17 +33,60 @@ class ListaDeFormularios(ttk.LabelFrame):
         self.lista.grid(row=0, column=0, rowspan=2, sticky="ns", padx=(0, 8))
         self.lista.bind("<<ListboxSelect>>", lambda _evento: self.mostrar_seleccionado())
 
-        self.zona_formulario = ttk.Frame(self)
-        self.zona_formulario.grid(row=0, column=1, sticky="nsew")
+        # El formulario va dentro de un lienzo con barra: el de una zona mide
+        # unos 490 px y en una pantalla de 768 no cabe. Sin esto las pestañas
+        # de pérdidas (L_T, L_F, L_O, h_z) no llegan a verse y el cálculo
+        # pide datos que el usuario no tiene dónde escribir.
+        self.lienzo = tk.Canvas(self, highlightthickness=0)
+        self.lienzo.grid(row=0, column=1, sticky="nsew")
+        barra = ttk.Scrollbar(self, orient="vertical", command=self.lienzo.yview)
+        barra.grid(row=0, column=2, sticky="ns")
+        self.lienzo.configure(yscrollcommand=barra.set)
+
+        self.zona_formulario = ttk.Frame(self.lienzo)
+        self.lienzo.create_window((0, 0), window=self.zona_formulario, anchor="nw")
+        self.zona_formulario.bind(
+            "<Configure>",
+            lambda _e: self.lienzo.configure(scrollregion=self.lienzo.bbox("all")))
+        # La rueda solo mueve el lienzo que tenga el puntero encima.
+        self.lienzo.bind("<Enter>", lambda _e: self._rueda(True))
+        self.lienzo.bind("<Leave>", lambda _e: self._rueda(False))
 
         botones = ttk.Frame(self)
-        botones.grid(row=1, column=1, sticky="w", pady=(6, 0))
-        self.boton_anadir = ttk.Button(botones, text=f"Añadir {singular}",
+        botones.grid(row=1, column=0, sticky="ew", pady=(6, 0))
+        self.boton_anadir = ttk.Button(botones, text=f"+ {singular.capitalize()}",
                                        command=self.anadir)
-        self.boton_anadir.grid(row=0, column=0, padx=(0, 6))
-        self.boton_quitar = ttk.Button(botones, text=f"Quitar {singular}",
+        self.boton_anadir.grid(row=0, column=0, sticky="ew", padx=(0, 3))
+        self.boton_quitar = ttk.Button(botones, text=f"− {singular.capitalize()}",
                                        command=self.quitar)
-        self.boton_quitar.grid(row=0, column=1)
+        self.boton_quitar.grid(row=0, column=1, sticky="ew")
+        botones.columnconfigure(0, weight=1)
+        botones.columnconfigure(1, weight=1)
+
+        # El formulario de la derecha es el que tiene que crecer: sin esto
+        # se queda en su alto mínimo y las pestañas de abajo no se ven.
+        self.columnconfigure(1, weight=1)
+        self.rowconfigure(0, weight=1)
+
+    def _rueda(self, encendida):
+        """Engancha o suelta la rueda del ratón sobre este lienzo."""
+        if encendida:
+            self.lienzo.bind_all("<MouseWheel>", self._girar)
+            self.lienzo.bind_all("<Button-4>", self._girar)
+            self.lienzo.bind_all("<Button-5>", self._girar)
+        else:
+            for evento in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+                self.lienzo.unbind_all(evento)
+
+    def _girar(self, evento):
+        """Windows y Mac mandan delta; X11 manda los botones 4 y 5."""
+        if evento.num == 4:
+            pasos = -1
+        elif evento.num == 5:
+            pasos = 1
+        else:
+            pasos = -1 if evento.delta > 0 else 1
+        self.lienzo.yview_scroll(pasos, "units")
 
     # -- contenido ---------------------------------------------------------
 
