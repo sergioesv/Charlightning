@@ -19,6 +19,7 @@ from calculate_risk.norma import tablas
 
 AZUL = "#2a78d6"        # cumple
 NARANJA = "#eb6834"     # no cumple
+GRIS = "#8a8a8a"        # el resultado ya no corresponde a los datos
 
 TITULOS = {
     1: "R1 · Pérdida de vidas humanas",
@@ -74,6 +75,7 @@ class PanelResultados(ttk.LabelFrame):
         self.boton_medidas = ttk.Button(pie, text="Buscar medidas de protección",
                                         state="disabled")
         self.boton_medidas.grid(row=0, column=1)
+        self.obsoleto = False
 
     # -- contenido ---------------------------------------------------------
 
@@ -82,6 +84,30 @@ class PanelResultados(ttk.LabelFrame):
             self.arbol.delete(fila)
         self.aviso.configure(text="")
         self.boton_medidas.configure(state="disabled")
+        self._colorear(AZUL, NARANJA)
+        self.obsoleto = False
+
+    def _colorear(self, cumple, no_cumple, zona=""):
+        self.arbol.tag_configure("cumple", foreground=cumple)
+        self.arbol.tag_configure("no_cumple", foreground=no_cumple)
+        self.arbol.tag_configure("zona", foreground=zona)
+
+    def marcar_obsoleto(self) -> bool:
+        """Los datos cambiaron: lo que se ve ya no corresponde a lo escrito.
+
+        Todo se pone en gris y el aviso lo dice. Es lo que pedía Sergio: un
+        pantallazo del panel nunca puede enseñar un riesgo que no salga de
+        los datos que se ven al lado.
+        """
+        if not self.arbol.get_children():
+            return False
+        self.obsoleto = True
+        self._colorear(GRIS, GRIS, GRIS)
+        self.aviso.configure(
+            text="Los datos cambiaron: hay que volver a calcular.",
+            foreground=GRIS)
+        self.boton_medidas.configure(state="disabled")
+        return True
 
     def mostrar(self, resultados: dict):
         """resultados = {tipo: lo que devuelve riesgos.evaluar para ese tipo}."""
@@ -99,7 +125,8 @@ class PanelResultados(ttk.LabelFrame):
                 self.arbol.insert(
                     padre, "end", text=f"    {nombre}",
                     values=(numero(por_zona["total"]), "",
-                            porcentaje(por_zona["total"], r["total"])))
+                            porcentaje(por_zona["total"], r["total"])),
+                    tags=("zona",))
 
         self._resumir(resultados)
 

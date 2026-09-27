@@ -189,8 +189,10 @@ def test_el_informe_deja_las_figuras_y_el_csv_junto_al_tex(pantalla, tmp_path, a
                                               encoding="utf-8").read()
 
 
-def test_el_informe_calcula_solo_si_hace_falta(pantalla, tmp_path):
+def test_el_informe_calcula_el_solo(pantalla, tmp_path):
     # Sin haber pulsado Calcular, el Informe tiene que calcular por su cuenta.
+    # Desde el Paso 53 recalcula SIEMPRE antes de escribir, para no sacar un
+    # documento con las entradas nuevas y los riesgos viejos.
     ruta = tmp_path / "memoria.tex"
 
     pantalla.informe(ruta)

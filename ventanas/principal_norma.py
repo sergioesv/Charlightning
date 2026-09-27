@@ -35,6 +35,7 @@ class PrincipalNorma(Panel):
         super().__init__(master, titulo=titulo, ancho=ancho, alto=alto)
         self.anterior_modo = lambda: None
         self.ultimo_calculo = None
+        self.huella_calculo = None
 
         barra = ttk.Frame(self)
         barra.pack(side="top", fill="x", padx=10, pady=6)
@@ -49,6 +50,7 @@ class PrincipalNorma(Panel):
 
         self.editor = editor_caso.EditorCaso(self)
         self.editor.pack(side="top", fill="both", expand=True, padx=10)
+        self._vigilar_cambios()
 
     def _botones(self, barra):
         acciones = (("Abrir caso", self.abrir), ("Guardar caso", self.guardar),
@@ -65,7 +67,8 @@ class PrincipalNorma(Panel):
         self.marcas = {}
         for posicion, (tipo, nombre) in enumerate(NOMBRES_RIESGOS.items()):
             marca = tk.BooleanVar(value=(tipo == 1))
-            ttk.Checkbutton(barra, text=nombre, variable=marca).grid(
+            ttk.Checkbutton(barra, text=nombre, variable=marca,
+                            command=self.revisar_cambios).grid(
                 row=0, column=10 + posicion, padx=2)
             self.marcas[tipo] = marca
 
@@ -83,8 +86,10 @@ class PrincipalNorma(Panel):
         except campos.DatoFaltante as error:
             self.resultados.limpiar()
             self.ultimo_calculo = None
+            self.huella_calculo = None
             messagebox.showinfo(title="Faltan datos", message=str(error))
             return None
+        self.huella_calculo = self.huella()
         self.resultados.mostrar(self.ultimo_calculo)
         return self.ultimo_calculo
 
@@ -99,6 +104,8 @@ class PrincipalNorma(Panel):
             messagebox.showinfo(title="No se pudo abrir", message=str(error))
             return None
         self.resultados.limpiar()
+        self.ultimo_calculo = None
+        self.huella_calculo = None
         return ruta
 
     def guardar(self, ruta=None):
@@ -119,7 +126,11 @@ class PrincipalNorma(Panel):
         Las figuras y el CSV quedan en la misma carpeta que el .tex, que es
         lo que LaTeX necesita para encontrar los PNG al compilar.
         """
-        if self.ultimo_calculo is None and self.calcular() is None:
+        # Recalcular ANTES de escribir no es un lujo: la memoria se arma con
+        # las entradas frescas del formulario, así que usar un resultado
+        # viejo sacaría un documento con las tablas de entrada nuevas y los
+        # riesgos antiguos. El entregable es material del artículo.
+        if self.al_dia() is None:
             return None
         ruta = ruta or filedialog.asksaveasfilename(
             title="Guardar la memoria", defaultextension=".tex",
@@ -148,7 +159,7 @@ class PrincipalNorma(Panel):
 
     def buscar_medidas(self):
         """Busca combinaciones de medidas para el primer riesgo que no cumple."""
-        if self.ultimo_calculo is None:
+        if self.ultimo_calculo is None or self.al_dia() is None:
             return None
         incumplen = [t for t, r in self.ultimo_calculo.items() if not r["cumple"]]
         if not incumplen:
@@ -163,6 +174,50 @@ class PrincipalNorma(Panel):
 
     def volver(self):
         self.anterior_modo()
+
+    # -- que lo que se ve corresponda a los datos ---------------------------
+
+    def huella(self) -> tuple:
+        """Todo lo que entra al cálculo: los riesgos marcados y el editor."""
+        return (self.tipos(), self.editor.huella())
+
+    def al_dia(self):
+        """El resultado vigente, recalculándolo si los datos ya no son esos."""
+        if self.ultimo_calculo is None or self.huella() != self.huella_calculo:
+            return self.calcular()
+        return self.ultimo_calculo
+
+    def revisar_cambios(self) -> bool:
+        """Pone el panel en gris si lo que se ve ya no sale de lo escrito.
+
+        Si el cambio se deshace (se vuelve a escribir lo que había), el
+        resultado sigue siendo válido y se devuelve a sus colores.
+        """
+        if self.huella_calculo is None:
+            return False
+        if self.huella() != self.huella_calculo:
+            return self.resultados.marcar_obsoleto()
+        if self.resultados.obsoleto:
+            self.resultados.mostrar(self.ultimo_calculo)
+        return False
+
+    def _vigilar_cambios(self):
+        """Se entera de que tocaron una casilla del editor.
+
+        El enganche va en la ventana entera porque un Frame no recibe los
+        eventos de sus hijos, y se filtra por la ruta del editor. Hecho así
+        —y no campo por campo— quedan vigiladas también las casillas de una
+        zona o una línea que se añadan después.
+        """
+        ventana = self.winfo_toplevel()
+        for evento in ("<KeyRelease>", "<<ComboboxSelected>>", "<ButtonRelease-1>"):
+            ventana.bind(evento, self._tocaron_el_editor, add="+")
+        self.editor.al_cambiar = self.revisar_cambios
+
+    def _tocaron_el_editor(self, evento):
+        ruta, raiz = str(evento.widget), str(self.editor)
+        if ruta == raiz or ruta.startswith(raiz + "."):
+            self.revisar_cambios()
 
     # -- auxiliares --------------------------------------------------------
 

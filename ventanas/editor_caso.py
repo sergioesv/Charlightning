@@ -25,7 +25,9 @@ class EditorCaso(ttk.Frame):
 
     def __init__(self, padre):
         super().__init__(padre, padding=6)
-
+        # Quien quiera enterarse de que se tocó un dato se apunta aquí.
+        self.al_cambiar = lambda: None
+        
         cabecera = ttk.Frame(self)
         cabecera.grid(row=0, column=0, sticky="w", pady=(0, 6))
         self.N_G = campos.CampoNumero(
@@ -60,9 +62,27 @@ class EditorCaso(ttk.Frame):
     # -- lectura -----------------------------------------------------------
 
     def pedir_densidad(self):
-        """Abre el diálogo de la climatología y deja el N_G que devuelva."""
-        self.dialogo = dialogo_densidad.DialogoDensidad(self, self.N_G.poner)
+        """Abre el diálogo de la climatología y deja el N_G que devuelva.
+
+        El diálogo es otra ventana, así que el cambio de N_G no pasa por los
+        eventos del editor: hay que avisar a mano.
+        """
+        self.dialogo = dialogo_densidad.DialogoDensidad(self, self._poner_densidad)
         return self.dialogo
+
+    def _poner_densidad(self, valor):
+        self.N_G.poner(valor)
+        self.al_cambiar()
+
+    def huella(self) -> tuple:
+        """Foto cruda de todas las casillas, sin validar y sin calcular nada.
+
+        Sirve para saber si un resultado ya mostrado sigue correspondiendo a
+        lo que hay escrito. Se recorre el árbol de widgets y no una lista de
+        campos, así una zona o una línea añadidas después entran solas, y la
+        propia ruta del widget delata que se añadió o se quitó algo.
+        """
+        return tuple((str(w), _contenido(w)) for w in _descendientes(self))
 
     def casos_por_tipo(self, tipos=(1, 2, 3, 4)) -> dict:
         """{tipo: {"estructura":…, "lineas":[…], "zonas":[…], "N_G":…}}.
@@ -142,3 +162,22 @@ class EditorCaso(ttk.Frame):
     def abrir(self, ruta):
         """Abre un archivo JSON, del formato que sea."""
         self.poner(casos.cargar_casos(ruta))
+
+
+def _descendientes(widget):
+    """El widget y todo lo que cuelga de él, en orden."""
+    yield widget
+    for hijo in widget.winfo_children():
+        yield from _descendientes(hijo)
+
+
+def _contenido(widget):
+    """Lo que el usuario escribió o eligió; None si el widget no guarda datos."""
+    if isinstance(widget, ttk.Combobox):
+        return widget.current()
+    if isinstance(widget, ttk.Entry):
+        return widget.get()
+    if isinstance(widget, ttk.Checkbutton):
+        variable = str(widget.cget("variable"))
+        return widget.getvar(variable) if variable else None
+    return None
