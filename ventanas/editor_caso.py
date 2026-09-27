@@ -114,6 +114,26 @@ class EditorCaso(ttk.Frame):
         }
 
     # -- escritura ---------------------------------------------------------
+    
+    def limpiar(self):
+        """Deja el caso como recién abierto el programa: todo en blanco.
+
+        La estructura se vuelve a crear entera en vez de ir vaciando casilla
+        por casilla: así queda EXACTAMENTE igual que al arrancar —listas sin
+        elegir y valores por defecto puestos— y no se puede olvidar ningún
+        campo que se añada mañana. Las zonas y las líneas ya se rehacen
+        solas, porque `poner([])` destruye sus formularios.
+        """
+        self.N_G.poner("")
+        indice = self.cuaderno.index(self.estructura)
+        self.estructura.destroy()
+        self.estructura = formularios.FormularioEstructura(self.cuaderno)
+        self.cuaderno.insert(indice, self.estructura, text="Estructura")
+        self.zonas.poner([])
+        self.lineas.poner([])
+        self.cuaderno.select(indice)
+        self.al_cambiar()
+
 
     def poner_caso(self, caso: dict, tipo: int = 1):
         """Abre un caso del formato de casos.cargar_caso().

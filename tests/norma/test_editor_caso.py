@@ -174,6 +174,47 @@ def test_los_cuatro_casos_van_y_vuelven(editor, caso):
 # Lo que falta se dice entero
 # ---------------------------------------------------------------------------
 
+def test_limpiar_deja_el_editor_como_recien_abierto(editor, raiz):
+    # Paso 55: el botón «Caso nuevo». Tiene que quedar igual que un editor
+    # recién creado, no "parecido": si mañana se añade un campo con valor
+    # por defecto, este editor también lo tiene que traer.
+    editor.limpiar()
+    recien_creado = editor_caso.EditorCaso(raiz)
+
+    assert editor.zonas.formularios == []
+    assert editor.lineas.formularios == []
+    assert editor.N_G.entrada.get() == ""
+    assert (editor.estructura.campos["C_D"].combo.current()
+            == recien_creado.estructura.campos["C_D"].combo.current())
+    assert (editor.estructura.campos["n_t"].entrada.get()
+            == recien_creado.estructura.campos["n_t"].entrada.get())
+
+
+def test_las_pestanas_siguen_en_su_sitio_despues_de_limpiar(editor):
+    # La estructura se rehace: si se añadiera al final, quedaría de tercera.
+    editor.limpiar()
+
+    assert [editor.cuaderno.tab(i, "text") for i in range(3)] == [
+        "Estructura", "Zonas", "Líneas"]
+
+
+def test_despues_de_limpiar_el_calculo_pide_todo_otra_vez(editor):
+    editor.limpiar()
+
+    with pytest.raises(campos.DatoFaltante) as fallo:
+        editor.casos_por_tipo(tipos=(1,))
+
+    assert "al menos 1 zona" in str(fallo.value)
+
+
+def test_limpiar_avisa_de_que_cambiaron_los_datos(editor):
+    avisado = []
+    editor.al_cambiar = lambda: avisado.append(True)
+
+    editor.limpiar()
+
+    assert avisado, "el panel de resultados tiene que enterarse"
+
 def test_un_editor_vacio_dice_todo_lo_que_falta(raiz):
     vacio = editor_caso.EditorCaso(raiz)
 

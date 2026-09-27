@@ -53,7 +53,8 @@ class PrincipalNorma(Panel):
         self._vigilar_cambios()
 
     def _botones(self, barra):
-        acciones = (("Abrir caso", self.abrir), ("Guardar caso", self.guardar),
+        acciones = (("Caso nuevo", self.nuevo),
+                    ("Abrir caso", self.abrir), ("Guardar caso", self.guardar),
                     ("Calcular", self.calcular), ("Informe", self.informe),
                     ("Volver", self.volver))
         self.botones = {}
@@ -92,6 +93,25 @@ class PrincipalNorma(Panel):
         self.huella_calculo = self.huella()
         self.resultados.mostrar(self.ultimo_calculo)
         return self.ultimo_calculo
+
+    def nuevo(self, confirmado=None):
+        """Deja la pantalla en cero: ni datos escritos ni resultados.
+
+        Pregunta antes, porque se lleva por delante todo lo que haya. Las
+        pruebas pasan `confirmado` y así no se abre ningún cuadro.
+        """
+        if confirmado is None:
+            confirmado = messagebox.askyesno(
+                title="Caso nuevo",
+                message=("Se va a borrar todo lo escrito y los resultados.\n"
+                         "¿Seguir?"))
+        if not confirmado:
+            return False
+        self.editor.limpiar()
+        self.resultados.limpiar()
+        self.ultimo_calculo = None
+        self.huella_calculo = None
+        return True
 
     def abrir(self, ruta=None):
         ruta = ruta or filedialog.askopenfilename(

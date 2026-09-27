@@ -60,11 +60,11 @@ def pantalla(raiz, avisos):
 # La ventana está armada
 # ---------------------------------------------------------------------------
 
-def test_tiene_los_cinco_botones(raiz, avisos):
+def test_tiene_los_seis_botones(raiz, avisos):
     p = principal_norma.PrincipalNorma(raiz)
 
-    assert sorted(p.botones) == ["Abrir caso", "Calcular", "Guardar caso",
-                                 "Informe", "Volver"]
+    assert sorted(p.botones) == ["Abrir caso", "Calcular", "Caso nuevo",
+                                 "Guardar caso", "Informe", "Volver"]
 
 
 def test_arranca_evaluando_solo_el_riesgo_de_vidas(raiz, avisos):
@@ -116,6 +116,44 @@ def test_volver_a_calcular_no_acumula(pantalla):
 
     assert len(pantalla.resultados.filas()) == antes
 
+# ---------------------------------------------------------------------------
+# Caso nuevo (Paso 55)
+# ---------------------------------------------------------------------------
+
+def test_caso_nuevo_deja_la_pantalla_en_cero(pantalla):
+    pantalla.calcular()
+
+    assert pantalla.nuevo(confirmado=True) is True
+
+    assert pantalla.editor.zonas.formularios == []
+    assert pantalla.editor.lineas.formularios == []
+    assert pantalla.editor.N_G.entrada.get() == ""
+    assert pantalla.resultados.filas() == []
+    assert pantalla.ultimo_calculo is None
+
+
+def test_caso_nuevo_pregunta_antes_de_borrar(pantalla, monkeypatch):
+    preguntas = []
+    monkeypatch.setattr(principal_norma.messagebox, "askyesno",
+                        lambda **kwargs: preguntas.append(kwargs) or False)
+    pantalla.calcular()
+
+    assert pantalla.nuevo() is False
+
+    assert preguntas, "borrarlo todo sin preguntar, no"
+    assert pantalla.editor.lineas.nombres() == ["potencia", "telecomunicacion"]
+    assert pantalla.resultados.filas()          # el resultado sigue ahí
+
+
+def test_despues_de_caso_nuevo_el_informe_no_escribe_nada(pantalla, tmp_path,
+                                                          avisos):
+    pantalla.calcular()
+    pantalla.nuevo(confirmado=True)
+    ruta = tmp_path / "memoria.tex"
+
+    assert pantalla.informe(ruta) is None
+    assert not ruta.exists()
+    assert "al menos 1 zona" in avisos[-1]
 
 # ---------------------------------------------------------------------------
 # Abrir y guardar
