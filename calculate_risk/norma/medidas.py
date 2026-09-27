@@ -244,3 +244,74 @@ def explorar(estructura, lineas, zonas, N_G, tipo=1, catalogo_medidas=None,
     else:
         soluciones.sort(key=lambda s: (not s.cumple, s.costo, len(s.medidas), s.riesgo))
     return soluciones
+
+
+
+
+# ---------------------------------------------------------------------------
+# Paso 56: de dónde viene el riesgo y qué medida baja cada parte
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class Rebaja:
+    """Lo que consigue una medida instalada ELLA SOLA."""
+    medida: Medida
+    componente: float      # a cuánto baja ese componente
+    total: float           # a cuánto baja el riesgo entero
+    cumple: bool           # si con esa sola medida ya basta
+
+
+@dataclass(frozen=True)
+class Aporte:
+    """Lo que un componente aporta al riesgo, y qué medidas lo bajan."""
+    componente: str
+    valor: float
+    fraccion: float
+    rebajas: tuple         # de la que más baja a la que menos
+
+    @property
+    def porcentaje(self) -> float:
+        return self.fraccion * 100
+
+
+def de_donde_viene(estructura, lineas, zonas, N_G, tipo=1,
+                   catalogo_medidas=None) -> list:
+    """Los componentes del riesgo, de mayor a menor, con las medidas que los bajan.
+
+    No hay ninguna tabla de "qué medida toca qué componente", y no hace falta:
+    se instala cada medida SOLA sobre este caso y se mira qué componentes
+    bajan. Así la respuesta es la de este caso concreto y no una regla general
+    — en una estructura sin líneas, por ejemplo, el blindaje de la línea no
+    aparece porque no baja nada.
+
+    Los componentes que valen cero no salen: no aportan al riesgo y no hay
+    nada que bajarles.
+    """
+    disponibles = catalogo_medidas if catalogo_medidas is not None else catalogo()
+    base = riesgos.evaluar(estructura, lineas, zonas, N_G, tipos=(tipo,))[tipo]
+
+    con_cada_medida = [
+        (medida, riesgos.evaluar(*aplicar(estructura, lineas, zonas, [medida]),
+                                 N_G, tipos=(tipo,))[tipo])
+        for medida in disponibles
+    ]
+
+    aportes = []
+    for componente in riesgos.COMPONENTES:
+        valor = base[componente]
+        if not valor:
+            continue
+        rebajas = [
+            Rebaja(medida=medida, componente=r[componente], total=r["total"],
+                   cumple=r["cumple"])
+            for medida, r in con_cada_medida if r[componente] < valor
+        ]
+        rebajas.sort(key=lambda rebaja: (rebaja.componente, rebaja.total))
+        aportes.append(Aporte(
+            componente=componente, valor=valor,
+            fraccion=valor / base["total"] if base["total"] else 0.0,
+            rebajas=tuple(rebajas),
+        ))
+
+    aportes.sort(key=lambda aporte: -aporte.valor)
+    return aportes

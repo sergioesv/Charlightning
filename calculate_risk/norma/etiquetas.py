@@ -258,6 +258,33 @@ ETIQUETAS = {
     },
 }
 
+# Los ocho componentes del riesgo (numeral 4.2) en palabras. La letra dice de
+# dónde viene el rayo y qué rompe; sin esto el usuario ve "R_V" y no sabe si
+# eso se arregla con un pararrayos o con un DPS.
+COMPONENTES = {
+    "R_A": "Tensiones de paso y de contacto por un rayo A LA ESTRUCTURA",
+    "R_B": "Daño físico (incendio o explosión) por un rayo A LA ESTRUCTURA",
+    "R_C": "Falla de los sistemas internos por un rayo A LA ESTRUCTURA",
+    "R_M": "Falla de los sistemas internos por un rayo CERCA DE LA ESTRUCTURA",
+    "R_U": "Tensiones de paso y de contacto por un rayo A UNA LÍNEA",
+    "R_V": "Daño físico (incendio o explosión) por un rayo A UNA LÍNEA",
+    "R_W": "Falla de los sistemas internos por un rayo A UNA LÍNEA",
+    "R_Z": "Falla de los sistemas internos por un rayo CERCA DE UNA LÍNEA",
+}
+
+
+# De qué tabla de la norma sale cada familia de medidas de medidas.py. Una
+# medida no es un dato nuevo: es escoger otra fila de una tabla que ya está.
+TABLA_DE_FAMILIA = {
+    "spcr": "PB",
+    "dps": "PDPS",
+    "tension_estructura": "PTA",
+    "tension_linea": "PTU",
+    "incendio": "RP",
+    "cableado_interno": "KS3",
+    "blindaje_linea": "CLD_CLI",
+}
+
 
 def nombre_de(tabla: str) -> str:
     """'CD' -> 'Tabla A.1 - Factor de localización de la estructura'."""
@@ -288,3 +315,20 @@ def opciones(tabla: str) -> list:
 def llaves(tabla: str) -> list:
     """Las llaves de la tabla, en el mismo orden que opciones()."""
     return list(getattr(tablas, tabla))
+
+
+def texto_de_componente(componente: str) -> str:
+    """'R_V' -> 'R_V - Daño físico ... por un rayo A UNA LÍNEA'."""
+    return f"{componente} - {COMPONENTES[componente]}"
+
+
+def texto_de_medida(nombre: str) -> str:
+    """'spcr:spcr_nivel_IV' -> 'SPCR: ... (Tabla B.2)'.
+
+    El nombre de una medida es "familia:llave", y la llave es una fila de la
+    tabla de esa familia: el texto sale de ahí, no se escribe otra vez.
+    """
+    familia, _, llave = nombre.partition(":")
+    tabla = TABLA_DE_FAMILIA[familia]
+    numero, _titulo = NOMBRES[tabla]
+    return f"{ETIQUETAS[tabla][llave]} ({numero})"
