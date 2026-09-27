@@ -1,0 +1,52 @@
+{
+  "N_G": 4.0,
+  "tipos": [1],
+  "estructura": {
+    "L": 50, "W": 150, "H": 10, "n_t": 1000, "c_t": 90.0,
+    "riesgo_explosion_o_vital": true
+  },
+  "lineas": [
+    {
+      "nombre": "potencia", "L_L": 500, "C_I": 0.5, "C_T": 0.2, "C_E": 0.5,
+      "C_LI": 0, "P_LD": 0.2, "P_LI": 0.3
+    },
+    {
+      "nombre": "telecom", "L_L": 300, "C_I": 0.5, "C_E": 0.5, "U_W": 1.5,
+      "C_LI": 0, "P_LD": 0.8, "P_LI": 0.5,
+      "adyacente": {"L": 20, "W": 30, "H": 5}
+    }
+  ],
+  "zonas": [
+    {
+      "nombre": "Z1",
+      "P_TU": 0, "r_t": 0.01, "r_f": 0, "L_T": 0.01, "n_z": 10
+    },
+    {
+      "nombre": "Z2",
+      "sistemas_internos": [
+        {"nombre": "pot", "linea": "potencia", "K_S3": 0.2},
+        {"nombre": "tel", "linea": "telecom", "K_S3": 0.01, "U_W": 1.5}
+      ],
+      "r_t": 1e-05, "r_f": 0.01, "h_z": 5,
+      "L_T": 0.01, "L_F": 0.1, "L_O": 0.001, "n_z": 950
+    },
+    {
+      "nombre": "Z3",
+      "sistemas_internos": [
+        {"nombre": "pot", "linea": "potencia", "K_S3": 0.2},
+        {"nombre": "tel", "linea": "telecom", "K_S3": 0.01, "U_W": 1.5}
+      ],
+      "r_t": 1e-05, "r_f": 0.001, "h_z": 5,
+      "L_T": 0.01, "L_F": 0.1, "L_O": 0.01, "n_z": 35
+    },
+    {
+      "nombre": "Z4",
+      "sistemas_internos": [
+        {"nombre": "pot", "linea": "potencia", "K_S3": 0.2},
+        {"nombre": "tel", "linea": "telecom", "K_S3": 0.01, "U_W": 1.5}
+      ],
+      "r_t": 1e-05, "r_f": 0.001, "h_z": 5,
+      "L_T": 0.01, "L_F": 0.1, "L_O": 0.01, "n_z": 5
+    }
+  ]
+}

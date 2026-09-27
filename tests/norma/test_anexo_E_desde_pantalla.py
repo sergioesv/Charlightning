@@ -32,8 +32,7 @@ pytestmark = pytest.mark.skipif(not _hay_pantalla(),
                                 reason="no hay pantalla gráfica (ni Xvfb)")
 
 from calculate_risk.norma import casos                                  # noqa: E402
-from calculate_risk.norma.modelo import (Estructura, Linea,             # noqa: E402
-                                         SistemaInterno, Zona)
+from calculate_risk.norma.modelo import Estructura                     # noqa: E402
 from ventanas import editor_caso                                        # noqa: E402
 
 E5 = 1e-5
@@ -60,35 +59,16 @@ def _por_la_pantalla(raiz, caso):
 
 # ---------------------------------------------------------------------------
 # Los cuatro casos, tal como los define la norma
+#
+# Paso 57: los cuatro viven ahora en casos/*.json, que son los mismos archivos
+# que abre el menú «Ejemplos de la norma». Así lo que el usuario abre con un
+# clic es exactamente lo que estas pruebas comparan contra los valores
+# publicados: si alguien toca un JSON, el número deja de dar y se sabe aquí.
 # ---------------------------------------------------------------------------
 
 def casa_rural():
     """E.2 — 15 x 20 x 6 m, una zona, dos líneas. Total publicado: 2,51."""
     return casos.cargar_caso("casos/casa_rural.json")
-
-
-def oficinas():
-    """E.3 — cinco zonas, dos de ellas exteriores. Total publicado: 9,65."""
-    est = Estructura(L=20, W=40, H=25, C_D=1, n_t=200)
-    pot = Linea("potencia", L_L=200, C_I=1.0, C_T=1, C_E=1, U_W=2.5,
-                C_LD=1, C_LI=1, P_LD=1, P_LI=0.3, P_EB=1.0)
-    tel = Linea("telecom", L_L=1000, C_I=0.5, C_T=1, C_E=1, U_W=1.5,
-                C_LD=1, C_LI=1, P_LD=1, P_LI=0.5, P_EB=1.0)
-
-    def sistemas():
-        return [SistemaInterno("pot", "potencia", K_S3=0.2, U_W=2.5),
-                SistemaInterno("tel", "telecom", K_S3=1.0, U_W=1.5)]
-
-    comun = dict(P_B=1.0, L_T=1e-2, t_z=8760)
-    dentro = dict(r_t=1e-5, h_z=2, L_F=0.02, sistemas_internos=None, **comun)
-    zonas = [
-        Zona("Z1", r_t=1e-3, P_TA=1, P_TU=0, r_f=0, n_z=4, **comun),
-        Zona("Z2", r_t=1e-2, P_TA=0, P_TU=0, r_f=0, n_z=2, **comun),
-        Zona("Z3", r_f=1e-1, n_z=20, **{**dentro, "sistemas_internos": sistemas()}),
-        Zona("Z4", r_f=1e-3, n_z=160, **{**dentro, "sistemas_internos": sistemas()}),
-        Zona("Z5", r_f=1e-3, n_z=14, **{**dentro, "sistemas_internos": sistemas()}),
-    ]
-    return {"estructura": est, "lineas": [pot, tel], "zonas": zonas, "N_G": 4.0}
 
 
 def hospital():
@@ -115,15 +95,19 @@ def hospital():
     return {"estructura": est, "lineas": [pot, tel], "zonas": zonas, "N_G": 4.0}
 
 
+def oficinas():
+    """E.3 — cinco zonas, dos de ellas exteriores. Total publicado: 9,65."""
+    return casos.cargar_caso("casos/E3_oficinas.json")
+
+
+def hospital():
+    """E.4 — cuatro zonas y estructura vecina en la línea. Publicado: 69,96."""
+    return casos.cargar_caso("casos/E4_hospital.json")
+
+
 def apartamentos():
     """E.5 — una zona; el escenario H=20 m, r_f=0,01, sin SPCR: 8,364."""
-    est = Estructura(L=30, W=20, H=20, C_D=1, n_t=200)
-    pot = Linea("potencia", L_L=200, C_I=0.5, C_T=1, C_E=0.5, U_W=2.5,
-                P_LI=0.3, P_EB=1)
-    tel = Linea("telecom", L_L=100, C_I=0.5, C_T=1, C_E=0.5, U_W=1.5,
-                P_LI=0.5, P_EB=1)
-    zona = Zona("Z2", r_t=1e-5, P_B=1, r_f=1e-2, r_p=1, L_T=1e-2, L_F=0.1, n_z=200)
-    return {"estructura": est, "lineas": [pot, tel], "zonas": [zona], "N_G": 4.0}
+    return casos.cargar_caso("casos/E5_apartamentos.json")
 
 
 EJEMPLOS = [

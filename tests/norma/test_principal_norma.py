@@ -278,9 +278,48 @@ def test_las_dos_soluciones_de_la_norma_estan_entre_las_encontradas(pantalla):
     for publicado in (0.223e-5, 0.141e-5):
         assert any(r == approx(publicado, rel=0.02) for r in riesgos_hallados), publicado
 
+# ---------------------------------------------------------------------------
+# Ejemplos de la norma
+# ---------------------------------------------------------------------------
+
+def test_el_menu_trae_los_cuatro_ejemplos_del_anexo_E(pantalla):
+    menu = pantalla.menu_ejemplos
+    textos = [menu.entrycget(i, "label") for i in range(menu.index("end") + 1)]
+
+    assert len(textos) == 4
+    assert textos[0].startswith("E.2")
+    assert textos[3].startswith("E.5")
+
+
+@pytest.mark.parametrize("archivo, publicado", [
+    ("casa_rural.json", 2.506e-5),
+    ("E3_oficinas.json", 9.65e-5),
+    ("E4_hospital.json", 69.96e-5),
+    ("E5_apartamentos.json", 8.364e-5),
+])
+def test_cada_ejemplo_se_abre_y_da_el_valor_publicado(pantalla, archivo, publicado):
+    # Es el criterio 1 del Hito G y, de paso, la prueba de que los JSON que
+    # reparte el programa son los del Anexo E y no una copia que se quedó atrás.
+    pantalla.abrir_ejemplo(archivo)
+
+    assert pantalla.calcular()[1]["total"] == approx(publicado, rel=0.011)
+
+
+def test_los_ejemplos_no_dependen_de_donde_se_arranco_el_programa(
+        pantalla, tmp_path, monkeypatch):
+    # La carpeta se busca al lado del código: desde cualquier directorio.
+    monkeypatch.chdir(tmp_path)
+
+    assert pantalla.abrir_ejemplo("E5_apartamentos.json") is not None
+    assert len(pantalla.editor.zonas.formularios) == 1
+
+
+def test_un_ejemplo_que_faltara_avisa_en_vez_de_caerse(pantalla, avisos):
+    assert pantalla.abrir_ejemplo("no_existe.json") is None
+    assert avisos
 
 # ---------------------------------------------------------------------------
-# De dónde viene el riesgo (Paso 56)
+# De dónde viene el riesgo
 # ---------------------------------------------------------------------------
 
 def test_el_boton_del_desglose_se_enciende_al_calcular(pantalla):

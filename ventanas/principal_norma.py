@@ -13,6 +13,7 @@ pide casi todo proyecto, y porque obligar a llenar las pérdidas económicas
 para ver el riesgo de vidas humanas no tiene sentido.
 """
 import os
+import pathlib
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
@@ -26,6 +27,17 @@ NOMBRES_RIESGOS = {1: "R1 vidas", 2: "R2 servicio", 3: "R3 patrimonio",
 
 CUANTAS_SOLUCIONES = 15
 
+# Los ejemplos resueltos del Anexo E, los que vienen con el programa. La
+# carpeta se busca al lado del código y no en el directorio desde el que se
+# arrancó: si no, abrir un ejemplo obliga a saber dónde quedó instalado.
+CARPETA_DE_CASOS = pathlib.Path(__file__).resolve().parent.parent / "casos"
+
+EJEMPLOS_DE_LA_NORMA = (
+    ("E.2  Casa rural (1 zona)", "casa_rural.json"),
+    ("E.3  Edificio de oficinas (5 zonas)", "E3_oficinas.json"),
+    ("E.4  Hospital (4 zonas)", "E4_hospital.json"),
+    ("E.5  Edificio de apartamentos (1 zona)", "E5_apartamentos.json"),
+)
 
 class PrincipalNorma(Panel):
     """La pantalla completa: caso arriba, resultados abajo."""
@@ -53,15 +65,37 @@ class PrincipalNorma(Panel):
         self._vigilar_cambios()
 
     def _botones(self, barra):
-        acciones = (("Caso nuevo", self.nuevo),
-                    ("Abrir caso", self.abrir), ("Guardar caso", self.guardar),
-                    ("Calcular", self.calcular), ("Informe", self.informe),
-                    ("Volver", self.volver))
+        """La barra de arriba. El menú de ejemplos va junto a «Abrir caso»."""
         self.botones = {}
-        for columna, (texto, accion) in enumerate(acciones):
-            boton = ttk.Button(barra, text=texto, command=accion)
-            boton.grid(row=0, column=columna, padx=(0, 6))
-            self.botones[texto] = boton
+        columna = 0
+        for texto, accion in (("Caso nuevo", self.nuevo),
+                              ("Abrir caso", self.abrir)):
+            self._boton(barra, texto, accion, columna)
+            columna += 1
+        self._menu_de_ejemplos(barra, columna)
+        columna += 1
+        for texto, accion in (("Guardar caso", self.guardar),
+                              ("Calcular", self.calcular),
+                              ("Informe", self.informe),
+                              ("Volver", self.volver)):
+            self._boton(barra, texto, accion, columna)
+            columna += 1
+
+    def _boton(self, barra, texto, accion, columna):
+        boton = ttk.Button(barra, text=texto, command=accion)
+        boton.grid(row=0, column=columna, padx=(0, 6))
+        self.botones[texto] = boton
+
+    def _menu_de_ejemplos(self, barra, columna):
+        """Los cuatro ejemplos del Anexo E, a un clic y sin buscar carpeta."""
+        self.boton_ejemplos = ttk.Menubutton(barra, text="Ejemplos de la norma")
+        self.menu_ejemplos = tk.Menu(self.boton_ejemplos, tearoff=False)
+        self.boton_ejemplos.configure(menu=self.menu_ejemplos)
+        for texto, archivo in EJEMPLOS_DE_LA_NORMA:
+            self.menu_ejemplos.add_command(
+                label=texto,
+                command=lambda archivo=archivo: self.abrir_ejemplo(archivo))
+        self.boton_ejemplos.grid(row=0, column=columna, padx=(0, 6))
 
     def _casillas_de_riesgo(self, barra):
         ttk.Label(barra, text="    Evaluar:").grid(row=0, column=9)
@@ -112,6 +146,10 @@ class PrincipalNorma(Panel):
         self.ultimo_calculo = None
         self.huella_calculo = None
         return True
+
+    def abrir_ejemplo(self, archivo: str):
+        """Abre uno de los ejemplos que vienen con el programa."""
+        return self.abrir(CARPETA_DE_CASOS / archivo)
 
     def abrir(self, ruta=None):
         ruta = ruta or filedialog.askopenfilename(

@@ -1,0 +1,43 @@
+{
+  "N_G": 4.0,
+  "tipos": [1],
+  "estructura": {"L": 20, "W": 40, "H": 25, "n_t": 200},
+  "lineas": [
+    {"nombre": "potencia", "L_L": 200, "P_LI": 0.3},
+    {"nombre": "telecom", "C_I": 0.5, "U_W": 1.5, "P_LI": 0.5}
+  ],
+  "zonas": [
+    {
+      "nombre": "Z1",
+      "P_TU": 0, "r_t": 0.001, "r_f": 0, "L_T": 0.01, "n_z": 4
+    },
+    {
+      "nombre": "Z2",
+      "P_TA": 0, "P_TU": 0, "r_t": 0.01, "r_f": 0, "L_T": 0.01, "n_z": 2
+    },
+    {
+      "nombre": "Z3",
+      "sistemas_internos": [
+        {"nombre": "pot", "linea": "potencia", "K_S3": 0.2},
+        {"nombre": "tel", "linea": "telecom", "U_W": 1.5}
+      ],
+      "r_t": 1e-05, "r_f": 0.1, "h_z": 2, "L_T": 0.01, "L_F": 0.02, "n_z": 20
+    },
+    {
+      "nombre": "Z4",
+      "sistemas_internos": [
+        {"nombre": "pot", "linea": "potencia", "K_S3": 0.2},
+        {"nombre": "tel", "linea": "telecom", "U_W": 1.5}
+      ],
+      "r_t": 1e-05, "r_f": 0.001, "h_z": 2, "L_T": 0.01, "L_F": 0.02, "n_z": 160
+    },
+    {
+      "nombre": "Z5",
+      "sistemas_internos": [
+        {"nombre": "pot", "linea": "potencia", "K_S3": 0.2},
+        {"nombre": "tel", "linea": "telecom", "U_W": 1.5}
+      ],
+      "r_t": 1e-05, "r_f": 0.001, "h_z": 2, "L_T": 0.01, "L_F": 0.02, "n_z": 14
+    }
+  ]
+}

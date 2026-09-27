@@ -1,0 +1,15 @@
+{
+  "N_G": 4.0,
+  "tipos": [1],
+  "estructura": {"L": 30, "W": 20, "H": 20, "n_t": 200},
+  "lineas": [
+    {"nombre": "potencia", "L_L": 200, "C_I": 0.5, "C_E": 0.5, "P_LI": 0.3},
+    {"nombre": "telecom", "L_L": 100, "C_I": 0.5, "C_E": 0.5, "U_W": 1.5, "P_LI": 0.5}
+  ],
+  "zonas": [
+    {
+      "nombre": "Z2",
+      "r_t": 1e-05, "r_f": 0.01, "L_T": 0.01, "L_F": 0.1, "n_z": 200
+    }
+  ]
+}
