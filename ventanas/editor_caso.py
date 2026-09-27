@@ -41,6 +41,9 @@ class EditorCaso(ttk.Frame):
 
         self.estructura = formularios.FormularioEstructura(self.cuaderno)
         self.cuaderno.add(self.estructura, text="Estructura")
+        # El cuaderno es lo que tiene que crecer con la ventana.
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(1, weight=1)
 
         # Sin zonas no hay riesgo que calcular: por eso el mínimo es 1.
         self.zonas = listas.ListaDeFormularios(
