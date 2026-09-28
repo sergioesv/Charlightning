@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from netCDF4 import Dataset
+from calculate_risk.norma.modelo import Emplazamiento
 
 FACTOR_LIS_A_NG = 0.227
 
@@ -118,3 +119,46 @@ def ficha_desde_lat_lon(lat: float, lon: float, fraccion_nube_tierra: float = FA
         institucion=atributos.get("Institutions", ""), version=atributos.get("Version", ""),
         procesamiento=atributos.get("history", ""),
     )
+
+# ---------------------------------------------------------------------------
+# Paso 58b: el emplazamiento de un caso (coordenadas o declarado)
+# ---------------------------------------------------------------------------
+
+MODOS = ("coordenadas", "declarado")
+
+
+class EmplazamientoInvalido(ValueError):
+    """Al emplazamiento le falta algo: coordenadas, o la fuente de un N_G declarado."""
+
+
+def ficha_de(emplazamiento: Emplazamiento, ruta_nc: str = RUTA_POR_DEFECTO) -> FichaNG:
+    """La ficha del dato para un emplazamiento por coordenadas."""
+    if emplazamiento.modo != "coordenadas":
+        raise EmplazamientoInvalido("Solo un emplazamiento por coordenadas tiene ficha del dato.")
+    if emplazamiento.lat is None or emplazamiento.lon is None:
+        raise EmplazamientoInvalido("Faltan la latitud y la longitud.")
+    return ficha_desde_lat_lon(emplazamiento.lat, emplazamiento.lon,
+                               emplazamiento.fraccion_nube_tierra, ruta_nc)
+
+
+def validar(emplazamiento: Emplazamiento):
+    """Lanza EmplazamientoInvalido si el emplazamiento no se sostiene."""
+    if emplazamiento.modo not in MODOS:
+        raise EmplazamientoInvalido(f"Modo desconocido: {emplazamiento.modo!r}.")
+    if emplazamiento.modo == "declarado" and not emplazamiento.fuente.strip():
+        raise EmplazamientoInvalido(
+            "Un N_G declarado necesita su fuente (red de detección, mapa oficial, norma...).")
+    if emplazamiento.modo == "coordenadas" and (
+            emplazamiento.lat is None or emplazamiento.lon is None):
+        raise EmplazamientoInvalido("Faltan la latitud y la longitud.")
+
+
+def concuerda(emplazamiento: Emplazamiento, N_G: float, ruta_nc: str = RUTA_POR_DEFECTO) -> bool:
+    """¿El N_G guardado es el que dan hoy las coordenadas? Un declarado siempre concuerda.
+
+    Sirve para no calcular con un N_G que ya no corresponde a lo que el informe
+    va a decir de dónde salió (coordenadas editadas a mano en el archivo, por ejemplo).
+    """
+    if emplazamiento.modo != "coordenadas":
+        return True
+    return abs(ficha_de(emplazamiento, ruta_nc).N_G - N_G) <= 1e-6 * max(1.0, abs(N_G))

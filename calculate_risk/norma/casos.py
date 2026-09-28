@@ -20,7 +20,8 @@ Los archivos viejos se siguen leyendo igual.
 import json
 from dataclasses import asdict
 
-from calculate_risk.norma.modelo import Estructura, Linea, SistemaInterno, Zona
+from calculate_risk.norma.modelo import (Emplazamiento, Estructura, Linea,
+                                         SistemaInterno, Zona)
 
 
 def _sistema_interno(datos: dict) -> SistemaInterno:
@@ -32,6 +33,9 @@ def _zona(datos: dict) -> Zona:
     sistemas = datos.pop("sistemas_internos", [])
     return Zona(sistemas_internos=[_sistema_interno(s) for s in sistemas], **datos)
 
+def _emplazamiento(datos):
+    """El emplazamiento del archivo, o None si es un archivo anterior al Paso 58."""
+    return None if datos is None else Emplazamiento(**datos)
 
 def _linea(datos: dict) -> Linea:
     datos = dict(datos)
@@ -53,6 +57,7 @@ def cargar_caso(ruta: str) -> dict:
         "lineas": [_linea(d) for d in datos.get("lineas", [])],
         "zonas": [_zona(d) for d in datos.get("zonas", [])],
         "N_G": datos["N_G"],
+        "emplazamiento": _emplazamiento(datos.get("emplazamiento")),
         "tipos": tuple(datos.get("tipos", [1])),
     }
 
@@ -73,6 +78,7 @@ def cargar_casos(ruta: str) -> dict:
     estructura = Estructura(**datos["estructura"])
     lineas = [_linea(d) for d in datos.get("lineas", [])]
     N_G = datos["N_G"]
+    emplazamiento = _emplazamiento(datos.get("emplazamiento"))
     zonas = datos.get("zonas", [])
 
     tipos = _tipos_guardados(zonas, datos.get("tipos", [1]))
@@ -135,11 +141,14 @@ def guardar_caso(ruta: str, casos: dict) -> str:
 
     datos = {
         "N_G": primero["N_G"],
+        "emplazamiento": emplazamiento,
         "tipos": tipos,
         "estructura": asdict(primero["estructura"]),
         "lineas": [asdict(linea) for linea in primero["lineas"]],
         "zonas": zonas,
     }
+    if primero.get("emplazamiento") is not None:
+        datos["emplazamiento"] = asdict(primero["emplazamiento"])
     with open(ruta, "w", encoding="utf-8") as f:
         json.dump(datos, f, ensure_ascii=False, indent=2)
     return str(ruta)

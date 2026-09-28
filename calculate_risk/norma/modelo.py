@@ -103,3 +103,18 @@ class Caso:
     estructura: Estructura
     zonas: list = field(default_factory=list)    # list[Zona]
     lineas: list = field(default_factory=list)   # list[Linea]
+
+
+@dataclass
+class Emplazamiento:
+    """De dónde sale N_G (Paso 58b). N_G nunca se escribe sin decir de dónde viene.
+
+    modo="coordenadas": N_G sale de lat/lon en la climatología de la NASA, con la
+    fracción nube-tierra indicada. modo="declarado": el diseñador da N_G y la
+    `fuente` es obligatoria (red local, mapa oficial, la propia norma...).
+    """
+    modo: str = "declarado"
+    lat: float = None
+    lon: float = None
+    fraccion_nube_tierra: float = 0.227
+    fuente: str = ""

@@ -1,5 +1,6 @@
 {
   "N_G": 4.0,
+  "emplazamiento": {"modo": "declarado", "fuente": "NTC 4552-2:2023, Anexo E.4 (dato del ejemplo)"},
   "tipos": [1],
   "estructura": {
     "L": 50, "W": 150, "H": 10, "n_t": 1000, "c_t": 90.0,
