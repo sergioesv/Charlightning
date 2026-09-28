@@ -62,8 +62,13 @@ class CampoNumero(_Campo):
             self.poner(valor)
 
     def poner(self, valor):
+        # Una casilla de solo lectura (N_G por coordenadas) también se puede llenar
+        # desde el programa; lo que no puede es escribirla el usuario.
+        estado = str(self.entrada.cget("state"))
+        self.entrada.configure(state="normal")
         self.entrada.delete(0, "end")
         self.entrada.insert(0, str(valor))
+        self.entrada.configure(state=estado)
         self.marcar(False)
 
     def valor(self) -> float:

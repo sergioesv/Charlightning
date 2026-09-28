@@ -61,20 +61,18 @@ def test_la_pantalla_no_escribe_ningun_valor_de_las_tablas():
         "tablas.py por etiquetas.opciones():\n" + "\n".join(culpables))
 
 
-def test_los_unicos_decimales_de_la_pantalla_son_las_coordenadas_de_ejemplo():
-    # Hoy ventanas/ tiene exactamente dos números con decimales, y son la
-    # latitud y la longitud de Medellín que trae puestas el diálogo de N_G.
+def test_la_pantalla_no_tiene_ningun_decimal_escrito():
+    # Hasta el Paso 58 ventanas/ tenía exactamente dos: la latitud y la longitud de
+    # Medellín que traía puestas el diálogo de N_G. Ese diálogo se retiró (el panel
+    # de emplazamiento empieza en blanco) y el factor nube-tierra sale de
+    # modelo.Emplazamiento, no de un número escrito en la pantalla.
     #
     # Esta es la prueba fuerte, más que la de arriba: un valor escrito a mano
     # que HOY coincida con la tabla pasaría la otra y se separaría el día que
-    # la tabla cambie. Si aparece un tercer decimal en la pantalla, hay que
-    # mirar de dónde salió antes de añadirlo aquí.
-    #
-    # El menos de la longitud no entra: en el árbol del código -75.563 es un
-    # menos aplicado a 75,563. Da igual, ningún valor de tabla es negativo.
+    # la tabla cambie. Si aparece un decimal en la pantalla, hay que mirar de
+    # dónde salió antes de aceptarlo.
     decimales = {(str(ruta), valor)
                  for ruta in sorted(CARPETA_PANTALLA.rglob("*.py"))
                  for _, valor in _numeros(ruta, solo_decimales=True)}
 
-    assert decimales == {("ventanas/dialogo_densidad.py", 6.251),
-                         ("ventanas/dialogo_densidad.py", 75.563)}
+    assert decimales == set()

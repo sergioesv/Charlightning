@@ -17,7 +17,7 @@ tipo de riesgo (ver el reparto COMUNES / POR_TIPO de formularios.py).
 from tkinter import ttk
 
 from calculate_risk.norma import casos, riesgos
-from ventanas import campos, dialogo_densidad, formularios, listas
+from ventanas import campos, emplazamiento, formularios, listas
 
 
 class EditorCaso(ttk.Frame):
@@ -27,17 +27,13 @@ class EditorCaso(ttk.Frame):
         super().__init__(padre, padding=6)
         # Quien quiera enterarse de que se tocó un dato se apunta aquí.
         self.al_cambiar = lambda: None
-        
-        cabecera = ttk.Frame(self)
-        cabecera.grid(row=0, column=0, sticky="w", pady=(0, 6))
-        self.N_G = campos.CampoNumero(
-            cabecera, "Densidad de descargas a tierra (N_G)", 0,
-            unidad="rayos/km² año", positivo=True)
-        # El botón que tenía la pantalla vieja: N_G desde lat/lon.
-        self.boton_densidad = ttk.Button(cabecera, text="Calcular con lat/lon",
-                                         command=self.pedir_densidad)
-        self.boton_densidad.grid(row=0, column=3, padx=8)
 
+        # De dónde sale N_G: por coordenadas o declarado con su fuente (Paso 58c).
+        # `al_cambiar` se busca en el momento, porque quien vigila lo reemplaza.
+        self.emplazamiento = emplazamiento.PanelEmplazamiento(
+            self, al_cambiar=lambda: self.al_cambiar())
+        self.emplazamiento.grid(row=0, column=0, sticky="w", pady=(0, 6))
+        self.N_G = self.emplazamiento.N_G      
         self.cuaderno = ttk.Notebook(self)
         self.cuaderno.grid(row=1, column=0, sticky="nsew")
 
@@ -61,18 +57,6 @@ class EditorCaso(ttk.Frame):
 
     # -- lectura -----------------------------------------------------------
 
-    def pedir_densidad(self):
-        """Abre el diálogo de la climatología y deja el N_G que devuelva.
-
-        El diálogo es otra ventana, así que el cambio de N_G no pasa por los
-        eventos del editor: hay que avisar a mano.
-        """
-        self.dialogo = dialogo_densidad.DialogoDensidad(self, self._poner_densidad)
-        return self.dialogo
-
-    def _poner_densidad(self, valor):
-        self.N_G.poner(valor)
-        self.al_cambiar()
 
     def huella(self) -> tuple:
         """Foto cruda de todas las casillas, sin validar y sin calcular nada.
@@ -92,7 +76,7 @@ class EditorCaso(ttk.Frame):
         """
         problemas = []
         partes = {}
-        for nombre, leer in (("N_G", self.N_G.valor),
+        for nombre, leer in (("N_G", self.emplazamiento.resolver),
                              ("estructura", self.estructura.leer),
                              ("lineas", self.lineas.leer),
                              ("zonas", lambda: self.zonas.leer(tipos=tipos))):
@@ -103,12 +87,14 @@ class EditorCaso(ttk.Frame):
         if problemas:
             raise campos.DatoFaltante("\n\n".join(problemas))
 
+        N_G, donde = partes["N_G"]
         return {
             tipo: {
                 "estructura": partes["estructura"],
                 "lineas": partes["lineas"],
                 "zonas": [por_tipo[tipo] for por_tipo in partes["zonas"]],
-                "N_G": partes["N_G"],
+                "N_G": N_G,
+                "emplazamiento": donde,
             }
             for tipo in tipos
         }
@@ -124,7 +110,7 @@ class EditorCaso(ttk.Frame):
         campo que se añada mañana. Las zonas y las líneas ya se rehacen
         solas, porque `poner([])` destruye sus formularios.
         """
-        self.N_G.poner("")
+        self.emplazamiento.limpiar()
         indice = self.cuaderno.index(self.estructura)
         self.estructura.destroy()
         self.estructura = formularios.FormularioEstructura(self.cuaderno)
@@ -142,7 +128,7 @@ class EditorCaso(ttk.Frame):
         los otros tres quedan en blanco y hay que llenarlas antes de pedir
         esos riesgos. El Paso 48 amplía el formato para guardar los cuatro.
         """
-        self.N_G.poner(caso["N_G"])
+        self.emplazamiento.poner(caso["N_G"], caso.get("emplazamiento"))
         self.estructura.poner(caso["estructura"])
         self.lineas.poner(caso["lineas"])
         self.zonas.poner([{tipo: zona} for zona in caso["zonas"]])
@@ -150,7 +136,7 @@ class EditorCaso(ttk.Frame):
     def poner(self, casos: dict):
         """Abre lo que devuelve casos_por_tipo()."""
         alguno = casos[sorted(casos)[0]]
-        self.N_G.poner(alguno["N_G"])
+        self.emplazamiento.poner(alguno["N_G"], alguno.get("emplazamiento"))
         self.estructura.poner(alguno["estructura"])
         self.lineas.poner(alguno["lineas"])
         self.zonas.poner([
@@ -197,7 +183,7 @@ def _contenido(widget):
         return widget.current()
     if isinstance(widget, ttk.Entry):
         return widget.get()
-    if isinstance(widget, ttk.Checkbutton):
+    if isinstance(widget, (ttk.Checkbutton, ttk.Radiobutton)):
         variable = str(widget.cget("variable"))
         return widget.getvar(variable) if variable else None
     return None
