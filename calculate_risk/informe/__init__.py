@@ -1,0 +1,1 @@
+"""Paso 59 en adelante: el informe sin LaTeX (documento.py -> pdf.py)."""
