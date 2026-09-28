@@ -88,6 +88,7 @@ def cargar_casos(ruta: str) -> dict:
             "lineas": lineas,
             "zonas": [_zona_de_tipo(z, tipo) for z in zonas],
             "N_G": N_G,
+            "emplazamiento": emplazamiento,
         }
         for tipo in tipos
     }
@@ -141,7 +142,6 @@ def guardar_caso(ruta: str, casos: dict) -> str:
 
     datos = {
         "N_G": primero["N_G"],
-        "emplazamiento": emplazamiento,
         "tipos": tipos,
         "estructura": asdict(primero["estructura"]),
         "lineas": [asdict(linea) for linea in primero["lineas"]],
