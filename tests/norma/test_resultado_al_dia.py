@@ -29,7 +29,6 @@ def _hay_pantalla() -> bool:
 pytestmark = pytest.mark.skipif(not _hay_pantalla(),
                                 reason="no hay pantalla gráfica (ni Xvfb)")
 
-from calculate_risk.norma import memoria                            # noqa: E402
 from ventanas import principal_norma, resultados                    # noqa: E402
 
 RUTA_CASA_RURAL = "casos/casa_rural.json"
@@ -133,17 +132,22 @@ def test_sin_haber_calculado_no_hay_nada_que_invalidar(raiz, avisos):
 # ---------------------------------------------------------------------------
 
 def test_el_informe_no_mezcla_entradas_nuevas_con_riesgos_viejos(pantalla, tmp_path,
-                                                                 avisos):
+                                                                 avisos, monkeypatch):
     viejo = pantalla.ultimo_calculo[1]["total"]
     # Diez veces más rayos: todas las frecuencias son proporcionales a N_G,
     # así que el riesgo tiene que salir diez veces mayor.
     pantalla.editor.N_G.poner(float(pantalla.editor.N_G.entrada.get()) * 10)
-    ruta = tmp_path / "memoria.tex"
+    recibido = {}
 
-    pantalla.informe(ruta)
+    def falso(carpeta, casos, por_tipo, **nombrados):
+        recibido.update(casos=casos, por_tipo=por_tipo)
+        return principal_norma.generar.Informe(ruta="informe.pdf", paginas=7)
+    monkeypatch.setattr(principal_norma.generar, "generar_informe", falso)
+
+    pantalla.informe(tmp_path / "informe.pdf")
 
     nuevo = pantalla.ultimo_calculo[1]["total"]
     assert nuevo == approx(viejo * 10, rel=1e-9)
-    contenido = open(ruta, encoding="utf-8").read()
-    assert memoria.numero(nuevo) in contenido
-    assert memoria.numero(viejo) not in contenido
+    # el informe recibe el riesgo NUEVO y las entradas nuevas, no el cálculo viejo
+    assert recibido["por_tipo"][1]["total"] == nuevo
+    assert recibido["casos"][1]["N_G"] == approx(float(pantalla.editor.N_G.entrada.get()))

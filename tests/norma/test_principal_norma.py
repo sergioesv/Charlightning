@@ -167,7 +167,7 @@ def test_despues_de_caso_nuevo_el_informe_no_escribe_nada(pantalla, tmp_path,
                                                           avisos):
     pantalla.calcular()
     pantalla.nuevo(confirmado=True)
-    ruta = tmp_path / "memoria.tex"
+    ruta = tmp_path / "informe.pdf"
 
     assert pantalla.informe(ruta) is None
     assert not ruta.exists()
@@ -221,35 +221,64 @@ def test_cancelar_el_dialogo_no_hace_nada(pantalla, monkeypatch):
 # Informe
 # ---------------------------------------------------------------------------
 
-def test_el_informe_escribe_la_memoria(pantalla, tmp_path, avisos):
+def _informe_de_mentira(monkeypatch, recibido, falla=None):
+    """generar_informe sin generar nada: anota con qué lo llamaron. Así las pruebas
+    de la pantalla no tardan lo que tarda buscar medidas."""
+    def falso(carpeta, casos, por_tipo, **nombrados):
+        recibido.update(carpeta=carpeta, casos=casos, por_tipo=por_tipo, **nombrados)
+        recibido["aviso_abierto"] = _ventanita_de(nombrados["avance"]).winfo_exists()
+        nombrados["avance"]("Componiendo el PDF…")
+        if falla:
+            raise falla
+        return principal_norma.generar.Informe(
+            ruta=f"{carpeta}/{nombrados['nombre']}.pdf", paginas=7)
+    monkeypatch.setattr(principal_norma.generar, "generar_informe", falso)
+
+
+def _ventanita_de(metodo):
+    """La ventanita a la que pertenece el método avance (AvisoDeTrabajo.decir)."""
+    return metodo.__self__
+
+
+def test_el_informe_entrega_el_pdf(pantalla, tmp_path, avisos):
+    # Bug 5 del 28-sep: sin LaTeX en el PC, el botón dejaba un .tex y nada más.
     pantalla.calcular()
-    ruta = tmp_path / "memoria.tex"
+    ruta = tmp_path / "informe.pdf"
 
-    pantalla.informe(ruta)
+    assert pantalla.informe(ruta) == str(ruta)
 
-    contenido = open(ruta, encoding="utf-8").read()
-    assert contenido.startswith("\\documentclass")
-    assert "Z2\\_interior" in contenido
-    assert avisos            # dice dónde quedó
+    assert ruta.read_bytes()[:4] == b"%PDF"
+    assert [p.name for p in tmp_path.iterdir()] == ["informe.pdf"]
+    assert "Informe generado" in avisos[-1] and str(ruta) in avisos[-1]
 
-def test_el_informe_deja_las_figuras_y_el_csv_junto_al_tex(pantalla, tmp_path, avisos):
-    # Paso 51c: el informe de la pantalla nueva ya no es solo el .tex. Los PNG
-    # tienen que quedar en la MISMA carpeta o LaTeX no los encuentra al compilar.
-    pantalla.calcular()
 
-    pantalla.informe(tmp_path / "memoria.tex")
+def test_mientras_trabaja_hay_un_aviso_y_despues_se_cierra(pantalla, tmp_path,
+                                                          avisos, monkeypatch):
+    recibido = {}
+    _informe_de_mentira(monkeypatch, recibido)
 
-    assert (tmp_path / "memoria_sensibilidad.png").exists()
-    assert (tmp_path / "memoria_medidas.csv").exists()
-    assert "memoria_sensibilidad.png" in open(tmp_path / "memoria.tex",
-                                              encoding="utf-8").read()
+    pantalla.informe(tmp_path / "informe.pdf")
+
+    assert recibido["aviso_abierto"]
+    assert pantalla.aviso_de_trabajo.winfo_exists() == 0
+    assert recibido["nombre"] == "informe"
+
+
+def test_si_el_pdf_no_se_puede_escribir_lo_dice(pantalla, tmp_path, avisos, monkeypatch):
+    # En Windows pasa cuando el PDF anterior sigue abierto en el lector.
+    _informe_de_mentira(monkeypatch, {}, falla=PermissionError("Permiso denegado"))
+
+    assert pantalla.informe(tmp_path / "informe.pdf") is None
+
+    assert "No se pudo escribir el PDF" in avisos[-1]
+    assert pantalla.aviso_de_trabajo.winfo_exists() == 0
 
 
 def test_el_informe_calcula_el_solo(pantalla, tmp_path):
     # Sin haber pulsado Calcular, el Informe tiene que calcular por su cuenta.
     # Desde el Paso 53 recalcula SIEMPRE antes de escribir, para no sacar un
     # documento con las entradas nuevas y los riesgos viejos.
-    ruta = tmp_path / "memoria.tex"
+    ruta = tmp_path / "informe.pdf"
 
     pantalla.informe(ruta)
 
@@ -259,7 +288,7 @@ def test_el_informe_calcula_el_solo(pantalla, tmp_path):
 
 def test_sin_datos_no_hay_informe(raiz, tmp_path, avisos):
     vacia = principal_norma.PrincipalNorma(raiz)
-    ruta = tmp_path / "memoria.tex"
+    ruta = tmp_path / "informe.pdf"
 
     assert vacia.informe(ruta) is None
     assert not ruta.exists()
@@ -363,14 +392,14 @@ def test_el_desglose_no_trabaja_con_un_riesgo_viejo(pantalla):
 # Los datos del proyecto llegan al informe
 # ---------------------------------------------------------------------------
 
-def test_los_datos_del_proyecto_van_al_informe(pantalla, tmp_path, avisos):
+def test_los_datos_del_proyecto_van_al_informe(pantalla, tmp_path, avisos, monkeypatch):
     principal_norma.papo["proyecto"] = "Casa rural del Anexo E.2"
     principal_norma.papo["descripcion"] = "Prueba de la descripción"
+    recibido = {}
+    _informe_de_mentira(monkeypatch, recibido)
     pantalla.calcular()
-    ruta = tmp_path / "m.tex"
 
-    pantalla.informe(ruta)
+    pantalla.informe(tmp_path / "m.pdf")
 
-    contenido = open(ruta, encoding="utf-8").read()
-    assert "Casa rural del Anexo E.2" in contenido
-    assert "Prueba de la descripción" in contenido
+    assert recibido["proyecto"]["Proyecto"] == "Casa rural del Anexo E.2"
+    assert recibido["proyecto"]["Descripción"] == "Prueba de la descripción"

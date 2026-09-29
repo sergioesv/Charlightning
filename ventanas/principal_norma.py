@@ -18,6 +18,7 @@ para ver el riesgo de vidas humanas no tiene sentido.
 import os
 import pathlib
 import tkinter as tk
+from datetime import date
 from tkinter import filedialog, messagebox, ttk
 
 from calculate_risk.norma import medidas, memoria
@@ -180,42 +181,49 @@ class PrincipalNorma(Panel):
             return None
 
     def informe(self, ruta=None):
-        """Escribe la memoria completa: .tex, PDF, figuras y CSV de medidas.
+        """Genera el informe en PDF, sin LaTeX (Fase 7).
 
-        Las figuras y el CSV quedan en la misma carpeta que el .tex, que es
-        lo que LaTeX necesita para encontrar los PNG al compilar.
+        Mientras trabaja muestra una ventanita que dice en qué va: buscar las
+        medidas tarda unos segundos por cada riesgo que no cumple y, sin
+        aviso, parece que el programa se colgó (bug 5 del 28-sep).
         """
-        # Recalcular ANTES de escribir no es un lujo: la memoria se arma con
+        # Recalcular ANTES de escribir no es un lujo: el informe se arma con
         # las entradas frescas del formulario, así que usar un resultado
         # viejo sacaría un documento con las tablas de entrada nuevas y los
         # riesgos antiguos. El entregable es material del artículo.
         if self.al_dia() is None:
             return None
         ruta = ruta or filedialog.asksaveasfilename(
-            title="Guardar la memoria", defaultextension=".tex",
-            initialfile="Memoria de calculo.tex",
-            filetypes=[("LaTeX", "*.tex")])
+            title="Guardar el informe", defaultextension=".pdf",
+            initialfile="Memoria de calculo.pdf",
+            filetypes=[("PDF", "*.pdf")])
         if not ruta:
             return None
 
-        tipos = self.tipos()
         carpeta, archivo = os.path.split(str(ruta))
         nombre = os.path.splitext(archivo)[0] or "Memoria de calculo"
-        ruta_tex, ruta_pdf = memoria.informe_completo_caso(
-            carpeta or ".", self.editor.casos_por_tipo(tipos),
-            self.ultimo_calculo, proyecto=self._datos_proyecto(),
-            nombre=nombre, tipo=tipos[0])
+        self.aviso_de_trabajo = AvisoDeTrabajo(self, "Generando el informe…")
+        try:
+            hecho = generar.generar_informe(
+                carpeta or ".", self.editor.casos_por_tipo(self.tipos()),
+                self.ultimo_calculo, proyecto=self._datos_proyecto(), nombre=nombre,
+                fecha=date.today(), avance=self.aviso_de_trabajo.decir)
+        except OSError as error:
+            # Casi siempre: el PDF anterior está abierto en el lector y Windows no
+            # deja escribir encima. Sin esto el error moría en la consola.
+            messagebox.showinfo(
+                title="No se pudo generar el informe",
+                message=(f"No se pudo escribir el PDF:\n{error}\n\n"
+                         "Si está abierto en otro programa, ciérralo y vuelve a intentar."))
+            return None
+        finally:
+            self.aviso_de_trabajo.cerrar()
 
-        if ruta_pdf:
-            messagebox.showinfo(title="Memoria de cálculo",
-                                message=f"Memoria generada:\n{ruta_pdf}")
-            return ruta_pdf
-        messagebox.showinfo(
-            title="Memoria de cálculo",
-            message=(f"Se escribió el LaTeX:\n{ruta_tex}\n\n"
-                     "Para obtener el PDF hace falta tener LaTeX instalado."))
-        return ruta_tex
-
+        mensaje = f"Informe generado ({hecho.paginas} páginas):\n{hecho.ruta}"
+        if hecho.avisos:
+            mensaje += "\n\nOjo:\n- " + "\n- ".join(hecho.avisos)
+        messagebox.showinfo(title="Informe", message=mensaje)
+        return hecho.ruta
 
     def de_donde_viene(self):
         """Abre el desglose del riesgo elegido en el panel (Paso 56).
@@ -293,3 +301,41 @@ class PrincipalNorma(Panel):
                 "Teléfono": papo.get("telefono", ""),
                 "Descripción": papo.get("descripcion", "")}
 
+
+class AvisoDeTrabajo(tk.Toplevel):
+    """Una ventanita que dice qué está haciendo el programa mientras trabaja.
+
+    El trabajo corre en el mismo hilo que la pantalla, así que cada vez que se
+    dice algo se fuerza el dibujo (update): si no, la ventana sale en blanco
+    hasta que todo termina.
+    """
+
+    def __init__(self, padre, titulo: str):
+        super().__init__(padre, borderwidth=1, relief="solid")
+        self.title(titulo)
+        self.transient(padre.winfo_toplevel())
+        self.resizable(False, False)
+        ttk.Label(self, text=titulo, font=("TkDefaultFont", 11, "bold"),
+                  padding=(16, 12, 16, 4)).pack(anchor="w")
+        self.etapa = ttk.Label(self, text="", width=48, padding=(16, 0, 16, 14))
+        self.etapa.pack(anchor="w")
+        self.configure(cursor="watch")
+        # Centrada sobre la ventana principal, no en la esquina de la pantalla.
+        self.update_idletasks()
+        arriba = padre.winfo_toplevel()
+        x = arriba.winfo_rootx() + (arriba.winfo_width() - self.winfo_reqwidth()) // 2
+        y = arriba.winfo_rooty() + (arriba.winfo_height() - self.winfo_reqheight()) // 3
+        self.geometry(f"+{max(x, 0)}+{max(y, 0)}")
+        self.update()
+        try:
+            self.grab_set()        # que no se pueda pulsar Informe otra vez mientras tanto
+        except tk.TclError:
+            pass
+
+    def decir(self, texto: str):
+        self.etapa.configure(text=texto)
+        self.update()
+
+    def cerrar(self):
+        if self.winfo_exists():
+            self.destroy()
