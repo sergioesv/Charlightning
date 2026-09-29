@@ -1,5 +1,4 @@
 import tkinter as tk
-from variables.globales import papo
 
 class Panel(tk.Frame):
     """Clase genérica para mostrar un Frame con un cierto título y
