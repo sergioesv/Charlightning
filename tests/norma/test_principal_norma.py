@@ -373,17 +373,7 @@ def test_sin_elegir_nada_el_desglose_va_al_que_no_cumple(pantalla):
     pantalla.marcas[4].set(True)      # R4 de la casa rural cumple; R1 no
     _cargar_perdidas_r4(pantalla)
     pantalla.calcular()
-    pantalla.resultados.arbol.selection_set("R3")
-
-    pantalla.de_donde_viene()
-
-    assert pantalla.ventana_desglose.tipo == 3
-
-
-def test_sin_elegir_nada_el_desglose_va_al_que_no_cumple(pantalla):
-    pantalla.marcas[3].set(True)      # R3 de la casa rural cumple; R1 no
-    pantalla.calcular()
-
+  
     aportes = pantalla.de_donde_viene()
 
     assert pantalla.ventana_desglose.tipo == 1

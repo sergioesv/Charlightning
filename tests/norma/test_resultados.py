@@ -136,8 +136,6 @@ def test_los_cuatro_riesgos_caben_en_la_tabla(panel, editor):
         formulario.pestanas[2].campos["L_F"].poner_llave("gas_agua_electricidad")
         formulario.pestanas[3].banderas["L_F"][0].poner(True)
         formulario.pestanas[4].campos["L_F"].poner_llave("otros")
-    for formulario in editor.zonas.formularios:
-        formulario.pestanas[4].campos["L_F"].poner_llave("otros")
 
     panel.mostrar(editor.evaluar())
 
@@ -159,8 +157,8 @@ def test_si_no_cumple_se_habilita_el_boton_de_medidas(panel, editor):
 
 
 def test_si_cumple_no_hace_falta_buscar_medidas(panel, editor):
-    # R3 de la casa rural es 0: no hay patrimonio cultural que perder.
-    panel.mostrar(editor.evaluar(tipos=(3,)))
+    editor.N_G.poner(0.01)               # con tan pocos rayos, R1 cumple
+    panel.mostrar(editor.evaluar(tipos=(1,)))
 
     assert "por debajo del tolerable" in panel.aviso.cget("text")
     assert str(panel.boton_medidas.cget("state")) == "disabled"

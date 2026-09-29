@@ -264,7 +264,3 @@ def evaluar(estructura, lineas, zonas, N_G: float, tipos=(1,)) -> dict:
             "zonas": por_zona,
         }
     return resultados
-
-SIN_PERDIDAS = ("R{tipo} no tiene pérdidas cargadas en ninguna zona ({zonas}): daría 0 y "
-                "«Cumple» sin haber evaluado nada. Carga las pérdidas en la pestaña "
-                "«{pestana}» de cada zona, o desmarca R{tipo} arriba.")

@@ -153,10 +153,18 @@ class EditorCaso(ttk.Frame):
         lo son. Por eso el bucle.
         """
         resultados = {}
+        vacios = []
         for tipo, caso in self.casos_por_tipo(tipos).items():
+            if riesgos.sin_perdidas(caso["zonas"], tipo):
+                vacios.append(SIN_PERDIDAS.format(
+                    tipo=tipo, pestana=formularios.FormularioZona.TITULOS[tipo],
+                    zonas=", ".join(z.nombre for z in caso["zonas"]) or "no hay zonas"))
+                continue
             resultados[tipo] = riesgos.evaluar(
                 caso["estructura"], caso["lineas"], caso["zonas"],
                 caso["N_G"], tipos=(tipo,))[tipo]
+        if vacios:
+            raise campos.DatoFaltante("\n\n".join(vacios))
         return resultados
         
     # -- archivo -----------------------------------------------------------
@@ -169,6 +177,9 @@ class EditorCaso(ttk.Frame):
         """Abre un archivo JSON, del formato que sea."""
         self.poner(casos.cargar_casos(ruta))
 
+SIN_PERDIDAS = ("R{tipo} no tiene pérdidas cargadas en ninguna zona ({zonas}): daría 0 y "
+                "«Cumple» sin haber evaluado nada. Carga las pérdidas en la pestaña "
+                "«{pestana}» de cada zona, o desmarca R{tipo} arriba.")
 
 def _descendientes(widget):
     """El widget y todo lo que cuelga de él, en orden."""
