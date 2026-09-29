@@ -291,6 +291,7 @@ def _emplazamiento(emplazamiento, N_G, ficha):
     return bloques
 
 def _fila_de_tabla(tabla, valor, preferir="") -> str:
+    
     """El texto de la fila de la tabla que da ese valor.
 
     Si varias filas dan el mismo valor, se prefieren las que contienen `preferir` (en la
@@ -367,77 +368,6 @@ def _medidas_adoptadas(zonas, lineas):
 
 def _si_no(valor) -> str:
     return "Sí" if valor else "No"
-
-def _fila_de_tabla(tabla, valor, preferir="") -> str:
-    """El texto de la fila de la tabla que da ese valor.
-
-    Si varias filas dan el mismo valor, se prefieren las que contienen `preferir` (en la
-    Tabla B.4, «aerea» o «subterranea» según la línea) y, si siguen siendo varias, se
-    nombran todas con «o»: la norma no las distingue. Si ninguna fila da ese valor (un
-    P_TA que es producto de dos previsiones, un P_DPS mejor que NPR I), se escribe «valor
-    declarado»."""
-    llaves = [llave for llave, v in getattr(tablas, tabla).items() if v == valor]
-    elegidas = [llave for llave in llaves if preferir and preferir in llave] or llaves
-    if not elegidas:
-        return "Valor declarado"
-    return escapar(" o ".join(etiquetas.texto(tabla, llave) for llave in elegidas))
-
-
-def _ninguna(tabla):
-    """El valor de la primera fila de la tabla: la que dice «sin medidas»."""
-    return next(iter(getattr(tablas, tabla).values()))
-
-
-def _medidas_adoptadas(zonas, lineas):
-    """Las medidas de protección que el caso YA tiene: el informe dice con qué se calculó.
-
-    Solo salen las que difieren de la fila «sin medidas» de su tabla; lo que no aparece
-    vale 1 (o el par 1 y 1 de la Tabla B.4)."""
-    filas = [["Dónde", "Medida (tabla de la norma)", "Lo adoptado", "Factor"]]
-
-    def fila(donde, tabla, valor, factor, preferir=""):
-        numero, titulo = etiquetas.NOMBRES[tabla]
-        filas.append([escapar(donde), f"{escapar(titulo)} ({numero})",
-                      _fila_de_tabla(tabla, valor, preferir), factor])
-
-    for z in zonas:
-        for tabla, campo in (("PB", "P_B"), ("PTA", "P_TA"), ("PTU", "P_TU"), ("RP", "r_p")):
-            valor = getattr(z, campo)
-            if valor != _ninguna(tabla):
-                fila(z.nombre, tabla, valor, f"{_simbolo(campo)} = {corriente(valor)}")
-        for campo in ("K_S1", "K_S2"):
-            k = getattr(z, campo)
-            if k != 1:
-                filas.append([escapar(z.nombre), "Blindaje espacial en malla (ec. B.5 y B.6)",
-                              f"Malla de {plano(probabilidades.w_m_desde_k_s(k), 2)} m",
-                              f"{_simbolo(campo)} = {corriente(k)}"])
-        for si in z.sistemas_internos:
-            donde = f"{z.nombre}, {si.nombre}"
-            if si.P_DPS != _ninguna("PDPS"):
-                fila(donde, "PDPS", si.P_DPS, f"P<sub>DPS</sub> = {corriente(si.P_DPS)}")
-            if si.K_S3 != _ninguna("KS3"):
-                fila(donde, "KS3", si.K_S3, f"K<sub>S3</sub> = {corriente(si.K_S3)}")
-
-    for ln in lineas:
-        if ln.P_EB != _ninguna("PEB"):
-            fila(ln.nombre, "PEB", ln.P_EB, f"P<sub>EB</sub> = {corriente(ln.P_EB)}")
-        par = {"CLD": ln.C_LD, "CLI": ln.C_LI}
-        if par != _ninguna("CLD_CLI"):
-            tipo_de_linea = "aerea" if ln.C_I == tablas.CI["aerea"] else "subterranea"
-            fila(ln.nombre, "CLD_CLI", par,
-                 f"C<sub>LD</sub> = {corriente(ln.C_LD)}<br/>C<sub>LI</sub> = {corriente(ln.C_LI)}",
-                 preferir=tipo_de_linea)
-
-    bloques = [d.Titulo("Medidas de protección adoptadas", 2)]
-    if len(filas) == 1:
-        return bloques + [d.Parrafo(
-            "El caso no tiene ninguna medida de protección: todos los factores de las "
-            "Tablas B.1 a B.7 y C.4 están en su fila «sin medidas».")]
-    return bloques + [
-        d.Tabla(filas, anchos=(30, 52, 60, 24), derecha=(3,)),
-        d.Parrafo("Lo que no aparece en la tabla no tiene medida de protección: su factor "
-                  "es el de la fila «sin medidas» de la tabla correspondiente.", "nota"),
-    ]
 
 
 def _datos(caso, figura_area):
