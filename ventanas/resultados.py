@@ -75,6 +75,10 @@ class PanelResultados(ttk.LabelFrame):
         self.boton_desglose = ttk.Button(pie, text="¿De dónde viene el riesgo?",
                                          state="disabled")
         self.boton_desglose.grid(row=0, column=1)
+        # Lo que la norma dice que no es efectivo en este caso (p. ej. P_TA sin SPCR).
+        self.nota = ttk.Label(self, text="", wraplength=720, justify="left",
+                              foreground=NARANJA)
+        self.nota.grid(row=2, column=0, sticky="w", pady=(6, 0))
         self.obsoleto = False
 
     # -- contenido ---------------------------------------------------------
@@ -83,6 +87,7 @@ class PanelResultados(ttk.LabelFrame):
         for fila in self.arbol.get_children():
             self.arbol.delete(fila)
         self.aviso.configure(text="")
+        self.nota.configure(text="", foreground=NARANJA)
         self.boton_desglose.configure(state="disabled")
         self._colorear(AZUL, NARANJA)
         self.obsoleto = False
@@ -106,6 +111,7 @@ class PanelResultados(ttk.LabelFrame):
         self.aviso.configure(
             text="Los datos cambiaron: hay que volver a calcular.",
             foreground=GRIS)
+        self.nota.configure(foreground=GRIS)
         self.boton_desglose.configure(state="disabled")
         return True
 
@@ -144,6 +150,11 @@ class PanelResultados(ttk.LabelFrame):
             self.aviso.configure(
                 text="Los riesgos evaluados están por debajo del tolerable.",
                 foreground=AZUL)
+
+    def advertir(self, avisos):
+        """Las advertencias de la norma para este caso, debajo del veredicto."""
+        self.nota.configure(text="\n".join(f"Ojo: {a}" for a in avisos),
+                            foreground=NARANJA)
 
     def riesgo_elegido(self):
         """El tipo de riesgo seleccionado en el árbol, o None.

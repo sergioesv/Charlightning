@@ -154,7 +154,8 @@ class EditorCaso(ttk.Frame):
         """
         resultados = {}
         vacios = []
-        for tipo, caso in self.casos_por_tipo(tipos).items():
+        casos_ = self.casos_por_tipo(tipos)
+        for tipo, caso in casos_.items():
             if riesgos.sin_perdidas(caso["zonas"], tipo):
                 vacios.append(SIN_PERDIDAS.format(
                     tipo=tipo, pestana=formularios.FormularioZona.TITULOS[tipo],
@@ -165,6 +166,8 @@ class EditorCaso(ttk.Frame):
                 caso["N_G"], tipos=(tipo,))[tipo]
         if vacios:
             raise campos.DatoFaltante("\n\n".join(vacios))
+        # Lo común de las zonas (P_B, P_TA, sistemas internos) es igual en los cuatro riesgos.
+        self.avisos = riesgos.avisos_sin_spcr(next(iter(casos_.values()))["zonas"])
         return resultados
         
     # -- archivo -----------------------------------------------------------

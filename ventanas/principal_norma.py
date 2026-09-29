@@ -129,6 +129,7 @@ class PrincipalNorma(Panel):
             return None
         self.huella_calculo = self.huella()
         self.resultados.mostrar(self.ultimo_calculo)
+        self.resultados.advertir(self.editor.avisos)
         return self.ultimo_calculo
 
     def nuevo(self, confirmado=None):

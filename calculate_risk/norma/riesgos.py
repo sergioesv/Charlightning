@@ -113,6 +113,28 @@ def sin_perdidas(zonas, tipo: int) -> bool:
     return not any(getattr(zona, nombre)
                    for zona in zonas for nombre in PERDIDAS_TIPICAS[tipo])
 
+# Nota 1 del numeral B.2 y Nota 1 de la Tabla B.3: las medidas contra tensiones de paso
+# y contacto (P_TA) y el sistema de DPS coordinado (en P_C) solo son efectivas si la
+# estructura tiene SPCR. Decisión de Sergio (29-sep): el cálculo NO las anula; se avisa.
+# P_TA = 0 no se avisa: es la armadura usada como bajante (ya es un SPCR natural) o una
+# restricción física, como la cerca que el ejemplo E.3 usa sin SPCR.
+def avisos_sin_spcr(zonas) -> list:
+    """Las medidas del caso que, según la norma, no son efectivas sin SPCR."""
+    avisos = []
+    for z in zonas:
+        if z.P_B != tablas.PB["sin_spcr"]:
+            continue
+        if 0 < z.P_TA < tablas.PTA["sin_medidas"]:
+            avisos.append(
+                f"Zona {z.nombre}: las medidas contra tensiones de paso y contacto (P_TA) solo "
+                "son efectivas si la estructura tiene SPCR (Nota 1 del numeral B.2), y esta no "
+                "tiene. El cálculo las toma igual.")
+        if any(si.P_DPS < tablas.PDPS["sin_dps_coordinado"] for si in z.sistemas_internos):
+            avisos.append(
+                f"Zona {z.nombre}: el sistema de DPS coordinado solo reduce P_C si la estructura "
+                "tiene SPCR (Nota 1 de la Tabla B.3), y esta no tiene. El cálculo lo toma igual.")
+    return avisos
+
 def _perdidas_zona(zona, tipo: int, n_t: float, c_t: float) -> tuple:
     """L_A, L_B, L_C de la zona según el tipo de pérdida (1-4)."""
     if tipo == 1:

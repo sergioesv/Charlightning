@@ -356,11 +356,14 @@ def _medidas_adoptadas(zonas, lineas):
         return bloques + [d.Parrafo(
             "El caso no tiene ninguna medida de protección: todos los factores de las "
             "Tablas B.1 a B.7 y C.4 están en su fila «sin medidas».")]
-    return bloques + [
+    bloques += [
         d.Tabla(filas, anchos=(30, 52, 60, 24), derecha=(3,)),
         d.Parrafo("Lo que no aparece en la tabla no tiene medida de protección: su factor "
                   "es el de la fila «sin medidas» de la tabla correspondiente.", "nota"),
     ]
+    for aviso in riesgos.avisos_sin_spcr(zonas):
+        bloques.append(d.Parrafo(f"<b>Advertencia de la norma.</b> {escapar(aviso)}"))
+    return bloques
 
 # ---------------------------------------------------------------------------
 # 4. Datos de la estructura, las zonas y las líneas

@@ -538,3 +538,10 @@ def test_un_dps_mejor_que_npr_I_sale_con_su_fila(caso):
     assert any(f[2] == "DPS 2 veces mejor que NPR I (Nota 2)" for f in tabla.filas[1:])
 
 
+def test_una_medida_que_sin_spcr_no_es_efectiva_se_advierte(caso):
+    from dataclasses import replace
+
+    zonas = [replace(z, P_TA=0.1) for z in caso["zonas"]]
+    texto = _texto(_armar(dict(caso, zonas=zonas)))
+    assert "<b>Advertencia de la norma.</b>" in texto
+    assert "Nota 1 del numeral B.2" in texto

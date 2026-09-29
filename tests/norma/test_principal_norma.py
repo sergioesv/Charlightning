@@ -126,6 +126,21 @@ def test_con_las_perdidas_cargadas_el_riesgo_si_se_calcula(pantalla):
 
     assert resultado[4]["total"] > 0
 
+def test_una_medida_que_sin_spcr_no_es_efectiva_se_advierte(pantalla):
+    # Revisión IEC (Nota 1 del numeral B.2): P_TA < 1 sin SPCR no es efectivo.
+    formulario = pantalla.editor.zonas.formularios[0]
+    formulario.comun.campos["P_TA"].poner_llave("avisos_de_peligro")
+
+    pantalla.calcular()
+
+    assert "Nota 1 del numeral B.2" in pantalla.resultados.nota.cget("text")
+
+
+def test_sin_nada_que_advertir_la_nota_queda_vacia(pantalla):
+    pantalla.calcular()
+
+    assert pantalla.resultados.nota.cget("text") == ""
+
 def test_volver_a_calcular_no_acumula(pantalla):
     pantalla.calcular()
     antes = len(pantalla.resultados.filas())
