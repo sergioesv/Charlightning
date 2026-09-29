@@ -32,11 +32,17 @@ SIN_LIBRERIA = ("Para calcular N_G desde la latitud y la longitud hace falta "
 CELDA_EN_CERO = ("La celda de la NASA más cercana no registra descargas. Un cero puede ser "
                  "real o falta de dato (mar, desierto), y el programa no calcula un riesgo "
                  "cero en silencio: declara N_G con su fuente.")
-
+AL_REVES = ("¿Pusiste latitud y longitud al revés? La latitud {lat} queda fuera de la "
+            "cobertura del sensor (±{limite}°), pero {lon} sí cabría como latitud. "
+            "Corrige las casillas; si el sitio de verdad está fuera de la cobertura, "
+            "marca «Declarado, con su fuente» y escribe N_G.")
 
 def _coma(numero: float, decimales: int) -> str:
     return f"{numero:.{decimales}f}".replace(".", ",")
 
+def _sin_ceros(numero: float) -> str:
+    """El número como lo escribió la persona, con coma: -76,6161 y no -76,616100."""
+    return f"{numero:g}".replace(".", ",")
 
 def _para_la_casilla(n_g: float) -> str:
     """N_G con cuatro cifras significativas, para no enseñar 2,6429927434921265."""
@@ -75,9 +81,9 @@ class PanelEmplazamiento(ttk.LabelFrame):
         por_defecto = Emplazamiento()
         self.marco_coordenadas = ttk.Frame(self)
         self.lat = campos.CampoNumero(self.marco_coordenadas, "Latitud", 0,
-                                      unidad="°", minimo=-90, maximo=90)
+                                      unidad="°", minimo=-90, maximo=90, ancho=20)
         self.lon = campos.CampoNumero(self.marco_coordenadas, "Longitud", 1,
-                                      unidad="°", minimo=-180, maximo=180)
+                                      unidad="°", minimo=-180, maximo=180, ancho=20)
         self.fraccion = campos.CampoNumero(
             self.marco_coordenadas, "Fracción nube-tierra", 2,
             valor=por_defecto.fraccion_nube_tierra, positivo=True, maximo=1)
@@ -140,6 +146,16 @@ class PanelEmplazamiento(ttk.LabelFrame):
             from calculate_risk.norma import densidad
         except ImportError:
             return None, SIN_LIBRERIA
+        limite = densidad.LIMITE_DE_LATITUD
+        if abs(valores["lat"]) > limite and abs(valores["lon"]) <= limite:
+            # Casi seguro un error de tipeo: NO se pasa a declarado, porque eso
+            # esconde las casillas y la persona no ve qué escribió mal.
+            self.N_G.poner("")
+            self.lat.marcar(True)
+            self.lon.marcar(True)
+            return None, AL_REVES.format(lat=_sin_ceros(valores["lat"]),
+                                         lon=_sin_ceros(valores["lon"]),
+                                         limite=_sin_ceros(limite))
         try:
             return densidad.ficha_desde_lat_lon(
                 valores["lat"], valores["lon"], valores["fraccion"]), None

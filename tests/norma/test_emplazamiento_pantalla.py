@@ -133,13 +133,49 @@ def test_resolver_recalcula_desde_las_coordenadas(panel):
 # ---------------------------------------------------------------------------
 
 def test_fuera_de_cobertura_lo_dice_y_pasa_solo_a_declarado(panel):
-    _escribir(panel, 45, 10)
+    _escribir(panel, 45, -75)
 
     assert panel.buscar() is None
     assert panel.modo.get() == emplazamiento.DECLARADO
     assert "cobertura" in panel.aviso.cget("text")
     assert str(panel.N_G.entrada.cget("state")) == "normal"
 
+# Lo que pegó Sergio el 28-sep, con las casillas cambiadas.
+POPAYAN_LAT = "2.4399978804082365"
+POPAYAN_LON = "-76.61607271745503"
+
+
+def test_las_casillas_de_lat_lon_muestran_un_numero_pegado_entero(panel):
+    # Con ancho 12 no se veía el número completo y no se notaba el error de tipeo.
+    for campo in (panel.lat, panel.lon):
+        assert int(campo.entrada.cget("width")) >= len(POPAYAN_LON)
+
+
+def test_lat_lon_al_reves_lo_dice_y_no_cambia_de_modo(panel):
+    _escribir(panel, POPAYAN_LON, POPAYAN_LAT)
+
+    assert panel.buscar() is None
+    assert "al revés" in panel.aviso.cget("text")
+    # Se queda en coordenadas: pasar a declarado escondería lo que hay que corregir.
+    assert panel.modo.get() == emplazamiento.COORDENADAS
+    assert panel.lat.en_error and panel.lon.en_error
+    assert panel.N_G.entrada.get() == ""
+
+
+def test_lat_lon_al_reves_no_deja_calcular(panel):
+    _escribir(panel, POPAYAN_LON, POPAYAN_LAT)
+
+    with pytest.raises(campos.DatoFaltante, match="al revés"):
+        panel.resolver()
+
+
+def test_al_corregir_lat_lon_al_reves_se_calcula_y_se_quita_la_marca(panel):
+    _escribir(panel, POPAYAN_LON, POPAYAN_LAT)
+    panel.buscar()
+    _escribir(panel, POPAYAN_LAT, POPAYAN_LON)
+
+    assert panel.buscar().N_G == approx(2.64, abs=0.01)
+    assert not panel.lat.en_error and not panel.lon.en_error
 
 def test_una_celda_en_cero_no_se_calcula_en_silencio(panel):
     _escribir(panel, 0.0, -30.0)                      # Atlántico ecuatorial
