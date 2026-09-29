@@ -450,3 +450,78 @@ def test_el_titulo_de_la_norma_es_el_de_su_portada(caso):
                                    "Parte 2: Evaluación del riesgo")
     assert "Protección contra el rayo. Parte 2: Evaluación del riesgo" in _texto(documento)
     assert "descargas eléctricas atmosféricas (rayos)" not in _texto(documento)
+
+
+
+# ---------------------------------------------------------------------------
+# Paso 61b: lo que la estructura YA tiene, y la protección de cada línea
+# ---------------------------------------------------------------------------
+
+def _caso_con(caso, *nombres):
+    """El caso con esas medidas del catálogo ya instaladas."""
+    e, l, z = medidas.aplicar(caso["estructura"], caso["lineas"], caso["zonas"],
+                              _combinacion(caso, *nombres))
+    return dict(caso, estructura=e, lineas=l, zonas=z)
+
+
+def _tabla_de_adoptadas(documento):
+    return next((b for b in documento.bloques
+                 if isinstance(b, d.Tabla) and b.filas[0][0] == "Dónde"), None)
+
+
+def test_la_tabla_de_lineas_trae_C_LD_C_LI_y_P_EB(caso):
+    tabla = next(b for b in _armar(caso).bloques
+                 if isinstance(b, d.Tabla) and "P<sub>EB</sub>" in b.filas[0])
+    assert tabla.filas[0] == ["Línea", "U<sub>W</sub> [kV]", "P<sub>LD</sub>",
+                              "P<sub>LI</sub>", "C<sub>LD</sub>", "C<sub>LI</sub>",
+                              "P<sub>EB</sub>"]
+    assert len(tabla.filas) == 1 + len(caso["lineas"])
+    assert sum(tabla.anchos) == pytest.approx(166)
+
+
+def test_la_casa_rural_solo_tiene_adoptado_el_cableado_de_potencia(caso):
+    # Es el caso SIN medidas; lo único que no es la peor fila es K_S3 = 0,2.
+    tabla = _tabla_de_adoptadas(_armar(caso))
+    assert len(tabla.filas) == 2
+    assert "Cable sin blindar, evitando bucles grandes" in tabla.filas[1][2]
+    assert tabla.filas[1][3] == "K<sub>S3</sub> = 0,2"
+
+
+def test_sin_ninguna_medida_el_informe_lo_dice(caso):
+    from dataclasses import replace
+
+    zonas = [replace(z, sistemas_internos=[replace(si, K_S3=1.0) for si in z.sistemas_internos])
+             for z in caso["zonas"]]
+    documento = _armar(dict(caso, zonas=zonas))
+    assert _tabla_de_adoptadas(documento) is None
+    assert "no tiene ninguna medida de protección" in _texto(documento)
+
+
+def test_las_medidas_instaladas_salen_con_su_fila_y_su_factor(caso):
+    protegido = _caso_con(caso, "spcr:spcr_nivel_IV", "dps:npr_III_IV")
+    tabla = _tabla_de_adoptadas(armado.armar({1: protegido}, _por_tipo(protegido)))
+    filas = [" | ".join(f) for f in tabla.filas[1:]]
+    assert any("SPCR de nivel IV" in f and "P<sub>B</sub> = 0,2" in f for f in filas)
+    assert any("DPS de NPR III-IV" in f and "P<sub>EB</sub> = 0,05" in f for f in filas)
+    assert any("DPS de NPR III-IV" in f and "P<sub>DPS</sub> = 0,05" in f for f in filas)
+
+
+def test_el_blindaje_se_nombra_con_la_fila_de_su_tipo_de_linea(caso):
+    # La Tabla B.4 da el mismo C_LD y C_LI a la línea aérea y a la subterránea:
+    # el informe elige la que corresponde a cómo va instalada cada una (C_I).
+    protegido = _caso_con(caso, "blindaje_linea:subterranea_apantallada_conectada_barra")
+    tabla = _tabla_de_adoptadas(armado.armar({1: protegido}, _por_tipo(protegido)))
+    por_linea = {f[0]: f[2] for f in tabla.filas[1:] if "Tabla B.4" in f[1]}
+    assert por_linea["potencia"].startswith("Subterránea apantallada")     # enterrada
+    assert por_linea["telecomunicacion"].startswith("Aérea apantallada")    # aérea
+
+
+def test_un_valor_que_no_es_fila_de_la_tabla_se_declara(caso):
+    from dataclasses import replace
+
+    # El hospital del E.4 usa P_DPS = 0,002: la Tabla B.3 da un rango (0,005-0,001).
+    zonas = [replace(z, sistemas_internos=[replace(si, P_DPS=0.002) for si in z.sistemas_internos])
+             for z in caso["zonas"]]
+    tabla = _tabla_de_adoptadas(_armar(dict(caso, zonas=zonas)))
+    assert any(f[2] == "Valor declarado" and f[3] == "P<sub>DPS</sub> = 0,002"
+               for f in tabla.filas[1:])
