@@ -21,7 +21,8 @@ import tkinter as tk
 from datetime import date
 from tkinter import filedialog, messagebox, ttk
 
-from calculate_risk.norma import medidas, memoria
+from calculate_risk.informe import generar
+from calculate_risk.norma import medidas
 from ventanas import campos, desglose, editor_caso, resultados
 from ventanas.panel import Panel
 from variables.globales import papo
