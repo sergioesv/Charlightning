@@ -22,6 +22,13 @@ def l_c1(LO: float, nz: float, nt: float, tz: float) -> float:
 
 # ---------- L2: pérdida de servicio público ----------
 
+def l_ft1(LF: float, LFE: float, te: float) -> float:
+    """L_FT = L_F + L_E, con L_E = L_FE × t_e/8760 (ec. C.5, C.6): el daño físico
+    alcanza a personas FUERA de la estructura (emisiones, explosión). Con t_e = 0,
+    L_FT = L_F. Si no se conocen L_FE ni t_e, la norma dice L_FE × t_e/8760 = 1."""
+    return LF + LFE * (te / 8760)
+
+
 def l_b2(rp: float, rf: float, LF: float, nz: float, nt: float) -> float:
     """L_B = L_V: daño físico, D2 (ec. C.7)."""
     return rp * rf * LF * (nz / nt)

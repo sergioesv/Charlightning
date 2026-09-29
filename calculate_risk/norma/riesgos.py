@@ -139,7 +139,8 @@ def _perdidas_zona(zona, tipo: int, n_t: float, c_t: float) -> tuple:
     """L_A, L_B, L_C de la zona según el tipo de pérdida (1-4)."""
     if tipo == 1:
         L_A = perdidas.l_a1(zona.r_t, zona.L_T, zona.n_z, n_t, zona.t_z)
-        L_B = perdidas.l_b1(zona.r_p, zona.r_f, zona.h_z, zona.L_F, zona.n_z, n_t, zona.t_z)
+        L_F_total = perdidas.l_ft1(zona.L_F, zona.L_FE, zona.t_e)      # ec. C.5 y C.6
+        L_B = perdidas.l_b1(zona.r_p, zona.r_f, zona.h_z, L_F_total, zona.n_z, n_t, zona.t_z)
         L_C = perdidas.l_c1(zona.L_O, zona.n_z, n_t, zona.t_z)
     elif tipo == 2:
         L_A = 0.0

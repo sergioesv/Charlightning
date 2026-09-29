@@ -545,3 +545,12 @@ def test_una_medida_que_sin_spcr_no_es_efectiva_se_advierte(caso):
     texto = _texto(_armar(dict(caso, zonas=zonas)))
     assert "<b>Advertencia de la norma.</b>" in texto
     assert "Nota 1 del numeral B.2" in texto
+
+
+def test_si_el_dano_alcanza_a_personas_de_afuera_se_dice(caso):
+    from dataclasses import replace
+
+    zonas = [replace(z, t_e=8760) for z in caso["zonas"]]
+    texto = _texto(_armar(dict(caso, zonas=zonas)))
+    assert "ecuaciones C.5 y C.6" in texto
+    assert "= 1,1, que reemplaza a L<sub>F</sub>" in texto

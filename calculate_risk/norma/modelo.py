@@ -87,8 +87,9 @@ class Zona:
     c_s: float = 0.0         # valor de los sistemas internos (L4)
     c_e: float = 0.0         # valor de bienes en sitios peligrosos FUERA (L4, ec. C.15)
     L_FE: float = 1.0        # pérdida típica por daño físico fuera (L4, ec. C.15; 1 si se desconoce)
+    t_e: float = 0.0         # horas/año de personas en el sitio peligroso FUERA (L1, ec. C.6)
 
-     # Nota "a" de la Tabla C.11: si R4 se compara contra el valor
+    # Nota "a" de la Tabla C.11: si R4 se compara contra el valor
     # representativo de la Tabla 4 (sin hacer el Anexo D), las tres razones
     # c/c_t se reemplazan por 1. Con c_a, c_b, c_c y c_s no se puede expresar
     # eso a la vez, por eso es una bandera aparte.

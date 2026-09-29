@@ -19,7 +19,7 @@ from dataclasses import fields, is_dataclass
 
 from calculate_risk.informe import documento as d
 from calculate_risk.informe.documento import escapar
-from calculate_risk.norma import etiquetas, medidas, probabilidades, riesgos, tablas
+from calculate_risk.norma import etiquetas, medidas, perdidas, probabilidades, riesgos, tablas
 
 NOMBRES_COMPONENTES = {
     "R_A": "Lesiones a seres vivos por descarga en la estructura",
@@ -311,6 +311,21 @@ def _ninguna(tabla):
     return next(iter(getattr(tablas, tabla).values()))
 
 
+def _entorno(zonas):
+    """Las zonas cuyo daño físico alcanza a personas de afuera (ec. C.5 y C.6)."""
+    bloques = []
+    for z in zonas:
+        if z.t_e > 0:
+            bloques.append(d.Parrafo(
+                f"En la zona {escapar(z.nombre)} el daño físico alcanza a personas fuera de "
+                "la estructura (ecuaciones C.5 y C.6): L<sub>FT</sub> = L<sub>F</sub> + "
+                f"L<sub>FE</sub> × t<sub>e</sub>/8&nbsp;760 = {corriente(z.L_F)} + "
+                f"{corriente(z.L_FE)} × {plano(z.t_e)}/8&nbsp;760 = "
+                f"{corriente(perdidas.l_ft1(z.L_F, z.L_FE, z.t_e))}, que reemplaza a "
+                "L<sub>F</sub> en la ecuación C.3."))
+    return bloques
+
+
 def _medidas_adoptadas(zonas, lineas):
     """Las medidas de protección que el caso YA tiene: el informe dice con qué se calculó.
 
@@ -428,6 +443,7 @@ def _datos(caso, figura_area):
             "R<sub>U</sub>, R<sub>V</sub>, R<sub>W</sub> y R<sub>Z</sub> no intervienen.")]
     
     bloques += _medidas_adoptadas(zonas, lineas)
+    bloques += _entorno(zonas)
     if figura_area:
         bloques.append(d.Figura(
             figura_area, 122,

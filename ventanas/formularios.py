@@ -31,7 +31,7 @@ COMUNES = (
 )
 
 POR_TIPO = {
-    1: ("L_T", "L_F", "L_O", "h_z"),
+    1: ("L_T", "L_F", "L_O", "h_z", "L_FE", "t_e"),
     2: ("L_F", "L_O"),
     3: ("L_F", "c_z"),
     4: ("L_T", "L_F", "L_O",
@@ -236,7 +236,15 @@ class _PestanaPerdidas(ttk.Frame):
                 opcional=True)
             self.campos["h_z"] = campos.CampoTabla(
                 self, "HZ", 3, etiqueta="Daño especial (h_z)")
-
+            # Ec. C.5 y C.6: el daño alcanza a personas FUERA de la estructura
+            # (emisiones, explosión). Con t_e = 0 no hay L_E. Si no se conocen, la
+            # norma dice L_FE × t_e/8760 = 1: L_FE = 1 y t_e = 8760.
+            self.campos["t_e"] = campos.CampoNumero(
+                self, "Horas al año con personas en peligro afuera (t_e)", 4,
+                valor=d["t_e"], minimo=0, maximo=8760, unidad="h")
+            self.campos["L_FE"] = campos.CampoNumero(
+                self, "Pérdida típica por daño físico fuera (L_FE)", 5,
+                valor=d["L_FE"], minimo=0, maximo=1)
         elif tipo == 2:
             self.campos["L_F"] = campos.CampoTabla(
                 self, "LF_L2", 0, etiqueta="Pérdida por daño físico (L_F)",
