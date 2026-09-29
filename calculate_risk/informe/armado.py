@@ -15,9 +15,11 @@ de una plantilla.
 Es el heredero de norma/memoria.py: el desarrollo del cálculo y la tabla «de dónde viene
 R» vienen de allí.
 """
+from dataclasses import fields, is_dataclass
+
 from calculate_risk.informe import documento as d
 from calculate_risk.informe.documento import escapar
-from calculate_risk.norma import etiquetas, riesgos
+from calculate_risk.norma import etiquetas, medidas, riesgos
 
 NOMBRES_COMPONENTES = {
     "R_A": "Lesiones a seres vivos por descarga en la estructura",
@@ -496,7 +498,128 @@ def _calculo(por_tipo, tipos, tipo, figura_aporte):
 # 6. Veredicto y medidas
 # ---------------------------------------------------------------------------
 
-def _veredicto(por_tipo, tipos, tipo, soluciones, figura_veredicto):
+def _por_riesgo(valor, tipo) -> dict:
+    """Soluciones o figura del veredicto: un dict {riesgo: x} se usa tal cual; cualquier
+    otra cosa (una lista, una ruta) vale para el riesgo desarrollado. None = nada."""
+    if isinstance(valor, dict):
+        return dict(valor)
+    return {} if valor is None else {tipo: valor}
+
+
+def _reduccion(base, riesgo) -> str:
+    """Cuánto del riesgo sin medidas quita la combinación, en %. Solo presenta."""
+    if not base:
+        return "—"
+    pct = (1 - riesgo / base) * 100
+    return f"{coma(pct, 3 if pct >= 99.9 else 1)} %"
+
+
+FORMAS_DE_MEDIDAS = ("completa", "con_factor", "solo_porcentaje")
+
+
+def _simbolo(campo) -> str:
+    """'P_EB' -> P<sub>EB</sub>; 'r_p' -> r<sub>p</sub>."""
+    base, _, indice = campo.partition("_")
+    return f"{base}<sub>{indice}</sub>" if indice else base
+
+
+def _numeros_que_cambian(antes, despues, cambios):
+    """Recorre dos objetos del modelo y anota cada número que la combinación cambió."""
+    if isinstance(antes, (list, tuple)):
+        for a, b in zip(antes, despues):
+            _numeros_que_cambian(a, b, cambios)
+        return
+    if not is_dataclass(antes):
+        return
+    for campo in fields(antes):
+        a, b = getattr(antes, campo.name), getattr(despues, campo.name)
+        if isinstance(a, (int, float)) and not isinstance(a, bool):
+            if a != b:
+                cambios.setdefault((campo.name, a, b), None)
+        else:
+            _numeros_que_cambian(a, b, cambios)
+
+
+def factores_que_cambian(caso, combinacion) -> str:
+    """Los factores del caso que la combinación modifica: 'P_EB: de 1 a 0,05'.
+
+    Se obtienen aplicando la combinación al caso y comparando antes con después, así que
+    dicen lo que el motor de verdad recibe; no hay una tabla aparte que pueda desalinearse.
+    """
+    e, l, z = medidas.aplicar(caso["estructura"], caso["lineas"], caso["zonas"], combinacion)
+    cambios = {}
+    _numeros_que_cambian(caso["estructura"], e, cambios)
+    _numeros_que_cambian(caso["lineas"], l, cambios)
+    _numeros_que_cambian(caso["zonas"], z, cambios)
+    return "<br/>".join(f"{_simbolo(c)}: de {corriente(a)} a {corriente(b)}"
+                        for c, a, b in cambios) or "—"
+
+
+def _medidas(tipo, soluciones, figura, numero_de_figura, base, caso=None, forma="solo_porcentaje"):
+    """Las medidas de UN riesgo: la tabla de combinaciones y, si hay, su figura.
+
+    forma: "completa" (medidas, R resultante, % que reduce), "con_factor" (agrega el factor
+    que cambia cada combinación) o "solo_porcentaje" (medidas y % que reduce).
+    """
+    if forma not in FORMAS_DE_MEDIDAS:
+        raise ValueError(f"Forma de la tabla de medidas desconocida: {forma!r}.")
+    bloques = [d.Titulo(f"Medidas de protección para R<sub>{tipo}</sub>", 2)]
+    if not soluciones:
+        bloques.append(d.Parrafo(
+            "<b>Ninguna combinación de las medidas contempladas lleva el riesgo por debajo "
+            "del valor tolerable.</b> Hay que revisar el caso: reducir la longitud o la "
+            "exposición de las líneas, dividir la estructura en zonas, o reconsiderar los "
+            "valores de pérdida adoptados."))
+        return bloques
+
+    con_economia = soluciones[0].S_M is not None
+    con_costo = any(sol.costo for sol in soluciones)
+    dinero = lambda v: f"{v:,.0f}".replace(",", "&nbsp;")          # noqa: E731
+
+    # (título, ancho, a la derecha, cómo se escribe la celda de una solución)
+    columnas = [("N.º", 10, False, lambda sol: str(len(sol.nombres))),
+                ("Medidas", None, False,
+                 lambda sol: " + ".join(medida(n) for n in sol.nombres) or "(sin medidas)")]
+    if forma == "con_factor":
+        columnas.append(("Factor que cambia", 40, False,
+                         lambda sol: factores_que_cambian(caso, sol.medidas)))
+    if forma != "solo_porcentaje":
+        columnas.append((f"R<sub>{tipo}</sub> resultante", 28, True,
+                         lambda sol: cientifico(sol.riesgo)))
+    columnas.append(("Reduce", 20, True, lambda sol: _reduccion(base, sol.riesgo)))
+    if con_costo:
+        columnas.append(("Costo", 22, True, lambda sol: dinero(sol.costo)))
+    if con_economia:
+        columnas.append(("S<sub>M</sub>", 22, True, lambda sol: dinero(sol.S_M)))
+
+    ancho_libre = 166 - sum(c[1] for c in columnas if c[1])
+    filas = [[c[0] for c in columnas]]
+    for sol in soluciones[:MEDIDAS_QUE_SE_MUESTRAN]:
+        filas.append([c[3](sol) for c in columnas])
+    orden = ("según el análisis del Anexo D (mayor ahorro anual primero)" if con_economia
+             else "por costo y, con el mismo costo, de menos a más medidas" if con_costo
+             else "de menos a más medidas (columna N.º) y, con la misma cantidad, de "
+                  + ("mayor a menor reducción" if forma == "solo_porcentaje"
+                     else "menor a mayor riesgo resultante")
+                  + "; no se cargaron costos")
+    bloques += [
+        d.Parrafo("Combinaciones que llevan el riesgo por debajo del valor tolerable, "
+                  f"ordenadas {orden}. «Reduce» es la parte del riesgo sin medidas "
+                  f"(R<sub>{tipo}</sub> = {cientifico(base)}) que la combinación quita."),
+        d.Tabla(filas, anchos=tuple(c[1] or ancho_libre for c in columnas),
+                derecha=tuple(i for i, c in enumerate(columnas) if c[2])),
+    ]
+    if figura:
+        bloques.append(d.Figura(
+            figura, 140,
+            f"Figura {numero_de_figura}. R<sub>{tipo}</sub> sin medidas y con la primera "
+            "combinación de la tabla, frente al riesgo tolerable."))
+    return bloques
+
+
+def _veredicto(por_tipo, tipos, soluciones, figuras_veredicto, casos=None, forma="solo_porcentaje"):
+    """soluciones y figuras_veredicto: {riesgo: ...}. Cada riesgo que no cumple tiene su
+    sección de medidas; si no se buscaron, se dice."""
     filas = [["Riesgo", "Calculado", "Tolerable", "Veredicto"]]
     incumplen = []
     for t in tipos:
@@ -523,46 +646,17 @@ def _veredicto(por_tipo, tipos, tipo, soluciones, figura_veredicto):
                d.Espacio(3),
                d.Recuadro(resumen, cumple=not incumplen)]
 
-    if soluciones is None:
-        return bloques
-    bloques.append(d.Titulo(f"Medidas de protección para R<sub>{tipo}</sub>", 2))
-    if not soluciones:
-        bloques.append(d.Parrafo(
-            "<b>Ninguna combinación de las medidas contempladas lleva el riesgo por debajo "
-            "del valor tolerable.</b> Hay que revisar el caso: reducir la longitud o la "
-            "exposición de las líneas, dividir la estructura en zonas, o reconsiderar los "
-            "valores de pérdida adoptados."))
-        return bloques
-
-    con_economia = soluciones[0].S_M is not None
-    con_costo = any(sol.costo for sol in soluciones)
-    cabecera = ["Medidas", f"R<sub>{tipo}</sub> resultante"]
-    if con_costo:
-        cabecera.append("Costo")
-    if con_economia:
-        cabecera.append("S<sub>M</sub>")
-    filas = [cabecera]
-    for sol in soluciones[:MEDIDAS_QUE_SE_MUESTRAN]:
-        fila = [" + ".join(medida(n) for n in sol.nombres) or "(sin medidas)",
-                cientifico(sol.riesgo)]
-        if con_costo:
-            fila.append(f"{sol.costo:,.0f}".replace(",", "&nbsp;"))
-        if con_economia:
-            fila.append(f"{sol.S_M:,.0f}".replace(",", "&nbsp;"))
-        filas.append(fila)
-    ancho = {2: (128, 38), 3: (108, 34, 24), 4: (84, 34, 24, 24)}[len(cabecera)]
-    orden = ("según el análisis del Anexo D" if con_economia
-             else "por costo" if con_costo else "de menos a más medidas (no se cargaron costos)")
-    bloques += [
-        d.Parrafo("Combinaciones que llevan el riesgo por debajo del valor tolerable, "
-                  f"ordenadas {orden}."),
-        d.Tabla(filas, anchos=ancho, derecha=tuple(range(1, len(cabecera)))),
-    ]
-    if figura_veredicto:
-        bloques.append(d.Figura(
-            figura_veredicto, 140,
-            f"Figura 4. R<sub>{tipo}</sub> sin medidas y con la primera combinación de la "
-            "tabla, frente al riesgo tolerable."))
+    numero_de_figura = 4
+    for t in tipos:
+        if t in soluciones:
+            figura = figuras_veredicto.get(t)
+            bloques += _medidas(t, soluciones[t], figura, numero_de_figura,
+                                por_tipo[t]["total"], casos[t] if casos else None, forma)
+            numero_de_figura += 1 if figura else 0
+        elif t in incumplen:
+            bloques += [d.Titulo(f"Medidas de protección para R<sub>{t}</sub>", 2),
+                        d.Parrafo(f"No se buscaron medidas de protección para R<sub>{t}</sub>.",
+                                  "nota")]
     return bloques
 
 
@@ -570,38 +664,44 @@ def _veredicto(por_tipo, tipos, tipo, soluciones, figura_veredicto):
 # 7. Conclusión y firma
 # ---------------------------------------------------------------------------
 
-def _conclusion(por_tipo, tipos, tipo, soluciones, proyecto):
+def _frase_de_riesgo(por_tipo, t, soluciones):
+    """Lo que hay que decir de un riesgo que no cumple: qué lo causa y qué lo baja."""
+    frase = f"R<sub>{t}</sub> = {cientifico(por_tipo[t]['total'])}"
+    aportes = aportes_de(por_tipo[t])
+    if aportes:
+        c, _, pct = aportes[0]
+        frase += (f": el componente dominante es {_sub(c)} "
+                  f"({escapar(NOMBRES_COMPONENTES[c].lower())}), con {coma(pct, 1)} % del total")
+    if t in soluciones:
+        if soluciones[t]:
+            mejor = soluciones[t][0]
+            frase += (f". La primera combinación de medidas de la tabla del numeral 6 "
+                      f"({' + '.join(medida(n) for n in mejor.nombres) or 'sin medidas'}) deja "
+                      f"R<sub>{t}</sub> en {cientifico(mejor.riesgo)}, frente a un tolerable de "
+                      f"{cientifico(mejor.R_T)}")
+        else:
+            frase += (". Ninguna combinación de las medidas contempladas lo lleva por debajo "
+                      "del tolerable; hay que revisar el caso")
+    return frase + "."
+
+
+def _conclusion(por_tipo, tipos, soluciones, proyecto):
     incumplen = [t for t in tipos if not por_tipo[t]["cumple"]]
     if not incumplen:
-        texto = (f"La estructura evaluada <b>cumple</b> el criterio de riesgo tolerable de la "
-                 f"NTC 4552-2:2023 para los riesgos {_lista_de_riesgos(tipos)}.")
+        principal = (f"La estructura evaluada <b>cumple</b> el criterio de riesgo tolerable de "
+                     f"la NTC 4552-2:2023 para los riesgos {_lista_de_riesgos(tipos)}.")
     else:
-        texto = (f"La estructura evaluada <b>no cumple</b> el criterio de riesgo tolerable de "
-                 f"la NTC 4552-2:2023 para {_lista_de_riesgos(incumplen)}.")
-        aportes = aportes_de(por_tipo[tipo])
-        if aportes:
-            c, _, pct = aportes[0]
-            texto += (f" En R<sub>{tipo}</sub>, el componente dominante es {_sub(c)} "
-                      f"({escapar(NOMBRES_COMPONENTES[c].lower())}), con {coma(pct, 1)} % "
-                      "del total.")
-        if soluciones:
-            mejor = soluciones[0]
-            texto += (f" La primera combinación de medidas de la tabla del numeral 6 "
-                      f"({' + '.join(medida(n) for n in mejor.nombres) or 'sin medidas'}) deja "
-                      f"R<sub>{tipo}</sub> en {cientifico(mejor.riesgo)}, frente a un tolerable "
-                      f"de {cientifico(mejor.R_T)}.")
-        elif soluciones is not None:
-            texto += (" Ninguna combinación de las medidas contempladas lleva el riesgo por "
-                      "debajo del tolerable; hay que revisar el caso.")
+        principal = (f"La estructura evaluada <b>no cumple</b> el criterio de riesgo tolerable "
+                     f"de la NTC 4552-2:2023 para {_lista_de_riesgos(incumplen)}.")
 
     quien = escapar((proyecto or {}).get("Diseñador", "") or "Diseñador")
-    return [
-        d.Titulo("7. Conclusión y firma"),
-        d.Parrafo(texto),
-        d.Espacio(14),
-        d.Tabla([["_" * 34, "", "_" * 34],
-                 [quien, "", "Revisó"]], anchos=(70, 26, 70), cabecera=False),
-    ]
+    return (
+        [d.Titulo("7. Conclusión y firma"), d.Parrafo(principal)]
+        + [d.Parrafo(_frase_de_riesgo(por_tipo, t, soluciones)) for t in incumplen]
+        + [d.Espacio(14),
+           d.Tabla([["_" * 34, "", "_" * 34],
+                    [quien, "", "Revisó"]], anchos=(70, 26, 70), cabecera=False)]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -636,7 +736,7 @@ def _referencias(usa_nasa, usa_mapa):
 
 def armar(casos: dict, por_tipo: dict, proyecto: dict = None, ficha=None,
           soluciones=None, figuras: dict = None, tipo: int = None,
-          fecha=None) -> d.Documento:
+          fecha=None, medidas_como: str = "solo_porcentaje") -> d.Documento:
     """El informe completo como Documento.
 
     casos: {tipo: {"estructura", "lineas", "zonas", "N_G", "emplazamiento"}}, lo que
@@ -645,10 +745,15 @@ def armar(casos: dict, por_tipo: dict, proyecto: dict = None, ficha=None,
         que muestra el panel.
     ficha: la FichaNG del sitio (solo si N_G salió de coordenadas); sin ella el informe
         lo dice en vez de inventarla.
-    soluciones: las medidas de medidas.explorar(); None si no se buscaron (todo cumple).
-        Una lista vacía SÍ se informa: no hay ninguna combinación que baste.
-    figuras: {"mapa", "area", "aporte", "veredicto"} -> ruta PNG. Las que falten no salen.
+    soluciones: las medidas de medidas.explorar(). Un dict {riesgo: lista} da las de cada
+        riesgo que no cumple; una lista sola vale para el riesgo desarrollado. None = no se
+        buscaron. Una lista vacía SÍ se informa: no hay ninguna combinación que baste.
+    figuras: {"mapa", "area", "aporte", "veredicto"} -> ruta PNG; "veredicto" puede ser un
+        dict {riesgo: ruta}. Las que falten no salen.
     tipo: el riesgo que se desarrolla; por omisión, el más bajo de los evaluados.
+    medidas_como: la tabla de medidas. Por omisión "solo_porcentaje" (medidas y % que
+        reduce); también "completa" (además el R resultante) y "con_factor" (además el
+        factor que cambia cada combinación).
     """
     tipos = sorted(por_tipo)
     tipo = tipos[0] if tipo is None else tipo
@@ -674,8 +779,10 @@ def armar(casos: dict, por_tipo: dict, proyecto: dict = None, ficha=None,
     bloques += _emplazamiento(emplazamiento, caso["N_G"], ficha)
     bloques += _datos(caso, figuras.get("area"))
     bloques += _calculo(por_tipo, tipos, tipo, figuras.get("aporte"))
-    bloques += _veredicto(por_tipo, tipos, tipo, soluciones, figuras.get("veredicto"))
-    bloques += _conclusion(por_tipo, tipos, tipo, soluciones, proyecto)
+    soluciones = _por_riesgo(soluciones, tipo)
+    bloques += _veredicto(por_tipo, tipos, soluciones,
+                          _por_riesgo(figuras.get("veredicto"), tipo), casos, medidas_como)
+    bloques += _conclusion(por_tipo, tipos, soluciones, proyecto)
     bloques += _referencias(
         usa_nasa=emplazamiento is not None and emplazamiento.modo == "coordenadas",
         usa_mapa=bool(figuras.get("mapa")))

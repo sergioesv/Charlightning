@@ -217,8 +217,15 @@ def test_el_recuadro_es_azul_si_cumple(caso):
     assert "cumple" in _texto(documento)
 
 
-def test_sin_soluciones_pedidas_no_hay_seccion_de_medidas(caso):
-    assert "Medidas de protección para" not in _texto(_armar(caso, soluciones=None))
+def test_si_no_se_buscaron_medidas_de_un_riesgo_que_no_cumple_se_dice(caso):
+    texto = _texto(_armar(caso, soluciones=None))
+    assert "No se buscaron medidas de protección para R<sub>1</sub>" in texto
+
+
+def test_un_riesgo_que_cumple_no_tiene_seccion_de_medidas(caso):
+    from dataclasses import replace
+    protegido = {**caso, "zonas": [replace(z, n_z=0.001) for z in caso["zonas"]]}
+    assert "Medidas de protección para" not in _texto(_armar(protegido))
 
 
 def test_si_no_hay_ninguna_combinacion_que_baste_se_dice(caso):
@@ -288,4 +295,151 @@ def test_el_informe_completo_se_dibuja_sin_advertencias(caso, tmp_path):
 def test_el_pdf_no_contiene_cuadros_negros_por_subindices(caso, tmp_path):
     resultado = pdf.dibujar(_armar(caso), str(tmp_path / "i.pdf"))
     assert not re.search(r"[₀-₉²³¹]", _texto(_armar(caso)))
+    assert resultado.advertencias == []
+
+
+# ---------------------------------------------------------------------------
+# Las medidas de CADA riesgo que no cumple
+# ---------------------------------------------------------------------------
+
+def _cuatro_riesgos(caso):
+    from dataclasses import replace
+    z = caso["zonas"][0]
+    zonas = {1: z, 2: replace(z, L_F=0.1, L_O=0.01), 3: replace(z, c_z=20.0, L_F=0.1),
+             4: replace(z, L_F=0.1, L_O=0.01, c_b=60.0, c_c=30.0, c_s=10.0)}
+    estructura = replace(caso["estructura"], c_t=100.0)
+    casos_ = {t: {**caso, "estructura": estructura, "zonas": [zonas[t]]} for t in zonas}
+    por_tipo = {t: riesgos.evaluar(estructura, caso["lineas"], [zonas[t]], caso["N_G"],
+                                   tipos=(t,))[t] for t in zonas}
+    return casos_, por_tipo
+
+
+def test_cada_riesgo_que_no_cumple_tiene_su_tabla_de_medidas(caso):
+    casos_, por_tipo = _cuatro_riesgos(caso)
+    incumplen = [t for t, r in por_tipo.items() if not r["cumple"]]
+    assert incumplen == [1, 2, 4]
+    soluciones = {t: medidas.explorar(casos_[t]["estructura"], caso["lineas"],
+                                      casos_[t]["zonas"], caso["N_G"], tipo=t)
+                  for t in incumplen}
+
+    documento = armado.armar(casos_, por_tipo, soluciones=soluciones)
+    titulos = [b.texto for b in documento.bloques if isinstance(b, d.Titulo)]
+
+    for t in incumplen:
+        assert f"Medidas de protección para R<sub>{t}</sub>" in titulos
+        primera = soluciones[t][0].riesgo
+        assert armado.cientifico(primera) in _texto(documento)
+    assert "Medidas de protección para R<sub>3</sub>" not in titulos      # R3 cumple
+
+
+def test_la_conclusion_habla_de_cada_riesgo_que_no_cumple(caso):
+    casos_, por_tipo = _cuatro_riesgos(caso)
+    documento = armado.armar(casos_, por_tipo, soluciones={1: [], 2: None})
+    conclusion = [b.texto for b in documento.bloques
+                  if isinstance(b, d.Parrafo) and re.match(r"R<sub>\d</sub> = ", b.texto)]
+    assert [t.split(" ")[0] for t in conclusion] == [
+        "R<sub>1</sub>", "R<sub>2</sub>", "R<sub>4</sub>"]
+    assert "Ninguna combinación" in conclusion[0]
+
+
+def test_las_figuras_del_veredicto_se_numeran_en_orden(caso, tmp_path):
+    casos_, por_tipo = _cuatro_riesgos(caso)
+    figura = tmp_path / "v.png"
+    figura.write_bytes(b"x")
+    documento = armado.armar(
+        casos_, por_tipo, soluciones={1: [], 2: []},
+        figuras={"veredicto": {1: str(figura), 2: str(figura)}})
+    pies = [b.pie for b in documento.bloques if isinstance(b, d.Figura)]
+    assert pies == []           # con soluciones vacías no hay figura que poner
+
+
+def test_el_informe_de_los_cuatro_riesgos_se_dibuja_sin_advertencias(caso, tmp_path):
+    casos_, por_tipo = _cuatro_riesgos(caso)
+    soluciones = {t: medidas.explorar(casos_[t]["estructura"], caso["lineas"],
+                                      casos_[t]["zonas"], caso["N_G"], tipo=t)
+                  for t in (1, 2, 4)}
+    documento = armado.armar(casos_, por_tipo, soluciones=soluciones)
+    resultado = pdf.dibujar(documento, str(tmp_path / "cuatro.pdf"))
+    assert resultado.advertencias == []
+
+
+def test_el_porcentaje_que_mitiga_sale_del_riesgo_sin_medidas(caso):
+    soluciones = medidas.explorar(caso["estructura"], caso["lineas"], caso["zonas"],
+                                  caso["N_G"], tipo=1)
+    base = _por_tipo(caso)[1]["total"]
+    texto = _texto(_armar(caso, soluciones=soluciones))
+    primera = soluciones[0]
+    esperado = armado._reduccion(base, primera.riesgo)
+    assert esperado in texto
+    assert esperado == "95,9 %"                     # 1 - 1,032e-6 / 2,506e-5
+
+
+@pytest.mark.parametrize("base, riesgo, esperado", [
+    (100.0, 25.0, "75,0 %"), (100.0, 0.05, "99,950 %"), (0.0, 1.0, "—")])
+def test_reduccion_muestra_mas_decimales_cerca_del_cien(base, riesgo, esperado):
+    assert armado._reduccion(base, riesgo) == esperado
+
+
+# ---------------------------------------------------------------------------
+# Las tres formas de la tabla de medidas
+# ---------------------------------------------------------------------------
+
+def _combinacion(caso, *nombres):
+    catalogo = {m.nombre: m for m in medidas.catalogo()}
+    return tuple(catalogo[n] for n in nombres)
+
+
+def test_el_factor_que_cambia_sale_de_comparar_el_caso_antes_y_despues(caso):
+    dps = armado.factores_que_cambian(caso, _combinacion(caso, "dps:npr_III_IV"))
+    fuego = armado.factores_que_cambian(
+        caso, _combinacion(caso, "incendio:extincion_o_alarma_automatica"))
+    assert dps == "P<sub>EB</sub>: de 1 a 0,05<br/>P<sub>DPS</sub>: de 1 a 0,05"
+    assert fuego == "r<sub>p</sub>: de 1 a 0,2"
+
+
+def test_una_combinacion_lista_todos_sus_factores(caso):
+    texto = armado.factores_que_cambian(caso, _combinacion(
+        caso, "dps:npr_III_IV", "incendio:extincion_o_alarma_automatica"))
+    assert "P<sub>EB</sub>: de 1 a 0,05" in texto and "r<sub>p</sub>: de 1 a 0,2" in texto
+
+
+def test_sin_medidas_no_cambia_ningun_factor(caso):
+    assert armado.factores_que_cambian(caso, ()) == "—"
+
+
+def test_la_forma_con_factor_agrega_la_columna(caso):
+    soluciones = medidas.explorar(caso["estructura"], caso["lineas"], caso["zonas"],
+                                  caso["N_G"], tipo=1)
+    documento = _armar(caso, soluciones=soluciones, medidas_como="con_factor")
+    tablas = [b for b in documento.bloques if isinstance(b, d.Tabla)]
+    tabla = next(t for t in tablas if "Factor que cambia" in t.filas[0])
+    assert tabla.filas[0][:3] == ["N.º", "Medidas", "Factor que cambia"]
+    assert any("P<sub>EB</sub>: de 1 a 0,05" in fila[2] for fila in tabla.filas[1:])
+    assert sum(tabla.anchos) == pytest.approx(166)
+
+
+def test_la_forma_solo_porcentaje_no_trae_el_riesgo_resultante(caso):
+    soluciones = medidas.explorar(caso["estructura"], caso["lineas"], caso["zonas"],
+                                  caso["N_G"], tipo=1)
+    documento = _armar(caso, soluciones=soluciones, medidas_como="solo_porcentaje")
+    tabla = next(b for b in documento.bloques
+                 if isinstance(b, d.Tabla) and "Reduce" in b.filas[0])
+    assert tabla.filas[0] == ["N.º", "Medidas", "Reduce"]
+    assert sum(tabla.anchos) == pytest.approx(166)
+    assert tabla.derecha == (2,)
+
+
+def test_una_forma_desconocida_se_rechaza(caso):
+    soluciones = medidas.explorar(caso["estructura"], caso["lineas"], caso["zonas"],
+                                  caso["N_G"], tipo=1)
+    with pytest.raises(ValueError):
+        _armar(caso, soluciones=soluciones, medidas_como="rara")
+
+
+@pytest.mark.parametrize("forma", ["completa", "con_factor", "solo_porcentaje"])
+def test_las_tres_formas_se_dibujan_sin_advertencias(caso, tmp_path, forma):
+    soluciones = medidas.explorar(caso["estructura"], caso["lineas"], caso["zonas"],
+                                  caso["N_G"], tipo=1)
+    documento = _armar(caso, soluciones=soluciones, medidas_como=forma)
+    resultado = pdf.dibujar(documento, str(tmp_path / f"{forma}.pdf"))
     assert resultado.advertencias == []
