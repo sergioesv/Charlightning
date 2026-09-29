@@ -710,8 +710,8 @@ def _conclusion(por_tipo, tipos, soluciones, proyecto):
 
 def _referencias(usa_nasa, usa_mapa):
     refs = [
-        "ICONTEC. <i>NTC 4552-2:2023 — Protección contra descargas eléctricas atmosféricas "
-        "(rayos). Parte 2: Evaluación del riesgo</i>.",
+        "ICONTEC. <i>NTC 4552-2:2023 — Protección contra el rayo. Parte 2: Evaluación del "
+        "riesgo</i> (E: Protection against lightning. Part 2: Risk management).",
     ]
     if usa_nasa:
         refs += [
@@ -789,7 +789,7 @@ def armar(casos: dict, por_tipo: dict, proyecto: dict = None, ficha=None,
 
     return d.Documento(
         titulo="Evaluación del riesgo por descargas<br/>eléctricas atmosféricas",
-        subtitulo="NTC 4552-2:2023 — Protección contra descargas eléctricas atmosféricas. "
+        subtitulo="NTC 4552-2:2023 — Protección contra el rayo. "
                   "Parte 2: Evaluación del riesgo",
         sobretitulo="Memoria de cálculo",
         autor=str(proyecto.get("Diseñador", "")),

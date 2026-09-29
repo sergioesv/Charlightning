@@ -443,3 +443,10 @@ def test_las_tres_formas_se_dibujan_sin_advertencias(caso, tmp_path, forma):
     documento = _armar(caso, soluciones=soluciones, medidas_como=forma)
     resultado = pdf.dibujar(documento, str(tmp_path / f"{forma}.pdf"))
     assert resultado.advertencias == []
+
+def test_el_titulo_de_la_norma_es_el_de_su_portada(caso):
+    documento = _armar(caso)
+    assert documento.subtitulo == ("NTC 4552-2:2023 — Protección contra el rayo. "
+                                   "Parte 2: Evaluación del riesgo")
+    assert "Protección contra el rayo. Parte 2: Evaluación del riesgo" in _texto(documento)
+    assert "descargas eléctricas atmosféricas (rayos)" not in _texto(documento)
