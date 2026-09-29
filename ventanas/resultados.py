@@ -72,12 +72,9 @@ class PanelResultados(ttk.LabelFrame):
         pie.grid(row=1, column=0, columnspan=2, sticky="w", pady=(8, 0))
         self.aviso = ttk.Label(pie, text="")
         self.aviso.grid(row=0, column=0, padx=(0, 12))
-        self.boton_medidas = ttk.Button(pie, text="Buscar medidas de protección",
-                                        state="disabled")
-        self.boton_medidas.grid(row=0, column=1)
         self.boton_desglose = ttk.Button(pie, text="¿De dónde viene el riesgo?",
                                          state="disabled")
-        self.boton_desglose.grid(row=0, column=2, padx=(6, 0))
+        self.boton_desglose.grid(row=0, column=2)
         self.obsoleto = False
 
     # -- contenido ---------------------------------------------------------
@@ -87,7 +84,6 @@ class PanelResultados(ttk.LabelFrame):
             self.arbol.delete(fila)
         self.aviso.configure(text="")
         self.boton_medidas.configure(state="disabled")
-        self.boton_desglose.configure(state="disabled")
         self._colorear(AZUL, NARANJA)
         self.obsoleto = False
 
@@ -110,7 +106,6 @@ class PanelResultados(ttk.LabelFrame):
         self.aviso.configure(
             text="Los datos cambiaron: hay que volver a calcular.",
             foreground=GRIS)
-        self.boton_medidas.configure(state="disabled")
         self.boton_desglose.configure(state="disabled")
         return True
 
@@ -145,7 +140,6 @@ class PanelResultados(ttk.LabelFrame):
             self.aviso.configure(
                 text=f"No cumple: {cuales}. Hace falta protección.",
                 foreground=NARANJA)
-            self.boton_medidas.configure(state="normal")
         else:
             self.aviso.configure(
                 text="Los riesgos evaluados están por debajo del tolerable.",

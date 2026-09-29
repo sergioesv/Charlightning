@@ -146,22 +146,38 @@ def test_los_cuatro_riesgos_caben_en_la_tabla(panel, editor):
 
 
 # ---------------------------------------------------------------------------
-# El aviso y el botón de medidas
+# El aviso y el botón del desglose
 # ---------------------------------------------------------------------------
 
-def test_si_no_cumple_se_habilita_el_boton_de_medidas(panel, editor):
+def _textos_de_botones(widget) -> list:
+    textos = [str(widget.cget("text"))] if widget.winfo_class() == "TButton" else []
+    for hijo in widget.winfo_children():
+        textos += _textos_de_botones(hijo)
+    return textos
+
+
+def test_el_panel_ya_no_ofrece_buscar_medidas(panel):
+    # Bug 3 (28-sep): la ventana de medidas no se entendía y tardaba ~6 s.
+    # Queda solo el desglose; las medidas se buscan para el informe.
+    textos = _textos_de_botones(panel)
+
+    assert "Buscar medidas de protección" not in textos
+    assert "¿De dónde viene el riesgo?" in textos
+
+
+def test_si_no_cumple_el_aviso_lo_dice(panel, editor):
     panel.mostrar(editor.evaluar(tipos=(1,)))
 
     assert "No cumple: R1" in panel.aviso.cget("text")
-    assert str(panel.boton_medidas.cget("state")) == "normal"
+    assert str(panel.boton_desglose.cget("state")) == "normal"
 
 
-def test_si_cumple_no_hace_falta_buscar_medidas(panel, editor):
+def test_si_cumple_el_aviso_tambien_lo_dice(panel, editor):
     editor.N_G.poner(0.01)               # con tan pocos rayos, R1 cumple
     panel.mostrar(editor.evaluar(tipos=(1,)))
 
     assert "por debajo del tolerable" in panel.aviso.cget("text")
-    assert str(panel.boton_medidas.cget("state")) == "disabled"
+    assert str(panel.boton_desglose.cget("state")) == "normal"
 
 
 def test_volver_a_mostrar_no_acumula_filas(panel, editor):

@@ -2,7 +2,10 @@
 Paso 51a: la ventana de la pantalla nueva.
 
 Junta el editor del caso (Paso 47b) con el panel de resultados (Paso 49) y
-pone los botones: abrir, guardar, calcular, informe y buscar medidas.
+pone los botones: abrir, guardar, calcular e informe, y en el panel
+«¿De dónde viene el riesgo?». El botón «Buscar medidas de protección» se
+quitó el 28-sep (bug 3): la ventana no se entendía y tardaba ~6 s; las
+medidas se siguen buscando, pero para el informe.
 
 Los métodos que tocan archivos aceptan la ruta como argumento. Si no se les
 da, la preguntan con el diálogo del sistema. Así las pruebas pueden llamarlos
@@ -25,7 +28,6 @@ from variables.globales import papo
 NOMBRES_RIESGOS = {1: "R1 vidas", 2: "R2 servicio", 3: "R3 patrimonio",
                    4: "R4 económica"}
 
-CUANTAS_SOLUCIONES = 15
 
 # Los ejemplos resueltos del Anexo E, los que vienen con el programa. La
 # carpeta se busca al lado del código y no en el directorio desde el que se
@@ -58,7 +60,6 @@ class PrincipalNorma(Panel):
         # sitio reservado y el editor no se lo come al crecer.
         self.resultados = resultados.PanelResultados(self)
         self.resultados.pack(side="bottom", fill="x", padx=10, pady=6)
-        self.resultados.boton_medidas.configure(command=self.buscar_medidas)
         self.resultados.boton_desglose.configure(command=self.de_donde_viene)
         self.editor = editor_caso.EditorCaso(self)
         self.editor.pack(side="top", fill="both", expand=True, padx=10)
@@ -215,19 +216,6 @@ class PrincipalNorma(Panel):
                      "Para obtener el PDF hace falta tener LaTeX instalado."))
         return ruta_tex
 
-    def buscar_medidas(self):
-        """Busca combinaciones de medidas para el primer riesgo que no cumple."""
-        if self.ultimo_calculo is None or self.al_dia() is None:
-            return None
-        if all(r["cumple"] for r in self.ultimo_calculo.values()):
-            return None
-        tipo = self._primero_que_no_cumple()
-        caso = self.editor.casos_por_tipo((tipo,))[tipo]
-
-        soluciones = medidas.explorar(caso["estructura"], caso["lineas"],
-                                      caso["zonas"], caso["N_G"], tipo=tipo)
-        self._mostrar_soluciones(tipo, soluciones)
-        return soluciones
 
     def de_donde_viene(self):
         """Abre el desglose del riesgo elegido en el panel (Paso 56).
@@ -305,30 +293,3 @@ class PrincipalNorma(Panel):
                 "Teléfono": papo.get("telefono", ""),
                 "Descripción": papo.get("descripcion", "")}
 
-    def _mostrar_soluciones(self, tipo, soluciones):
-        ventana = tk.Toplevel(self)
-        ventana.title(f"Medidas de protección para R{tipo}")
-        self.ventana_medidas = ventana
-
-        if not soluciones:
-            ttk.Label(ventana, padding=12, wraplength=520, text=(
-                "Ninguna combinación de las medidas contempladas lleva el riesgo "
-                "por debajo del tolerable. Hay que revisar el caso: puede que "
-                "haga falta reducir la pérdida (n_z, t_z) o separar la zona.")
-            ).pack()
-            return
-
-        tabla = ttk.Treeview(ventana, columns=("riesgo", "costo"), height=15)
-        tabla.heading("#0", text="Medidas", anchor="w")
-        tabla.column("#0", width=520, anchor="w")
-        tabla.heading("riesgo", text=f"R{tipo} resultante", anchor="e")
-        tabla.heading("costo", text="Costo", anchor="e")
-        tabla.column("riesgo", width=140, anchor="e")
-        tabla.column("costo", width=110, anchor="e")
-        for solucion in soluciones[:CUANTAS_SOLUCIONES]:
-            tabla.insert("", "end",
-                         text=", ".join(m.nombre for m in solucion.medidas),
-                         values=(resultados.numero(solucion.riesgo),
-                                 f"{solucion.costo:,.0f}".replace(",", " ")))
-        tabla.pack(padx=10, pady=10)
-        self.tabla_medidas = tabla

@@ -73,8 +73,8 @@ def test_cambiar_un_dato_pone_el_panel_en_gris_y_lo_dice(pantalla):
     assert pantalla.resultados.obsoleto
     assert "volver a calcular" in pantalla.resultados.aviso.cget("text")
     assert _color_del_veredicto(pantalla.resultados) == resultados.GRIS
-    # y no se puede seguir buscando medidas sobre un riesgo que ya no vale
-    assert str(pantalla.resultados.boton_medidas.cget("state")) == "disabled"
+    # y no se puede abrir el desglose de un riesgo que ya no vale
+    assert str(pantalla.resultados.boton_desglose.cget("state")) == "disabled"
 
 
 def test_deshacer_el_cambio_devuelve_el_resultado(pantalla):
@@ -147,11 +147,3 @@ def test_el_informe_no_mezcla_entradas_nuevas_con_riesgos_viejos(pantalla, tmp_p
     contenido = open(ruta, encoding="utf-8").read()
     assert memoria.numero(nuevo) in contenido
     assert memoria.numero(viejo) not in contenido
-
-
-def test_el_buscador_de_medidas_no_trabaja_con_un_riesgo_viejo(pantalla):
-    # Con casi ningún rayo la casa rural ya cumple: no hay medidas que buscar.
-    pantalla.editor.N_G.poner(0.01)
-
-    assert pantalla.buscar_medidas() is None
-    assert pantalla.ultimo_calculo[1]["cumple"] is True
