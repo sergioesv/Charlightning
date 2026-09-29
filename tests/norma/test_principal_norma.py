@@ -107,6 +107,24 @@ def test_calcular_con_datos_a_medias_avisa_y_no_deja_resultados(pantalla, avisos
     assert pantalla.resultados.filas() == []
     assert "Zona 2" in avisos[-1]
 
+def test_un_riesgo_marcado_sin_perdidas_lo_dice_y_no_calcula(pantalla, avisos):
+    # Bug 4 (28-sep): la casa rural solo trae pérdidas de R1. Marcar R2 daba
+    # R2 = 0 y «Cumple» sin haber evaluado nada.
+    pantalla.marcas[2].set(True)
+
+    assert pantalla.calcular() is None
+    assert pantalla.resultados.filas() == []
+    assert "R2 no tiene pérdidas cargadas" in avisos[-1]
+    assert "R2 Servicio público" in avisos[-1]
+
+
+def test_con_las_perdidas_cargadas_el_riesgo_si_se_calcula(pantalla):
+    pantalla.marcas[4].set(True)
+    _cargar_perdidas_r4(pantalla)
+
+    resultado = pantalla.calcular()
+
+    assert resultado[4]["total"] > 0
 
 def test_volver_a_calcular_no_acumula(pantalla):
     pantalla.calcular()
@@ -334,8 +352,26 @@ def test_sin_calcular_no_hay_desglose(pantalla):
     assert pantalla.de_donde_viene() is None
 
 
+def _cargar_perdidas_r4(pantalla):
+    """La casa rural solo trae R1; con L_F «otros» tiene R4, y R4 cumple."""
+    for formulario in pantalla.editor.zonas.formularios:
+        formulario.pestanas[4].campos["L_F"].poner_llave("otros")
+
+
 def test_el_desglose_abre_el_riesgo_elegido_en_el_panel(pantalla):
-    pantalla.marcas[3].set(True)
+    pantalla.marcas[4].set(True)
+    _cargar_perdidas_r4(pantalla)
+    pantalla.calcular()
+    pantalla.resultados.arbol.selection_set("R4")
+
+    pantalla.de_donde_viene()
+
+    assert pantalla.ventana_desglose.tipo == 4
+
+
+def test_sin_elegir_nada_el_desglose_va_al_que_no_cumple(pantalla):
+    pantalla.marcas[4].set(True)      # R4 de la casa rural cumple; R1 no
+    _cargar_perdidas_r4(pantalla)
     pantalla.calcular()
     pantalla.resultados.arbol.selection_set("R3")
 

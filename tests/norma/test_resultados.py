@@ -130,6 +130,12 @@ def test_con_dos_zonas_se_ve_lo_que_aporta_cada_una(panel, editor, caso):
 
 
 def test_los_cuatro_riesgos_caben_en_la_tabla(panel, editor):
+    # La casa rural solo trae pérdidas de R1: sin cargar las de los otros tres,
+    # el editor se niega a calcularlos (bug 4 del 28-sep).
+    for formulario in editor.zonas.formularios:
+        formulario.pestanas[2].campos["L_F"].poner_llave("gas_agua_electricidad")
+        formulario.pestanas[3].banderas["L_F"][0].poner(True)
+        formulario.pestanas[4].campos["L_F"].poner_llave("otros")
     for formulario in editor.zonas.formularios:
         formulario.pestanas[4].campos["L_F"].poner_llave("otros")
 

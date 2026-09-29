@@ -97,6 +97,21 @@ def componentes_aplicables(tipo: int, estructura) -> set:
         return base
     raise ValueError("El tipo de riesgo debe ser 1, 2, 3 o 4")
 
+# Las pérdidas típicas de cada riesgo (Anexo C). Si NINGUNA zona tiene alguna
+# cargada, el riesgo sale 0 y «cumple» sin haber evaluado nada: el mismo cero
+# en silencio que daba la casilla de N_G vacía en el programa viejo.
+PERDIDAS_TIPICAS = {
+    1: ("L_T", "L_F", "L_O"),
+    2: ("L_F", "L_O"),
+    3: ("L_F",),
+    4: ("L_T", "L_F", "L_O"),
+}
+
+
+def sin_perdidas(zonas, tipo: int) -> bool:
+    """True si ninguna zona tiene cargada ninguna pérdida típica de este riesgo."""
+    return not any(getattr(zona, nombre)
+                   for zona in zonas for nombre in PERDIDAS_TIPICAS[tipo])
 
 def _perdidas_zona(zona, tipo: int, n_t: float, c_t: float) -> tuple:
     """L_A, L_B, L_C de la zona según el tipo de pérdida (1-4)."""
@@ -249,3 +264,7 @@ def evaluar(estructura, lineas, zonas, N_G: float, tipos=(1,)) -> dict:
             "zonas": por_zona,
         }
     return resultados
+
+SIN_PERDIDAS = ("R{tipo} no tiene pérdidas cargadas en ninguna zona ({zonas}): daría 0 y "
+                "«Cumple» sin haber evaluado nada. Carga las pérdidas en la pestaña "
+                "«{pestana}» de cada zona, o desmarca R{tipo} arriba.")
