@@ -519,9 +519,22 @@ def test_el_blindaje_se_nombra_con_la_fila_de_su_tipo_de_linea(caso):
 def test_un_valor_que_no_es_fila_de_la_tabla_se_declara(caso):
     from dataclasses import replace
 
-    # El hospital del E.4 usa P_DPS = 0,002: la Tabla B.3 da un rango (0,005-0,001).
+    # 0,003 cae en el rango de la Nota 2 de la Tabla B.3 (0,005-0,001) pero no es
+    # ninguna de sus tres filas: el informe no le inventa nombre.
+    zonas = [replace(z, sistemas_internos=[replace(si, P_DPS=0.003) for si in z.sistemas_internos])
+             for z in caso["zonas"]]
+    tabla = _tabla_de_adoptadas(_armar(dict(caso, zonas=zonas)))
+    assert any(f[2] == "Valor declarado" and f[3] == "P<sub>DPS</sub> = 0,003"
+               for f in tabla.filas[1:])
+
+
+def test_un_dps_mejor_que_npr_I_sale_con_su_fila(caso):
+    from dataclasses import replace
+
+    # El hospital del E.4 usa P_DPS = 0,002: desde la revisión IEC es fila de la tabla.
     zonas = [replace(z, sistemas_internos=[replace(si, P_DPS=0.002) for si in z.sistemas_internos])
              for z in caso["zonas"]]
     tabla = _tabla_de_adoptadas(_armar(dict(caso, zonas=zonas)))
-    assert any(f[2] == "Valor declarado" and f[3] == "P<sub>DPS</sub> = 0,002"
-               for f in tabla.filas[1:])
+    assert any(f[2] == "DPS 2 veces mejor que NPR I (Nota 2)" for f in tabla.filas[1:])
+
+

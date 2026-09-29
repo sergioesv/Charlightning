@@ -65,8 +65,11 @@ def catalogo(costos: dict = None) -> list:
     # --- Tablas B.3 y B.7: DPS coordinados -> P_DPS (sistemas) y P_EB (líneas).
     # Las dos tablas tienen las mismas llaves y valores: un mismo sistema de DPS
     # baja las dos probabilidades.
+    # Las filas «mejor que NPR I» (Nota 2 de la Tabla B.3) no se proponen solas:
+    # exigen justificar las características del DPS. Quien las tenga, las
+    # declara en la pantalla.
     for clave, valor in tablas.PDPS.items():
-        if clave == "sin_dps_coordinado":
+        if clave == "sin_dps_coordinado" or clave.startswith("mejor_que_npr_I"):
             continue
         medidas.append(Medida(
             nombre=f"dps:{clave}", familia="dps",

@@ -117,6 +117,9 @@ ETIQUETAS = {
         "npr_III_IV": "DPS de NPR III-IV",
         "npr_II": "DPS de NPR II",
         "npr_I": "DPS de NPR I",
+        "mejor_que_npr_I_1_5x": "DPS 1,5 veces mejor que NPR I (Nota 2)",
+        "mejor_que_npr_I_2x": "DPS 2 veces mejor que NPR I (Nota 2)",
+        "mejor_que_npr_I_3x": "DPS 3 veces mejor que NPR I (Nota 2)",   
     },
 
     "CLD_CLI": {
@@ -162,6 +165,9 @@ ETIQUETAS = {
         "npr_III_IV": "DPS de NPR III-IV",
         "npr_II": "DPS de NPR II",
         "npr_I": "DPS de NPR I",
+        "mejor_que_npr_I_1_5x": "DPS 1,5 veces mejor que NPR I (Nota 3)",
+        "mejor_que_npr_I_2x": "DPS 2 veces mejor que NPR I (Nota 3)",
+        "mejor_que_npr_I_3x": "DPS 3 veces mejor que NPR I (Nota 3)",
     },
 
     "PLD": {

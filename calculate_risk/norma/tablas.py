@@ -153,6 +153,12 @@ PDPS = {
     "npr_III_IV": 0.05,
     "npr_II": 0.02,
     "npr_I": 0.01,
+    # Fila «NOTA 2» de la tabla: DPS con mejores características que las del NPR I
+    # (corriente nominal mayor, nivel de protección menor). La norma da el rango
+    # 0,005 - 0,001; estos tres son los que usa el ejemplo del hospital (E.4.5).
+    "mejor_que_npr_I_1_5x": 0.005,
+    "mejor_que_npr_I_2x": 0.002,
+    "mejor_que_npr_I_3x": 0.001,
 }
 
 
@@ -177,6 +183,10 @@ PEB = {
     "npr_III_IV": 0.05,
     "npr_II": 0.02,
     "npr_I": 0.01,
+    # Fila «NOTA 3» de la tabla: la misma idea que la Nota 2 de la Tabla B.3.
+    "mejor_que_npr_I_1_5x": 0.005,
+    "mejor_que_npr_I_2x": 0.002,
+    "mejor_que_npr_I_3x": 0.001,
 }
 
 
