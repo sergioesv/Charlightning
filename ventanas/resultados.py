@@ -74,7 +74,7 @@ class PanelResultados(ttk.LabelFrame):
         self.aviso.grid(row=0, column=0, padx=(0, 12))
         self.boton_desglose = ttk.Button(pie, text="¿De dónde viene el riesgo?",
                                          state="disabled")
-        self.boton_desglose.grid(row=0, column=2)
+        self.boton_desglose.grid(row=0, column=1)
         self.obsoleto = False
 
     # -- contenido ---------------------------------------------------------
@@ -83,7 +83,7 @@ class PanelResultados(ttk.LabelFrame):
         for fila in self.arbol.get_children():
             self.arbol.delete(fila)
         self.aviso.configure(text="")
-        self.boton_medidas.configure(state="disabled")
+        self.boton_desglose.configure(state="disabled")
         self._colorear(AZUL, NARANJA)
         self.obsoleto = False
 

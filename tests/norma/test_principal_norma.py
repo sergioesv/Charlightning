@@ -266,37 +266,6 @@ def test_sin_datos_no_hay_informe(raiz, tmp_path, avisos):
 
 
 # ---------------------------------------------------------------------------
-# Buscar medidas
-# ---------------------------------------------------------------------------
-
-def test_el_buscador_solo_corre_si_algo_no_cumple(pantalla):
-    # Sin calcular no hay nada que buscar.
-    assert pantalla.buscar_medidas() is None
-
-
-def test_el_buscador_encuentra_soluciones_para_la_casa_rural(pantalla):
-    pantalla.calcular()
-
-    soluciones = pantalla.buscar_medidas()
-
-    assert soluciones, "la casa rural sí tiene solución en la norma"
-    assert all(s.cumple for s in soluciones)
-    assert soluciones[0].riesgo < 1e-5
-    # y quedan a la vista, ordenadas
-    assert len(pantalla.tabla_medidas.get_children()) <= (
-        principal_norma.CUANTAS_SOLUCIONES)
-
-
-def test_las_dos_soluciones_de_la_norma_estan_entre_las_encontradas(pantalla):
-    # El Anexo E.2 publica 0,223e-5 y 0,141e-5 para la casa rural.
-    pantalla.calcular()
-
-    riesgos_hallados = [s.riesgo for s in pantalla.buscar_medidas()]
-
-    for publicado in (0.223e-5, 0.141e-5):
-        assert any(r == approx(publicado, rel=0.02) for r in riesgos_hallados), publicado
-
-# ---------------------------------------------------------------------------
 # Ejemplos de la norma
 # ---------------------------------------------------------------------------
 
