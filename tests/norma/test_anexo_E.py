@@ -8,8 +8,9 @@ la tolerancia es de medio dígito de la norma o 1 %, la que sea mayor -- el
 mismo criterio que ya usaste en ntc4552_2/validacion_anexo_E.py (58/59).
 
 Nota: E.4 solución c) tiene una discrepancia conocida y documentada en la
-memoria del proyecto (norma imprime 0,2505; el modelo da 0,244) -- no es
-un error de este código, se deja el valor recalculado.
+memoria del proyecto (la norma imprime 0,244; el modelo da 0,2505) -- no es
+un error de este código. La IEC 62305-2:2010 imprime lo mismo: deja R_M de la
+zona Z2 en ~0 (da 0,0048, porque Z2 no tiene la malla de 0,1 m)
 """
 import pytest
 
@@ -160,8 +161,8 @@ def test_hospital_soluciones_a_b():
 
 
 @pytest.mark.xfail(
-    reason="Tabla E.36 (hospital solucion c): discrepancia conocida de la norma -- "
-           "recalculado da 0,2505, la norma imprime 0,244 (ver erratas en la memoria)",
+    reason="Tabla E.36 (hospital solucion c): discrepancia heredada de la IEC -- "
+           "recalculado da 0,2505, la norma imprime 0,244 (R_M de Z2 ~0 en la tabla)",
     strict=True,
 )
 def test_hospital_solucion_c():
