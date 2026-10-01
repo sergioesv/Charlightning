@@ -10,14 +10,17 @@
   --azul-claro: #e8eef7;
   --enlace: #0033cc;
   --visitado: #551a8b;
-  --bien: #007700;
-  --mal: #cc0000;
+  --bien: #1f5fae;      /* cumple: azul, como el programa (no verde: daltonismo) */
+  --mal: #c2410c;       /* no cumple: naranja */
+  --error: #c0392b;
   --aviso-fondo: #ffffcc;
   --aviso-borde: #e0c000;
   color-scheme: light;
 }
 
 * { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
 
 body {
   margin: 0;
@@ -29,7 +32,7 @@ body {
 
 a { color: var(--enlace); }
 a:visited { color: var(--visitado); }
-a:hover { color: var(--mal); }
+a:hover { color: var(--error); }
 
 #pagina {
   max-width: 900px;
@@ -225,6 +228,7 @@ th, td { text-align: left; padding: 3px 6px; border: 1px solid #c8d2e2; }
 th { background: linear-gradient(#eef2f8, #d3dcea); color: var(--azul); font-size: 11px; }
 tbody tr:nth-child(even) td { background: #f3f6fb; }
 td.num, th.num { text-align: right; }
+td.num { white-space: nowrap; }
 
 .cumple { color: var(--bien); font-weight: bold; }
 .no-cumple { color: var(--mal); font-weight: bold; }
@@ -238,7 +242,8 @@ td.num, th.num { text-align: right; }
 
 .aviso::before { content: "\26A0  "; }
 
-.error { color: var(--mal); font-weight: bold; }
+.error { color: var(--error); font-weight: bold; }
+.multilinea { white-space: pre-line; }
 
 pre {
   background: #f8f8f8;
@@ -277,3 +282,102 @@ pre {
 }
 
 .tarjeta > :last-child { margin-bottom: 0; }
+
+/* --- Formularios de la calculadora (como los LabelFrame del programa) ------------- */
+
+fieldset {
+  border: 1px solid var(--borde);
+  margin: 10px 0;
+  padding: 6px 10px 10px;
+  background: #fafbfd;
+  min-width: 0;
+}
+
+legend {
+  font-weight: bold;
+  color: var(--azul);
+  padding: 0 4px;
+}
+
+fieldset fieldset { background: #fff; }
+
+.campo {
+  display: grid;
+  grid-template-columns: minmax(130px, 42%) minmax(0, 1fr);
+  gap: 2px 8px;
+  align-items: center;
+  padding: 2px 0;
+  border-bottom: 1px dotted #e1e6ee;
+}
+
+.campo > label { font-weight: normal; margin: 0; font-size: 11px; }
+.campo .control { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 0; }
+.campo select { width: 100%; max-width: 420px; }
+.campo .unidad { color: var(--suave); font-size: 11px; }
+.campo.en-error > label { color: var(--error); font-weight: bold; }
+.campo.en-error input, .campo.en-error select { border-color: var(--error); }
+
+.radios { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 2px 0 6px; }
+.radios label { display: inline; font-weight: normal; margin: 0; }
+.aviso-ng { margin: 6px 0 0; font-size: 11px; color: var(--suave); }
+
+/* Pestañas (el Notebook de ttk) */
+.pestanas { margin: 8px 0; }
+.pestanas-barra { display: flex; flex-wrap: wrap; gap: 2px; border-bottom: 1px solid var(--borde); }
+.pestanas-barra button {
+  border: 1px solid var(--borde);
+  border-bottom: 0;
+  background: linear-gradient(#f4f4f4, #d8dde6);
+  font-weight: normal;
+  margin-bottom: -1px;
+}
+.pestanas-barra button[aria-selected="true"] {
+  background: #fff;
+  font-weight: bold;
+  border-bottom: 1px solid #fff;
+}
+.pestanas-panel { border: 1px solid var(--borde); border-top: 0; padding: 6px 8px; background: #fff; }
+
+/* La lista de elementos arriba y el formulario del elegido debajo (ListaDeFormularios).
+   En el programa la lista va a la izquierda; aquí hay menos ancho y el formulario lo necesita. */
+.lista-doble { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.lista-izquierda { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: flex-start; }
+.lista-izquierda select { flex: 1 1 200px; max-width: 320px; }
+.lista-botones { display: flex; flex-direction: column; gap: 4px; }
+.lista-botones button { padding: 2px 10px; }
+.lista-izquierda .pequeno { flex-basis: 100%; }
+.lista-derecha { min-width: 0; }
+
+/* Barra de botones de arriba */
+.barra-herramientas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  padding: 4px;
+  background: linear-gradient(#f4f4f4, #dcdcdc);
+  border: 1px solid #b0b0b0;
+}
+.barra-herramientas .evaluar { margin-left: 8px; font-size: 11px; }
+.barra-herramientas .evaluar label { display: inline; font-weight: normal; margin: 0 4px 0 0; }
+
+details.proyecto { margin: 8px 0; border: 1px solid var(--borde); padding: 4px 8px; background: #fafbfd; }
+details.proyecto summary { cursor: pointer; font-weight: bold; color: var(--azul); }
+
+/* Resultados */
+.resultados tr.riesgo td { border-top: 2px solid var(--borde); }
+.resultados tr.riesgo.cumple td, .resultados tr.cumple td { color: var(--bien); }
+.resultados tr.riesgo.no-cumple td { color: var(--mal); }
+.resultados tbody tr { cursor: pointer; }
+.resultados tr.elegida td { background: #fff3c4 !important; }
+.resultados td.sangria { padding-left: 22px; }
+.resultados.obsoleto td, .resultados.obsoleto .aviso { color: #8a8a8a !important; }
+.resultados.obsoleto #resumen { color: #8a8a8a; font-style: italic; }
+#resumen.cumple, #desglose-titulo.cumple { color: var(--bien); font-weight: bold; }
+#resumen.no-cumple, #desglose-titulo.no-cumple { color: var(--mal); font-weight: bold; }
+
+body.trabajando, body.trabajando * { cursor: progress !important; }
+
+@media (max-width: 640px) {
+  .campo { grid-template-columns: 1fr; }
+}

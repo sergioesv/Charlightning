@@ -78,13 +78,53 @@ def test_json_roto_y_demasiado_grande(cliente):
     assert cliente.post("/api/evaluar", content=grande).status_code == 413
 
 
-def test_riesgo_sin_perdidas_avisa_en_vez_de_cumplir(cliente):
+def test_riesgo_sin_perdidas_no_se_calcula(cliente):
+    """Como en el programa: R2 sin pérdidas daría 0 y «Cumple» sin haber evaluado nada."""
     sin_l2 = {"1": {}, "2": {"L_T": 0, "L_F": 0, "L_O": 0}}
     caso = {**CASA_RURAL, "zonas": [{**z, "perdidas": sin_l2} for z in CASA_RURAL["zonas"]]}
+    respuesta = cliente.post("/api/evaluar", json=caso)
+    assert respuesta.status_code == 422
+    assert "R2 no tiene pérdidas cargadas" in respuesta.json()["detail"]
+
+
+def test_el_esquema_trae_las_tablas_de_la_norma(cliente):
+    esquema = cliente.get("/api/esquema").json()
+    cd = esquema["tablas"]["CD"]
+    assert cd["nombre"].startswith("Tabla A.1")
+    assert {"llave": "aislada", "texto": "Aislada, sin otros objetos cerca", "valor": 1} in cd["opciones"]
+    assert esquema["tablas"]["CLD_CLI"]["opciones"][0]["valor"] == {"CLD": 1, "CLI": 1}
+    pli = {o["llave"]: o["valores"] for o in esquema["doble_entrada"]["PLI"]["opciones"]}
+    assert pli["potencia"]["2.5"] == 0.3
+    assert esquema["tensiones"] == [1, 1.5, 2.5, 4, 6]
+    assert esquema["por_defecto"]["Zona"]["t_z"] == 8760
+
+
+def test_abrir_un_caso_lo_deja_listo_para_los_formularios(cliente):
+    abierto = cliente.post("/api/abrir", json=servicio.ejemplo("E3_oficinas")).json()
+    caso = abierto["por_tipo"]["1"]
+    assert [z["nombre"] for z in caso["zonas"]] == ["Z1", "Z2", "Z3", "Z4", "Z5"]
+    assert caso["lineas"][1]["P_LI"] == 0.5
+    assert caso["emplazamiento"]["modo"] == "declarado"
+
+
+def test_lo_que_guarda_la_web_se_calcula_igual(cliente):
+    """El formato que arma la calculadora (pérdidas por riesgo) da lo mismo."""
+    abierto = cliente.post("/api/abrir", json=CASA_RURAL).json()["por_tipo"]["1"]
+    perdidas = ("L_T", "L_F", "L_O", "h_z", "L_FE", "t_e")
+    zonas = [{**{k: v for k, v in z.items() if k not in perdidas},
+              "perdidas": {"1": {k: z[k] for k in perdidas}}} for z in abierto["zonas"]]
+    caso = {"N_G": abierto["N_G"], "emplazamiento": abierto["emplazamiento"], "tipos": [1],
+            "estructura": abierto["estructura"], "lineas": abierto["lineas"], "zonas": zonas}
     datos = cliente.post("/api/evaluar", json=caso).json()
-    assert "1" in datos["riesgos"]
-    assert "2" not in datos["riesgos"]
-    assert any(a.startswith("R2") for a in datos["avisos"])
+    assert datos["riesgos"]["1"]["total"] == pytest.approx(2.51e-5, rel=0.01)
+
+
+def test_de_donde_viene_el_riesgo(cliente):
+    d = cliente.post("/api/desglose?tipo=1", json=CASA_RURAL).json()
+    assert d["aportes"][0]["componente"] == "R_V"
+    assert d["aportes"][0]["texto"].startswith("R_V - ")
+    assert any(r["cumple"] for r in d["aportes"][0]["rebajas"])
+    assert cliente.post("/api/desglose?tipo=3", json=CASA_RURAL).status_code == 422
 
 
 def test_n_g_desde_coordenadas(cliente):
@@ -128,7 +168,8 @@ def test_limite_de_peticiones(cliente, monkeypatch):
 
 def test_las_paginas_se_sirven(cliente):
     for pagina in ("/", "/calculadora.html", "/validacion.html", "/citar.html",
-                   "/apoyar.html", "/estilos.css", "/calculadora.js"):
+                   "/apoyar.html", "/estilos.css", "/calculadora.js", "/campos.js",
+                   "/formularios.js"):
         assert cliente.get(pagina).status_code == 200, pagina
 
 

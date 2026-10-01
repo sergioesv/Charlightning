@@ -51,7 +51,7 @@ Variables opcionales (Settings → Variables):
 
 | Variable | Por omisión | Para qué |
 |---|---|---|
-| `LIMITE_CALCULOS` | 30 | evaluaciones y consultas de N_G por minuto por IP |
+| `LIMITE_CALCULOS` | 120 | evaluaciones, consultas de N_G, abrir casos y desgloses por minuto por IP |
 | `LIMITE_INFORMES` | 5 | PDF por minuto por IP (cada uno tarda ~10 s) |
 
 ## Dominio propio

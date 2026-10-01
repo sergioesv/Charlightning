@@ -39,45 +39,67 @@
 </div>
 <main>
 <h1>Calculadora</h1>
-<p class="subtitulo">Cargue un ejemplo o un caso guardado con el programa de escritorio,
-ajústelo y evalúe.</p>
+<p class="subtitulo">Evaluación del riesgo según la NTC 4552-2:2023, con los mismos formularios
+del programa de escritorio. Llene el caso o abra un ejemplo de la norma.</p>
 
-<div class="tarjeta">
-  <div class="fila">
-    <div>
-      <label for="ejemplo">Ejemplo</label>
-      <select id="ejemplo"><option value="">— elegir —</option></select>
-    </div>
-    <div>
-      <label for="archivo">…o un archivo .json</label>
-      <input id="archivo" type="file" accept=".json,application/json">
-    </div>
+<div id="cargando" class="pequeno">Cargando las tablas de la norma…</div>
+
+<div id="calculadora" hidden>
+  <div class="barra-herramientas">
+    <button type="button" id="b-nuevo">Caso nuevo</button>
+    <button type="button" id="b-abrir">Abrir caso</button>
+    <select id="b-ejemplos" aria-label="Ejemplos de la norma">
+      <option value="">Ejemplos de la norma ▾</option>
+    </select>
+    <button type="button" id="b-guardar">Guardar caso</button>
+    <button type="button" id="b-calcular"><b>Calcular</b></button>
+    <button type="button" id="b-informe">Informe</button>
+    <input type="file" id="archivo" accept=".json,application/json" hidden>
+    <span class="evaluar">Evaluar:
+      <label><input type="checkbox" name="tipo" value="1" checked> R1 vidas</label>
+      <label><input type="checkbox" name="tipo" value="2"> R2 servicio</label>
+      <label><input type="checkbox" name="tipo" value="3"> R3 patrimonio</label>
+      <label><input type="checkbox" name="tipo" value="4"> R4 económica</label>
+    </span>
   </div>
+  <p id="estado" role="status" class="pequeno"></p>
 
-  <h2>N_G desde coordenadas (NASA LIS/OTD)</h2>
-  <div class="fila">
-    <div><label for="lat">Latitud</label><input id="lat" type="number" step="any" placeholder="6.25" size="10"></div>
-    <div><label for="lon">Longitud</label><input id="lon" type="number" step="any" placeholder="-75.56" size="10"></div>
-    <div><button id="usar-coordenadas" class="secundario" type="button">Usar estas coordenadas</button></div>
-  </div>
-  <p id="ficha" class="pequeno"></p>
+  <details class="proyecto">
+    <summary>Datos del proyecto (para el informe)</summary>
+    <div id="datos-proyecto"></div>
+  </details>
 
-  <label for="caso">Caso (JSON)</label>
-  <textarea id="caso" spellcheck="false" placeholder='{"N_G": 4, "tipos": [1], "estructura": {...}, "lineas": [...], "zonas": [...]}'></textarea>
-  <p class="pequeno">Mismo formato que los archivos de <code>casos/</code> del programa de escritorio.
-  Los nombres de los campos son los de la norma (L, W, H, C_D, n_t, L_L, P_LI, r_t, r_f, …).</p>
+  <div id="editor"></div>
 
-  <label for="proyecto">Nombre del proyecto (para el PDF)</label>
-  <input id="proyecto" type="text" maxlength="120" style="width:100%">
+  <fieldset id="panel-resultados" class="resultados">
+    <legend>Resultados</legend>
+    <div class="tabla-envuelta">
+      <table>
+        <thead><tr><th>Riesgo y zonas</th><th class="num">Riesgo calculado [1/año]</th>
+          <th class="num">Tolerable R_T</th><th class="num">Veredicto</th></tr></thead>
+        <tbody id="filas-resultados"><tr><td colspan="4" class="pequeno">Pulse «Calcular».</td></tr></tbody>
+      </table>
+    </div>
+    <p class="fila"><span id="resumen"></span>
+      <button type="button" id="b-desglose" disabled>¿De dónde viene el riesgo?</button></p>
+    <div id="notas"></div>
+  </fieldset>
 
-  <p class="fila">
-    <button id="evaluar" type="button">Evaluar</button>
-    <button id="informe" class="secundario" type="button">Descargar memoria en PDF</button>
-  </p>
-  <p id="estado" role="status"></p>
+  <fieldset id="panel-desglose" class="resultados" hidden>
+    <legend>De dónde viene el riesgo</legend>
+    <p id="desglose-titulo"></p>
+    <div class="tabla-envuelta"><table>
+      <thead><tr><th>Componente</th><th class="num">1/año</th><th class="num">Parte del riesgo</th></tr></thead>
+      <tbody id="desglose-componentes"></tbody>
+    </table></div>
+    <h2 id="desglose-medidas-titulo">Medidas</h2>
+    <div class="tabla-envuelta"><table>
+      <thead><tr><th>Medida</th><th class="num">Lo deja en</th><th class="num" id="desglose-queda">Queda en</th>
+        <th class="num">¿Basta con ella?</th></tr></thead>
+      <tbody id="desglose-medidas"></tbody>
+    </table></div>
+  </fieldset>
 </div>
-
-<div id="resultados"></div>
 </main>
 </div>
 <div id="pie">
@@ -86,6 +108,6 @@ ajústelo y evalúe.</p>
   <span class="resolucion">Se ve mejor a 1024&times;768</span>
 </div>
 </div>
-<script src="/calculadora.js"></script>
+<script type="module" src="/calculadora.js"></script>
 </body>
 </html>

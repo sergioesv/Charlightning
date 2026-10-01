@@ -6,11 +6,14 @@ peticiones y respuestas. Aquí no se calcula ningún riesgo: todo sale de
 calculate_risk/, el mismo motor del programa de escritorio.
 """
 import tempfile
-from dataclasses import asdict
+from dataclasses import MISSING, asdict, fields
+from datetime import date
 from pathlib import Path
 
-from calculate_risk.norma import casos, densidad, riesgos
-from calculate_risk.norma.modelo import Emplazamiento
+from calculate_risk.norma import (casos, densidad, etiquetas, medidas, probabilidades,
+                                  riesgos, tablas)
+from calculate_risk.norma.modelo import (Emplazamiento, Estructura, Linea, SistemaInterno,
+                                         Zona)
 
 RAIZ = Path(__file__).resolve().parent.parent
 CARPETA_EJEMPLOS = RAIZ / "casos"
@@ -88,14 +91,24 @@ def leer_casos(datos: dict) -> dict:
     return por_tipo
 
 
+TITULOS_PESTANA = {1: "R1 Vidas humanas", 2: "R2 Servicio público",
+                   3: "R3 Patrimonio", 4: "R4 Económica"}
+
+# El mismo texto de ventanas/editor_caso.py: un riesgo sin pérdidas no se calcula.
+SIN_PERDIDAS = ("R{tipo} no tiene pérdidas cargadas en ninguna zona ({zonas}): daría 0 y "
+                "«Cumple» sin haber evaluado nada. Carga las pérdidas en la pestaña "
+                "«{pestana}» de cada zona, o desmarca R{tipo} arriba.")
+
+
 def _evaluar_casos(por_caso: dict) -> tuple:
     """(resultados, avisos), igual que EditorCaso.evaluar de la pantalla."""
+    vacios = [SIN_PERDIDAS.format(tipo=t, pestana=TITULOS_PESTANA[t],
+                                  zonas=", ".join(z.nombre for z in c["zonas"]))
+              for t, c in sorted(por_caso.items()) if riesgos.sin_perdidas(c["zonas"], t)]
+    if vacios:
+        raise CasoInvalido("\n\n".join(vacios))
     resultados, avisos = {}, []
     for tipo, caso in sorted(por_caso.items()):
-        if riesgos.sin_perdidas(caso["zonas"], tipo):
-            avisos.append(f"R{tipo}: ninguna zona tiene pérdidas cargadas para este "
-                          "riesgo, así que no se evalúa (daría 0 y un falso «Cumple»).")
-            continue
         try:
             resultados[tipo] = riesgos.evaluar(caso["estructura"], caso["lineas"],
                                                caso["zonas"], caso["N_G"], tipos=(tipo,))[tipo]
@@ -153,15 +166,123 @@ def informe_pdf(datos: dict, proyecto: dict = None, buscar_medidas: bool = True)
 
     por_caso = leer_casos(datos)
     resultados, avisos = _evaluar_casos(por_caso)
-    if not resultados:
-        raise CasoInvalido("No hay ningún riesgo con pérdidas cargadas para el informe.")
-    casos_evaluados = {t: por_caso[t] for t in resultados}
-    proyecto = {str(k)[:40]: str(v)[:200] for k, v in (proyecto or {}).items()}
+    proyecto = {str(k)[:40]: str(v)[:1000] for k, v in (proyecto or {}).items()}
     with tempfile.TemporaryDirectory(prefix="charlightning_web_") as carpeta:
-        informe = generar.generar_informe(carpeta, casos_evaluados, resultados,
-                                          proyecto=proyecto, buscar_medidas=buscar_medidas)
+        informe = generar.generar_informe(carpeta, por_caso, resultados,
+                                          proyecto=proyecto, fecha=date.today(),
+                                          buscar_medidas=buscar_medidas)
         contenido = Path(informe.ruta).read_bytes()
     return contenido, avisos + list(informe.avisos)
+
+
+# ---------------------------------------------------------------------------
+# Lo que necesitan los formularios de la calculadora
+# ---------------------------------------------------------------------------
+
+def _por_defecto(clase) -> dict:
+    """Los valores por defecto de la dataclass, como en ventanas/formularios.py."""
+    salida = {}
+    for campo in fields(clase):
+        if campo.default is not MISSING:
+            salida[campo.name] = campo.default
+        elif campo.default_factory is not MISSING:
+            salida[campo.name] = campo.default_factory()
+    return salida
+
+
+def esquema() -> dict:
+    """Las listas de la norma para armar los formularios en el navegador.
+
+    Los textos salen de etiquetas.py y los valores de tablas.py, igual que en
+    las listas desplegables del programa de escritorio: el navegador no lleva
+    ni un número de la norma escrito a mano.
+    """
+    simples = {
+        tabla: {
+            "nombre": etiquetas.nombre_de(tabla),
+            "opciones": [{"llave": llave, "texto": texto, "valor": valor}
+                         for llave, (texto, valor) in zip(etiquetas.llaves(tabla),
+                                                          etiquetas.opciones(tabla))],
+        }
+        for tabla in etiquetas.SIMPLES
+    }
+    tensiones = probabilidades.tensiones_soportadas()
+    doble = {
+        "PLD": {
+            "nombre": etiquetas.nombre_de("PLD"),
+            "opciones": [{"llave": b, "texto": etiquetas.texto("PLD", b),
+                          "valores": {str(u): probabilidades.p_ld(b, u) for u in tensiones}}
+                         for b in probabilidades.BLINDAJES],
+        },
+        "PLI": {
+            "nombre": etiquetas.nombre_de("PLI"),
+            "opciones": [{"llave": t, "texto": etiquetas.texto("PLI", t),
+                          "valores": {str(u): probabilidades.p_li(t, u) for u in tensiones}}
+                         for t in probabilidades.TIPOS_DE_LINEA],
+        },
+    }
+    return {
+        "tablas": simples,
+        "doble_entrada": doble,
+        "tensiones": tensiones,
+        "constantes": {"LT_L1": tablas.LT_L1, "LF_L3": tablas.LF_L3, "LT_L4": tablas.LT_L4,
+                       "FACTOR_MALLA": probabilidades.FACTOR_MALLA,
+                       "LIMITE_DE_LATITUD": densidad.LIMITE_DE_LATITUD},
+        "tolerables": {str(t): tablas.RT[f"L{t}"] for t in (1, 2, 3, 4)},
+        "por_defecto": {
+            "Estructura": _por_defecto(Estructura),
+            "Linea": {k: v for k, v in _por_defecto(Linea).items() if k != "adyacente"},
+            "SistemaInterno": _por_defecto(SistemaInterno),
+            "Zona": _por_defecto(Zona),
+            "Emplazamiento": _por_defecto(Emplazamiento),
+        },
+        "componentes": dict(etiquetas.COMPONENTES),
+    }
+
+
+def abrir(datos: dict) -> dict:
+    """{tipo: caso} de un JSON en cualquiera de los dos formatos de casos/, con
+    las dataclasses ya convertidas en dict, para llenar los formularios."""
+    por_tipo = leer_casos(datos)
+    salida = {}
+    for tipo, caso in por_tipo.items():
+        empl = caso.get("emplazamiento")
+        salida[str(tipo)] = {
+            "N_G": caso["N_G"],
+            "emplazamiento": asdict(empl) if empl is not None else None,
+            "estructura": asdict(caso["estructura"]),
+            "lineas": [asdict(ln) for ln in caso["lineas"]],
+            "zonas": [asdict(z) for z in caso["zonas"]],
+        }
+    # Con coordenadas, leer_casos ya puso el N_G de la NASA; el original se
+    # devuelve aparte por si no coincide (la pantalla lo avisa).
+    return {"por_tipo": salida, "N_G_guardado": datos.get("N_G")}
+
+
+def desglose(datos: dict, tipo: int) -> dict:
+    """«¿De dónde viene el riesgo?»: cada componente y las medidas que lo bajan."""
+    por_caso = leer_casos(datos)
+    if tipo not in por_caso:
+        raise CasoInvalido(f"R{tipo} no está entre los riesgos del caso.")
+    resultados, _ = _evaluar_casos({tipo: por_caso[tipo]})
+    caso = por_caso[tipo]
+    aportes = medidas.de_donde_viene(caso["estructura"], caso["lineas"], caso["zonas"],
+                                     caso["N_G"], tipo=tipo)
+    return {
+        "tipo": tipo,
+        "total": resultados[tipo]["total"],
+        "R_T": resultados[tipo]["R_T"],
+        "cumple": resultados[tipo]["cumple"],
+        "aportes": [{
+            "componente": a.componente,
+            "texto": etiquetas.texto_de_componente(a.componente),
+            "valor": a.valor,
+            "fraccion": a.fraccion,
+            "rebajas": [{"medida": etiquetas.texto_de_medida(r.medida.nombre),
+                         "componente": r.componente, "total": r.total,
+                         "cumple": r.cumple} for r in a.rebajas],
+        } for a in aportes],
+    }
 
 
 # ---------------------------------------------------------------------------

@@ -29,7 +29,9 @@ COMMIT = os.environ.get("RAILWAY_GIT_COMMIT_SHA", "")[:7]
 app = FastAPI(title="Charlightning", version=VERSION, docs_url="/api/docs",
               redoc_url=None, openapi_url="/api/openapi.json")
 
-limite_calculo = Limite(maximo=int(os.environ.get("LIMITE_CALCULOS", 30)), segundos=60)
+_ESQUEMA = servicio.esquema()      # no cambia mientras el servicio está arriba
+
+limite_calculo = Limite(maximo=int(os.environ.get("LIMITE_CALCULOS", 120)), segundos=60)
 limite_informe = Limite(maximo=int(os.environ.get("LIMITE_INFORMES", 5)), segundos=60)
 
 # matplotlib (pyplot) no se lleva bien con dos hilos dibujando a la vez.
@@ -112,6 +114,28 @@ async def informe(request: Request, medidas: bool = True):
         "Content-Disposition": 'attachment; filename="Memoria de calculo.pdf"',
         "X-Avisos": str(len(avisos)),
     })
+
+
+@app.get("/api/esquema")
+def esquema():
+    """Las listas de las tablas de la norma, para los formularios."""
+    return _ESQUEMA
+
+
+@app.post("/api/abrir")
+async def abrir(request: Request):
+    """Un caso guardado (cualquiera de los dos formatos) -> listo para los formularios."""
+    _revisar_limite(limite_calculo, request)
+    datos = await _leer_json(request)
+    return await run_in_threadpool(servicio.abrir, datos)
+
+
+@app.post("/api/desglose")
+async def desglose(request: Request, tipo: int = Query(..., ge=1, le=4)):
+    """«¿De dónde viene el riesgo?» para un riesgo del caso."""
+    _revisar_limite(limite_calculo, request)
+    datos = await _leer_json(request)
+    return await run_in_threadpool(servicio.desglose, datos, tipo)
 
 
 @app.get("/api/ejemplos")
