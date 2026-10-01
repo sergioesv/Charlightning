@@ -1,175 +1,279 @@
-:root {
-  --fondo: #f7f7f5;
-  --superficie: #ffffff;
-  --texto: #1d1f23;
-  --suave: #5b6068;
-  --borde: #dcdde0;
-  --acento: #2f5bd3;
-  --acento-texto: #ffffff;
-  --bien: #1f7a3f;
-  --mal: #b3261e;
-  --aviso: #8a5a00;
-  --aviso-fondo: #fff4d6;
-  --radio: 8px;
-  color-scheme: light;
-}
+/* Charlightning: hoja de estilos con aire de 2005 (Verdana, degradados, menú lateral). */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --fondo: #15171a;
-    --superficie: #1e2125;
-    --texto: #e8e9eb;
-    --suave: #a3a8b0;
-    --borde: #33373d;
-    --acento: #7a9cff;
-    --acento-texto: #10131a;
-    --bien: #5cc27f;
-    --mal: #ff8a80;
-    --aviso: #f2c86b;
-    --aviso-fondo: #2e2616;
-    color-scheme: dark;
-  }
+:root {
+  --fondo: #d9dfe8;
+  --papel: #ffffff;
+  --texto: #222222;
+  --suave: #666666;
+  --borde: #8a9bb5;
+  --azul: #1c3f7a;
+  --azul-claro: #e8eef7;
+  --enlace: #0033cc;
+  --visitado: #551a8b;
+  --bien: #007700;
+  --mal: #cc0000;
+  --aviso-fondo: #ffffcc;
+  --aviso-borde: #e0c000;
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background: var(--fondo);
+  padding: 12px 0 24px;
+  background: var(--fondo) repeating-linear-gradient(45deg, transparent 0 6px, rgba(255,255,255,.25) 6px 7px);
   color: var(--texto);
-  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 12px/1.5 Verdana, Tahoma, Geneva, sans-serif;
 }
 
-a { color: var(--acento); }
+a { color: var(--enlace); }
+a:visited { color: var(--visitado); }
+a:hover { color: var(--mal); }
 
-header {
-  border-bottom: 1px solid var(--borde);
-  background: var(--superficie);
-}
-
-nav {
-  max-width: 960px;
+#pagina {
+  max-width: 900px;
   margin: 0 auto;
-  padding: 12px 16px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 18px;
-  align-items: center;
+  background: var(--papel);
+  border: 1px solid var(--borde);
+  box-shadow: 3px 3px 0 #b3bccb;
 }
 
-nav .marca {
-  font-weight: 700;
+/* --- Encabezado ---------------------------------------------------------- */
+
+#cabecera {
+  padding: 18px 16px 14px;
+  background: linear-gradient(#3d6fb8, #1c3f7a);
+  border-bottom: 3px solid #f2b705;
+  color: #fff;
+}
+
+#cabecera .titulo {
+  font: bold 28px Georgia, "Times New Roman", serif;
+  color: #fff;
   text-decoration: none;
-  color: var(--texto);
-  margin-right: auto;
+  text-shadow: 2px 2px 0 #0d2347;
 }
 
-nav a { text-decoration: none; }
-nav a[aria-current="page"] { font-weight: 600; text-decoration: underline; }
+#cabecera .lema { font-size: 11px; color: #d6e2f5; margin-top: 2px; }
+
+#barra {
+  padding: 3px 16px;
+  background: linear-gradient(#f4f4f4, #dcdcdc);
+  border-bottom: 1px solid #b0b0b0;
+  font-size: 10px;
+  color: var(--suave);
+}
+
+/* --- Cuerpo: menú a la izquierda, contenido a la derecha ------------------ */
+
+#cuerpo { display: flex; align-items: stretch; }
+
+#menu {
+  flex: 0 0 170px;
+  background: var(--azul-claro);
+  border-right: 1px solid var(--borde);
+  padding: 10px 8px;
+}
+
+.menu-titulo {
+  background: linear-gradient(#5a83c4, #2c548f);
+  color: #fff;
+  font-weight: bold;
+  font-size: 11px;
+  padding: 2px 6px;
+  margin: 8px 0 4px;
+  border: 1px solid #1c3f7a;
+}
+
+#menu ul { list-style: none; margin: 0 0 6px; padding: 0; }
+
+#menu li a {
+  display: block;
+  padding: 3px 4px 3px 14px;
+  border-bottom: 1px dotted var(--borde);
+  text-decoration: none;
+  position: relative;
+}
+
+#menu li a::before { content: "»"; position: absolute; left: 3px; color: #f2a000; }
+#menu li a:hover { background: #fff; text-decoration: underline; }
+#menu li a[aria-current="page"] { font-weight: bold; color: var(--texto); background: #fff; }
+
+.insignias { margin-top: 14px; display: flex; flex-direction: column; gap: 4px; align-items: center; }
+
+.insignia {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: 88px;
+  height: 31px;
+  padding-right: 4px;
+  border: 1px solid #000;
+  font: 9px/1 Verdana, sans-serif;
+  background: #fff;
+  color: #000;
+}
+
+.insignia b {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  background: #f2b705;
+  border-right: 1px solid #000;
+}
 
 main {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 24px 16px 48px;
+  flex: 1;
+  min-width: 0;
+  padding: 14px 18px 20px;
 }
 
-h1 { font-size: 1.8rem; line-height: 1.2; margin: 0 0 12px; }
-h2 { font-size: 1.25rem; margin: 32px 0 8px; }
+/* --- Texto --------------------------------------------------------------- */
 
-.subtitulo { color: var(--suave); font-size: 1.1rem; margin-top: 0; }
+h1 {
+  font: bold 20px Georgia, "Times New Roman", serif;
+  color: var(--azul);
+  margin: 0 0 8px;
+  border-bottom: 2px solid var(--azul);
+  padding-bottom: 3px;
+}
+
+h2 {
+  font-size: 13px;
+  color: var(--azul);
+  margin: 18px 0 6px;
+  border-bottom: 1px solid #c8d2e2;
+}
+
+.subtitulo { color: var(--suave); font-style: italic; margin-top: 0; }
+.pequeno { color: var(--suave); font-size: 10px; }
+
+/* --- Cajas --------------------------------------------------------------- */
 
 .tarjeta {
-  background: var(--superficie);
+  background: #fafbfd;
   border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  padding: 16px;
-  margin: 16px 0;
+  padding: 8px 10px;
+  margin: 10px 0;
+}
+
+.tarjeta > h2:first-child {
+  margin: -8px -10px 8px;
+  padding: 3px 10px;
+  background: linear-gradient(#eef2f8, #d3dcea);
+  border-bottom: 1px solid var(--borde);
 }
 
 .rejilla {
   display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
+
+/* --- Botones y formularios ---------------------------------------------- */
 
 .boton, button {
   display: inline-block;
-  font: inherit;
-  padding: 8px 16px;
-  border-radius: var(--radio);
-  border: 1px solid var(--acento);
-  background: var(--acento);
-  color: var(--acento-texto);
+  font: bold 11px Verdana, Tahoma, sans-serif;
+  padding: 3px 12px;
+  color: #000;
+  background: linear-gradient(#ffffff, #d4d0c8);
+  border: 2px outset #d4d0c8;
   text-decoration: none;
   cursor: pointer;
 }
 
-.boton.secundario, button.secundario {
-  background: transparent;
-  color: var(--acento);
-}
+.boton:visited { color: #000; }
+.boton:active, button:active { border-style: inset; }
+.boton.secundario, button.secundario { font-weight: normal; }
+button:disabled { color: #888; cursor: wait; }
 
-button:disabled { opacity: .55; cursor: wait; }
-
-label { display: block; font-weight: 600; margin: 12px 0 4px; }
+label { display: block; font-weight: bold; margin: 8px 0 2px; font-size: 11px; }
 
 input, select, textarea {
-  font: inherit;
-  color: var(--texto);
-  background: var(--fondo);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  padding: 6px 8px;
+  font: 12px Verdana, Tahoma, sans-serif;
+  color: #000;
+  background: #fff;
+  border: 2px inset #d4d0c8;
+  padding: 2px 3px;
   max-width: 100%;
 }
 
 textarea {
   width: 100%;
-  min-height: 320px;
-  font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  min-height: 300px;
+  font: 12px/1.35 "Courier New", Courier, monospace;
 }
 
-.fila { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+.fila { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: end; }
 .fila > div { min-width: 0; }
 
+/* --- Tablas --------------------------------------------------------------- */
+
 .tabla-envuelta { overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--borde); }
-th { color: var(--suave); font-weight: 600; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  border: 1px solid var(--borde);
+  font-variant-numeric: tabular-nums;
+}
+
+th, td { text-align: left; padding: 3px 6px; border: 1px solid #c8d2e2; }
+th { background: linear-gradient(#eef2f8, #d3dcea); color: var(--azul); font-size: 11px; }
+tbody tr:nth-child(even) td { background: #f3f6fb; }
 td.num, th.num { text-align: right; }
 
-.cumple { color: var(--bien); font-weight: 600; }
-.no-cumple { color: var(--mal); font-weight: 600; }
+.cumple { color: var(--bien); font-weight: bold; }
+.no-cumple { color: var(--mal); font-weight: bold; }
 
 .aviso {
   background: var(--aviso-fondo);
-  color: var(--aviso);
-  border-radius: var(--radio);
-  padding: 8px 12px;
-  margin: 8px 0;
+  border: 1px solid var(--aviso-borde);
+  padding: 4px 8px;
+  margin: 6px 0;
 }
 
-.error { color: var(--mal); font-weight: 600; }
+.aviso::before { content: "\26A0  "; }
 
-.pequeno { color: var(--suave); font-size: .9rem; }
+.error { color: var(--mal); font-weight: bold; }
 
 pre {
-  background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  padding: 12px;
+  background: #f8f8f8;
+  border: 1px dashed var(--borde);
+  padding: 8px;
   overflow-x: auto;
-  font-size: 13px;
+  font: 11px "Courier New", Courier, monospace;
 }
 
-.qr img { width: 100%; max-width: 240px; height: auto; border-radius: var(--radio); background: #fff; }
+.qr img { width: 100%; max-width: 200px; height: auto; border: 1px solid #000; background: #fff; }
 
-footer {
-  border-top: 1px solid var(--borde);
-  color: var(--suave);
-  font-size: .9rem;
+/* --- Pie ------------------------------------------------------------------- */
+
+#pie {
+  border-top: 3px solid #f2b705;
+  background: linear-gradient(#2c548f, #1c3f7a);
+  color: #d6e2f5;
+  font-size: 10px;
+  text-align: center;
+  padding: 8px 12px;
 }
 
-footer div { max-width: 960px; margin: 0 auto; padding: 16px; }
+#pie .resolucion { color: #9fb6da; font-style: italic; }
 
-.tarjeta > h2:first-child { margin-top: 0; }
+/* --- En el celular el menú pasa arriba (en 2005 no hacía falta; hoy sí). --- */
+
+@media (max-width: 640px) {
+  body { padding: 0; }
+  #pagina { border: 0; box-shadow: none; }
+  #cuerpo { flex-direction: column; }
+  #menu { flex: none; border-right: 0; border-bottom: 1px solid var(--borde); padding: 4px 8px 8px; }
+  #menu ul { display: flex; flex-wrap: wrap; }
+  #menu li a { border-bottom: 0; }
+  .menu-titulo:not(:first-child), #menu ul + .menu-titulo + ul, .insignias { display: none; }
+  main { padding: 12px 16px 16px; }
+}
+
+.tarjeta > :last-child { margin-bottom: 0; }
