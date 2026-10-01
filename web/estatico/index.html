@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Charlightning</title>
+<meta name="description" content="Evaluación del riesgo por descargas atmosféricas según la NTC 4552-2:2023 (IEC 62305-2), con N_G desde datos de la NASA.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%9A%A1%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/estilos.css">
+</head>
+<body>
+<header><nav>
+  <a class="marca" href="/">⚡ Charlightning</a>
+  <a href="/calculadora.html">Calculadora</a>
+  <a href="/validacion.html">Validación</a>
+  <a href="/citar.html">Cómo citar</a>
+  <a href="/apoyar.html">Apoyar</a>
+</nav></header>
+<main>
+<h1>Riesgo por descargas atmosféricas, calculado a la vista</h1>
+<p class="subtitulo">Charlightning evalúa los riesgos R1 a R4 de una estructura según la
+NTC 4552-2:2023 (equivalente a la IEC 62305-2) y entrega la memoria de cálculo en PDF.</p>
+<p><a class="boton" href="/calculadora.html">Abrir la calculadora</a>
+<a class="boton secundario" href="/validacion.html">Ver la validación</a></p>
+
+<div class="rejilla">
+  <div class="tarjeta">
+    <h2>Todo el desarrollo</h2>
+    <p>Cada componente (R_A, R_B, R_C, R_M, R_U, R_V, R_W, R_Z) por zona, con el
+    valor tolerable R_T y si cumple o no.</p>
+  </div>
+  <div class="tarjeta">
+    <h2>N_G con procedencia</h2>
+    <p>La densidad de descargas a tierra sale de la climatología LIS/OTD de la NASA
+    (1998–2013) a partir de latitud y longitud, o se declara con su fuente.</p>
+  </div>
+  <div class="tarjeta">
+    <h2>Memoria de cálculo</h2>
+    <p>Un PDF con los datos, las ecuaciones, las figuras y, para los riesgos que no
+    cumplen, combinaciones de medidas de protección.</p>
+  </div>
+  <div class="tarjeta">
+    <h2>Validado contra la norma</h2>
+    <p>Reproduce los casos del Anexo E (casa rural, oficinas, hospital y apartamentos);
+    las pruebas corren en cada cambio del código.</p>
+  </div>
+</div>
+
+<h2>Programa de escritorio</h2>
+<p>La calculadora web usa el mismo motor que el programa de escritorio (Python/Tkinter).
+Los casos guardados desde el programa se pueden cargar aquí tal cual. El código está en
+<a href="https://github.com/sergioesv/charlightning">GitHub</a>.</p>
+</main>
+<footer><div>
+  Charlightning · Sergio Andrés Estrada Vélez ·
+  <a href="https://github.com/sergioesv/charlightning">Código fuente</a> (GPL-3.0).
+  Herramienta de apoyo al diseño: no reemplaza el criterio ni la firma del ingeniero responsable.
+</div></footer>
+</body>
+</html>

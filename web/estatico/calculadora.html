@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora</title>
+<meta name="description" content="Evalúe un caso de riesgo por rayos (NTC 4552-2) y descargue la memoria de cálculo.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%9A%A1%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/estilos.css">
+</head>
+<body>
+<header><nav>
+  <a class="marca" href="/">⚡ Charlightning</a>
+  <a href="/calculadora.html" aria-current="page">Calculadora</a>
+  <a href="/validacion.html">Validación</a>
+  <a href="/citar.html">Cómo citar</a>
+  <a href="/apoyar.html">Apoyar</a>
+</nav></header>
+<main>
+<h1>Calculadora</h1>
+<p class="subtitulo">Cargue un ejemplo o un caso guardado con el programa de escritorio,
+ajústelo y evalúe.</p>
+
+<div class="tarjeta">
+  <div class="fila">
+    <div>
+      <label for="ejemplo">Ejemplo</label>
+      <select id="ejemplo"><option value="">— elegir —</option></select>
+    </div>
+    <div>
+      <label for="archivo">…o un archivo .json</label>
+      <input id="archivo" type="file" accept=".json,application/json">
+    </div>
+  </div>
+
+  <h2>N_G desde coordenadas (NASA LIS/OTD)</h2>
+  <div class="fila">
+    <div><label for="lat">Latitud</label><input id="lat" type="number" step="any" placeholder="6.25" size="10"></div>
+    <div><label for="lon">Longitud</label><input id="lon" type="number" step="any" placeholder="-75.56" size="10"></div>
+    <div><button id="usar-coordenadas" class="secundario" type="button">Usar estas coordenadas</button></div>
+  </div>
+  <p id="ficha" class="pequeno"></p>
+
+  <label for="caso">Caso (JSON)</label>
+  <textarea id="caso" spellcheck="false" placeholder='{"N_G": 4, "tipos": [1], "estructura": {...}, "lineas": [...], "zonas": [...]}'></textarea>
+  <p class="pequeno">Mismo formato que los archivos de <code>casos/</code> del programa de escritorio.
+  Los nombres de los campos son los de la norma (L, W, H, C_D, n_t, L_L, P_LI, r_t, r_f, …).</p>
+
+  <label for="proyecto">Nombre del proyecto (para el PDF)</label>
+  <input id="proyecto" type="text" maxlength="120" style="width:100%">
+
+  <p class="fila">
+    <button id="evaluar" type="button">Evaluar</button>
+    <button id="informe" class="secundario" type="button">Descargar memoria en PDF</button>
+  </p>
+  <p id="estado" role="status"></p>
+</div>
+
+<div id="resultados"></div>
+</main>
+<footer><div>
+  Charlightning · Sergio Andrés Estrada Vélez ·
+  <a href="https://github.com/sergioesv/charlightning">Código fuente</a> (GPL-3.0).
+  Herramienta de apoyo al diseño: no reemplaza el criterio ni la firma del ingeniero responsable.
+</div></footer>
+<script src="/calculadora.js"></script>
+</body>
+</html>

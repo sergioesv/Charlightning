@@ -1,3 +1,6 @@
 netCDF4
 matplotlib
 reportlab
+# página web (web/)
+fastapi
+uvicorn

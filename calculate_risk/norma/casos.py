@@ -73,8 +73,12 @@ def cargar_casos(ruta: str) -> dict:
     el mismo para todos los tipos que liste "tipos".
     """
     with open(ruta, encoding="utf-8") as f:
-        datos = json.load(f)
+        return casos_desde_datos(json.load(f))
 
+
+def casos_desde_datos(datos: dict) -> dict:
+    """Lo mismo que cargar_casos, pero con el JSON ya leído (por ejemplo, el que
+    llega a la página web)."""
     estructura = Estructura(**datos["estructura"])
     lineas = [_linea(d) for d in datos.get("lineas", [])]
     N_G = datos["N_G"]

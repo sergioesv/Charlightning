@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Validación</title>
+<meta name="description" content="Charlightning frente a los casos resueltos del Anexo E de la NTC 4552-2:2023.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%9A%A1%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/estilos.css">
+</head>
+<body>
+<header><nav>
+  <a class="marca" href="/">⚡ Charlightning</a>
+  <a href="/calculadora.html">Calculadora</a>
+  <a href="/validacion.html" aria-current="page">Validación</a>
+  <a href="/citar.html">Cómo citar</a>
+  <a href="/apoyar.html">Apoyar</a>
+</nav></header>
+<main>
+<h1>Validación contra el Anexo E</h1>
+<p class="subtitulo">Los casos resueltos de la NTC 4552-2:2023, evaluados en vivo por el
+mismo motor de la calculadora, junto al valor que imprime la norma.</p>
+
+<div class="tarjeta tabla-envuelta">
+  <table>
+    <thead><tr><th>Caso (R1 sin protección)</th><th class="num">Norma (×10⁻⁵)</th>
+    <th class="num">Charlightning (×10⁻⁵)</th><th class="num">Diferencia</th></tr></thead>
+    <tbody id="filas"><tr><td colspan="4">Calculando…</td></tr></tbody>
+  </table>
+</div>
+
+<h2>Cómo se comprueba</h2>
+<p>Además de esta tabla, el repositorio tiene más de 300 pruebas automáticas que corren en
+cada cambio: componentes por zona, las soluciones con medidas de protección de cada ejemplo
+y los 16 escenarios de la Tabla E.45. La tolerancia es medio dígito de lo que imprime la
+norma o 1 %, la que sea mayor. Vea
+<a href="https://github.com/sergioesv/charlightning/tree/master/tests/norma">tests/norma</a>.</p>
+<p class="pequeno">Diferencia conocida: en E.4, solución c), la norma imprime 0,244 y el
+modelo da 0,2505. La IEC 62305-2:2010 imprime lo mismo; se documenta en las pruebas.</p>
+</main>
+<footer><div>
+  Charlightning · Sergio Andrés Estrada Vélez ·
+  <a href="https://github.com/sergioesv/charlightning">Código fuente</a> (GPL-3.0).
+  Herramienta de apoyo al diseño: no reemplaza el criterio ni la firma del ingeniero responsable.
+</div></footer>
+<script>
+fetch("/api/validacion").then(r => r.json()).then(filas => {
+  const fmt = n => n.toLocaleString("es-CO", {maximumFractionDigits: 4});
+  document.getElementById("filas").innerHTML = filas.map(f => `<tr>
+    <td>${f.caso}<br><span class="pequeno">${f.archivo}</span></td>
+    <td class="num">${fmt(f.norma)}</td><td class="num">${fmt(f.charlightning)}</td>
+    <td class="num">${fmt(f.diferencia_pct)} %</td></tr>`).join("");
+}).catch(() => {
+  document.getElementById("filas").innerHTML = '<tr><td colspan="4" class="error">No se pudo calcular la tabla.</td></tr>';
+});
+</script>
+</body>
+</html>
