@@ -41,6 +41,27 @@ class Campo {
   mostrar(visible) {
     this.fila.hidden = !visible;
   }
+
+  // Lo que hay en la casilla tal cual, sin validar: para guardar el borrador.
+  foto() {
+    if (this.casilla) return this.casilla.checked;
+    return (this.entrada || this.select).value;
+  }
+
+  ponerFoto(valor) {
+    if (valor === undefined) return;
+    if (this.casilla) this.casilla.checked = Boolean(valor);
+    else (this.entrada || this.select).value = valor;
+  }
+}
+
+// La foto de un grupo de campos {nombre: campo}, y al revés.
+export function fotoDe(campos) {
+  return Object.fromEntries(Object.entries(campos).map(([nombre, campo]) => [nombre, campo.foto()]));
+}
+
+export function ponerFotoEn(campos, foto = {}) {
+  for (const [nombre, campo] of Object.entries(campos)) campo.ponerFoto(foto[nombre]);
 }
 
 export class CampoNumero extends Campo {

@@ -2,7 +2,7 @@
 // resultados.py y desglose.py. Arma el caso con los formularios, lo manda al motor
 // (en el servidor) y muestra lo que vuelve. Aquí no se calcula ningún riesgo.
 
-import {CampoTexto, DatoFaltante, juntar} from "./campos.js";
+import {CampoTexto, DatoFaltante, fotoDe, juntar, ponerFotoEn} from "./campos.js";
 import {FormularioEstructura, FormularioLinea, FormularioZona, ListaDeFormularios,
         PanelEmplazamiento, configurar, pestanas} from "./formularios.js";
 
@@ -56,6 +56,43 @@ async function pedir(url, opciones = {}) {
   return respuesta;
 }
 
+// --- Lo que se guarda en el navegador ----------------------------------------------
+// Solo comodidades de quien está usando la página: las tablas de la norma (para abrir
+// al instante la segunda vez) y el borrador del caso (para no perderlo al cambiar de
+// página o recargar). Si el navegador no deja guardar, la página funciona igual.
+
+const CLAVE_ESQUEMA = "charlightning:esquema";
+const CLAVE_BORRADOR = "charlightning:borrador";
+
+const almacen = {
+  leer(clave) {
+    try {
+      const texto = localStorage.getItem(clave);
+      return texto ? JSON.parse(texto) : null;
+    } catch {
+      return null;
+    }
+  },
+  guardar(clave, valor) {
+    try {
+      localStorage.setItem(clave, JSON.stringify(valor));
+    } catch { /* sin espacio o sin permiso: no pasa nada */ }
+  },
+  borrar(clave) {
+    try {
+      localStorage.removeItem(clave);
+    } catch { /* igual */ }
+  },
+};
+
+// Una huella corta del esquema: si las tablas cambian, el borrador viejo no se usa,
+// porque sus listas apuntarían a otras filas.
+function huella(texto) {
+  let h = 0;
+  for (let i = 0; i < texto.length; i++) h = (Math.imul(31, h) + texto.charCodeAt(i)) | 0;
+  return `${texto.length}-${(h >>> 0).toString(36)}`;
+}
+
 const postJson = (url, datos) => pedir(url, {
   method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(datos),
 });
@@ -83,6 +120,15 @@ class DatosProyecto {
     for (const [nombre, campo] of Object.entries(this.campos)) datos[nombre] = campo.crudo();
     datos["Descripción"] = this.descripcion.value.trim();
     return datos;
+  }
+
+  foto() {
+    return {...fotoDe(this.campos), descripcion: this.descripcion.value};
+  }
+
+  ponerFoto(foto = {}) {
+    ponerFotoEn(this.campos, foto);
+    this.descripcion.value = foto.descripcion ?? "";
   }
 }
 
@@ -149,6 +195,23 @@ class EditorCaso {
     intentar("Zonas", () => this.zonas.poner(alguno.zonas.map(
       (_, i) => Object.fromEntries(tipos.map((t) => [t, casos[t].zonas[i]])))));
     if (problemas.length) throw new DatoFaltante(problemas.join("\n\n"));
+  }
+
+  foto() {
+    return {
+      emplazamiento: this.emplazamiento.foto(),
+      estructura: this.estructura.foto(),
+      zonas: this.zonas.foto(),
+      lineas: this.lineas.foto(),
+    };
+  }
+
+  ponerFoto(foto) {
+    this.construir();
+    this.emplazamiento.ponerFoto(foto.emplazamiento || {});
+    this.estructura.ponerFoto(foto.estructura);
+    this.zonas.ponerFoto(foto.zonas);
+    this.lineas.ponerFoto(foto.lineas);
   }
 }
 
@@ -273,7 +336,8 @@ function mostrarDesglose(d) {
 // --- La pantalla completa -----------------------------------------------------------------
 
 class Calculadora {
-  constructor() {
+  constructor(firmaEsquema) {
+    this.firmaEsquema = firmaEsquema;
     this.proyecto = new DatosProyecto($("datos-proyecto"));
     this.editor = new EditorCaso($("editor"));
     this.resultados = new PanelResultados();
@@ -293,11 +357,62 @@ class Calculadora {
       e.target.value = "";
       if (archivo) this.trabajar("b-ejemplos", () => this.abrirEjemplo(archivo));
     });
-    // Cualquier cambio en el caso deja en gris el resultado que ya no le corresponde.
+    // Cualquier cambio en el caso deja en gris el resultado que ya no le corresponde,
+    // y se guarda como borrador (un momento después de dejar de escribir).
     for (const evento of ["input", "change"]) {
       $("editor").addEventListener(evento, () => this.resultados.marcarObsoleto());
       document.querySelectorAll('input[name="tipo"]').forEach((c) =>
         c.addEventListener(evento, () => this.resultados.marcarObsoleto()));
+      $("calculadora").addEventListener(evento, () => this.guardarBorradorLuego());
+    }
+    // Al salir de la página (otro enlace, recargar) se guarda lo último.
+    window.addEventListener("pagehide", () => this.guardarBorrador());
+    this.recuperarBorrador();
+  }
+
+  // --- borrador --------------------------------------------------------------
+
+  foto() {
+    return {
+      esquema: this.firmaEsquema,
+      tipos: this.tipos(),
+      proyecto: this.proyecto.foto(),
+      editor: this.editor.foto(),
+    };
+  }
+
+  guardarBorrador() {
+    clearTimeout(this.temporizador);
+    almacen.guardar(CLAVE_BORRADOR, this.foto());
+  }
+
+  guardarBorradorLuego() {
+    clearTimeout(this.temporizador);
+    this.temporizador = setTimeout(() => this.guardarBorrador(), 400);
+  }
+
+  recuperarBorrador() {
+    const foto = almacen.leer(CLAVE_BORRADOR);
+    if (!foto) return;
+    if (foto.esquema !== this.firmaEsquema) {
+      almacen.borrar(CLAVE_BORRADOR);
+      decir("Las tablas de la norma cambiaron desde la última visita: el borrador anterior no se pudo recuperar.");
+      return;
+    }
+    try {
+      document.querySelectorAll('input[name="tipo"]').forEach((c) => {
+        c.checked = (foto.tipos || [1]).includes(Number(c.value));
+      });
+      this.proyecto.ponerFoto(foto.proyecto);
+      this.editor.ponerFoto(foto.editor || {});
+      const e = foto.editor || {};
+      const algo = (e.zonas || []).length || (e.lineas || []).length ||
+        ["L", "W", "H"].some((c) => (e.estructura?.[c] ?? "") !== "");
+      if (algo) decir("Se recuperó el caso que estaba escribiendo (se guarda solo en este navegador).");
+    } catch (error) {
+      almacen.borrar(CLAVE_BORRADOR);
+      this.editor.construir();
+      decir("No se pudo recuperar el borrador anterior.");
     }
   }
 
@@ -353,9 +468,11 @@ class Calculadora {
   nuevo() {
     if (!confirm("Se va a borrar todo lo escrito y los resultados.\n¿Seguir?")) return;
     this.editor.construir();
+    this.proyecto.ponerFoto({});
     this.resultados.limpiar();
     $("panel-desglose").hidden = true;
     this.ultimo = null;
+    this.guardarBorrador();
     decir("Caso nuevo.");
   }
 
@@ -370,6 +487,8 @@ class Calculadora {
       this.editor.poner(abierto);
     } catch (error) {
       throw new DatoFaltante(`Se abrió «${nombre}», pero hay datos que revisar:\n\n${error.message}`);
+    } finally {
+      this.guardarBorrador();
     }
     decir(`Caso «${nombre}» abierto.`);
   }
@@ -435,17 +554,29 @@ function descargar(blob, nombre) {
   setTimeout(() => URL.revokeObjectURL(enlace.href), 1000);
 }
 
+// Las tablas de la norma: de la caché del navegador si ya están (abre al instante) y,
+// en todo caso, se piden al servidor por detrás para la próxima visita.
+async function esquemaFresco() {
+  const texto = await (await pedir("/api/esquema")).text();
+  almacen.guardar(CLAVE_ESQUEMA, {texto});
+  return texto;
+}
+
 async function arrancar() {
+  const enCache = almacen.leer(CLAVE_ESQUEMA)?.texto;
+  let texto = enCache;
   try {
-    configurar(await (await pedir("/api/esquema")).json());
+    if (!texto) texto = await esquemaFresco();
+    else esquemaFresco().catch(() => { /* sin red: sirve la copia */ });
+    configurar(JSON.parse(texto));
   } catch (error) {
     $("cargando").textContent = `No se pudieron cargar las tablas de la norma: ${error.message}`;
     $("cargando").className = "error";
     return;
   }
-  window.calculadora = new Calculadora();
   $("cargando").hidden = true;
   $("calculadora").hidden = false;
+  window.calculadora = new Calculadora(huella(texto));
 }
 
 arrancar();

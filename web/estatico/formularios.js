@@ -8,7 +8,7 @@
 // además nombre() y raiz (el elemento que se muestra u oculta).
 
 import {CampoLista, CampoNumero, CampoSiNo, CampoTabla, CampoTexto, DatoFaltante,
-        juntar, recoger} from "./campos.js";
+        fotoDe, juntar, ponerFotoEn, recoger} from "./campos.js";
 
 let E = null;                       // el esquema de /api/esquema
 export function configurar(esquema) {
@@ -113,6 +113,14 @@ export class FormularioEstructura {
   poner(estructura) {
     ponerTodos(this.campos, estructura);
   }
+
+  foto() {
+    return fotoDe(this.campos);
+  }
+
+  ponerFoto(foto) {
+    ponerFotoEn(this.campos, foto);
+  }
 }
 
 // --- Sistemas internos ----------------------------------------------------------
@@ -142,6 +150,14 @@ export class FormularioSistemaInterno {
 
   poner(sistema) {
     ponerTodos(this.campos, sistema);
+  }
+
+  foto() {
+    return fotoDe(this.campos);
+  }
+
+  ponerFoto(foto) {
+    ponerFotoEn(this.campos, foto);
   }
 }
 
@@ -288,6 +304,19 @@ export class ListaDeFormularios {
     this.mostrarSeleccionado();
     if (problemas.length) throw new DatoFaltante(problemas.join("\n"));
   }
+
+  foto() {
+    return this.formularios.map((f) => f.foto());
+  }
+
+  ponerFoto(fotos = []) {
+    this.formularios.forEach((f) => f.raiz.remove());
+    this.formularios = [];
+    for (const foto of fotos) this.anadir().ponerFoto(foto);
+    this.refrescarNombres();
+    if (this.formularios.length) this.lista.value = "0";
+    this.mostrarSeleccionado();
+  }
 }
 
 // --- Zona -------------------------------------------------------------------------
@@ -354,6 +383,19 @@ class FormularioZonaComun {
     }
     this._verMalla();
   }
+
+  _todos() {
+    return {...this.campos, blindaje: this.blindaje, w_m1: this.w_m1, w_m2: this.w_m2};
+  }
+
+  foto() {
+    return fotoDe(this._todos());
+  }
+
+  ponerFoto(foto) {
+    ponerFotoEn(this._todos(), foto);
+    this._verMalla();
+  }
 }
 
 // Las pérdidas de una zona para UN riesgo. Lo que no aplica se deja en «no aplica» y
@@ -412,6 +454,19 @@ class PestanaPerdidas {
       bandera.poner(zona[nombre] === valorSi);
     }
   }
+
+  _todos() {
+    const banderas = Object.fromEntries(Object.entries(this.banderas).map(([n, [b]]) => [`bandera_${n}`, b]));
+    return {...this.campos, ...banderas};
+  }
+
+  foto() {
+    return fotoDe(this._todos());
+  }
+
+  ponerFoto(foto) {
+    ponerFotoEn(this._todos(), foto);
+  }
 }
 
 // La zona completa: lo común arriba y una pestaña por riesgo abajo, más sus sistemas.
@@ -463,6 +518,20 @@ export class FormularioZona {
     intentar(() => this.sistemas.poner(primera.sistemas_internos || []));
     for (const tipo of tipos) intentar(() => this.pestanas[tipo].poner(zonas[tipo]));
     if (problemas.length) throw new DatoFaltante(problemas.join("\n"));
+  }
+
+  foto() {
+    return {
+      comun: this.comun.foto(),
+      perdidas: Object.fromEntries([1, 2, 3, 4].map((t) => [t, this.pestanas[t].foto()])),
+      sistemas: this.sistemas.foto(),
+    };
+  }
+
+  ponerFoto(foto) {
+    this.comun.ponerFoto(foto.comun);
+    for (const t of [1, 2, 3, 4]) this.pestanas[t].ponerFoto(foto.perdidas?.[t]);
+    this.sistemas.ponerFoto(foto.sistemas);
   }
 }
 
@@ -586,6 +655,20 @@ export class FormularioLinea {
     }
     this._verAdyacente();
     if (problemas.length) throw new DatoFaltante(problemas.join("\n"));
+  }
+
+  _todos() {
+    const vecina = Object.fromEntries(Object.entries(this.adyacente.campos).map(([n, c]) => [`vecina_${n}`, c]));
+    return {...this.campos, ...this.derivados, hayAdyacente: this.hayAdyacente, C_DJ: this.C_DJ, ...vecina};
+  }
+
+  foto() {
+    return fotoDe(this._todos());
+  }
+
+  ponerFoto(foto) {
+    ponerFotoEn(this._todos(), foto);
+    this._verAdyacente();
   }
 }
 
@@ -772,6 +855,19 @@ export class PanelEmplazamiento {
   // Al calcular, el servidor manda el N_G que de verdad usó.
   usado(N_G) {
     if (this.modo() === "coordenadas") this.N_G.poner(paraLaCasilla(N_G));
+  }
+
+  foto() {
+    return {modo: this.modo(), aviso: this.aviso.textContent,
+            ...fotoDe({lat: this.lat, lon: this.lon, fraccion: this.fraccion,
+                       fuente: this.fuente, N_G: this.N_G})};
+  }
+
+  ponerFoto(foto) {
+    this.ponerModo(foto.modo === "declarado" ? "declarado" : "coordenadas");
+    ponerFotoEn({lat: this.lat, lon: this.lon, fraccion: this.fraccion,
+                 fuente: this.fuente, N_G: this.N_G}, foto);
+    this.decir(foto.aviso || "");
   }
 
   limpiar() {
