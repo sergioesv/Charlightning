@@ -109,31 +109,6 @@ a:hover { color: var(--error); }
 #menu li a:hover { background: #fff; text-decoration: underline; }
 #menu li a[aria-current="page"] { font-weight: bold; color: var(--texto); background: #fff; }
 
-.insignias { margin-top: 14px; display: flex; flex-direction: column; gap: 4px; align-items: center; }
-
-.insignia {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  width: 88px;
-  height: 31px;
-  padding-right: 4px;
-  border: 1px solid #000;
-  font: 9px/1 Verdana, sans-serif;
-  background: #fff;
-  color: #000;
-}
-
-.insignia b {
-  align-self: stretch;
-  display: flex;
-  align-items: center;
-  padding: 0 4px;
-  color: #fff;
-  background: var(--color-insignia, var(--azul));
-  border-right: 1px solid #000;
-}
-
 main {
   flex: 1;
   min-width: 0;
@@ -287,11 +262,11 @@ pre {
   #menu { flex: none; border-right: 0; border-bottom: 1px solid var(--borde); padding: 4px 8px 8px; }
   #menu ul { display: flex; flex-wrap: wrap; }
   #menu li a { border-bottom: 0; }
-  .menu-titulo:not(:first-child), #menu ul + .menu-titulo + ul, .insignias { display: none; }
+  #menu .enlaces, #menu .insignias { display: none; }
+  #menu .visitas .menu-titulo { display: none; }
+  #menu .contador br { display: none; }
   main { padding: 12px 16px 16px; }
 }
-
-.tarjeta > :last-child { margin-bottom: 0; }
 
 /* --- Formularios de la calculadora (como los LabelFrame del programa) ------------- */
 
@@ -392,10 +367,6 @@ body.trabajando, body.trabajando * { cursor: progress !important; }
   .campo { grid-template-columns: 1fr; }
 }
 
-/* Las insignias de 80x15 de la época, cada una con su color */
-.insignia.python { --color-insignia: #306998; }
-.insignia.gpl { --color-insignia: #a42e2b; }
-.insignia.ntc { --color-insignia: var(--verde-xp-oscuro); }
 
 /* El contador de visitas: dígitos de odómetro, verde fósforo sobre negro */
 .contador { margin: 6px 0 4px; color: #fff; }
@@ -416,4 +387,76 @@ body.trabajando, body.trabajando * { cursor: progress !important; }
   color: #39ff14;
   text-shadow: 0 0 4px #39ff14aa;
   background: linear-gradient(#000 0%, #1c1c1c 50%, #000 51%, #111 100%);
+}
+
+/* --- Menú: contador y botoncitos de 88x31 ------------------------------------------ */
+
+#menu .contador { color: var(--texto); font-size: 10px; text-align: center; margin: 4px 0 8px; line-height: 1.8; }
+
+.insignias { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 12px; }
+
+.b88 {
+  display: flex;
+  width: 88px;
+  height: 31px;
+  border: 1px solid #000;
+  outline: 1px solid #fff;
+  text-decoration: none;
+  font: 9px/1.05 Verdana, Tahoma, sans-serif;
+  color: #fff;
+  overflow: hidden;
+  background: var(--fondo-b88);
+}
+.b88:visited, .b88:hover { color: #fff; }
+.b88:hover { filter: brightness(1.15); }
+.b88 b {
+  flex: 0 0 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: bold 12px Verdana, sans-serif;
+  background: var(--logo-b88, #fff);
+  color: var(--letra-logo, #000);
+  border-right: 1px solid #000;
+}
+.b88 i { font-style: normal; font-weight: bold; padding: 3px 4px; display: flex; flex-direction: column; justify-content: center; }
+.b88 small { font-weight: normal; font-size: 8px; }
+.b88.linux   { --fondo-b88: linear-gradient(#444, #000); }
+.b88.linux b { font-size: 17px; background: #fff; }
+.b88.gnu     { --fondo-b88: linear-gradient(#a42e2b, #6d1715); --logo-b88: #fff; --letra-logo: #a42e2b; }
+.b88.python  { --fondo-b88: linear-gradient(#3b78a8, #1f4a6e); --logo-b88: #fff; --letra-logo: #306998; }
+.b88.debian  { --fondo-b88: linear-gradient(#e0244f, #a80030); --logo-b88: #fff; --letra-logo: #d70a53; }
+.b88.debian b { font-size: 18px; }
+.b88.firefox { --fondo-b88: linear-gradient(#2a5db0, #102f6b); --logo-b88: #ff8a00; }
+.b88.firefox b { font-size: 16px; }
+.b88.w3c     { --fondo-b88: linear-gradient(#1a66b5, #0b3e75); --logo-b88: #fff; --letra-logo: #005a9c; }
+
+/* --- Barra de la calculadora: archivo a la izquierda, lo importante grande a la derecha --- */
+
+.barra-herramientas { justify-content: space-between; gap: 8px; padding: 6px 8px; }
+.grupo-archivo { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.grupo-archivo .evaluar { margin-left: 0; }
+.grupo-acciones { display: flex; gap: 6px; margin-left: auto; }
+
+button.grande {
+  font-size: 14px;
+  padding: 7px 18px;
+  color: #fff;
+  border-radius: 4px;
+  text-shadow: 1px 1px 0 #0006;
+}
+button.grande.verde {
+  background: linear-gradient(#5fc35f, #3c9b3c 50%, #2a7a2a);
+  border: 1px solid #1d5a1d;
+}
+button.grande.azul {
+  background: linear-gradient(#5b9cf5, #2c6fe0 50%, #1a4fb0);
+  border: 1px solid #0b3a8a;
+}
+button.grande:hover:not(:disabled) { filter: brightness(1.08); box-shadow: 0 0 0 1px #fff, 0 0 0 2px #0003; }
+button.grande:active { filter: brightness(0.92); }
+
+@media (max-width: 640px) {
+  .grupo-acciones { margin-left: 0; width: 100%; }
+  button.grande { flex: 1; }
 }

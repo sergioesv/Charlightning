@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Charlightning</title>
-<meta name="description" content="Evaluación del riesgo por descargas atmosféricas según la NTC 4552-2:2023 (IEC 62305-2), con N_G desde datos de la NASA.">
+<meta name="description" content="Evalúe un caso de riesgo por rayos (NTC 4552-2) y descargue la memoria de cálculo.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%9A%A1%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="/estilos.css">
 </head>
@@ -17,71 +17,124 @@
 <div id="barra">Software libre para ingenieros electricistas &middot; versión 0.1.0</div>
 <div id="cuerpo">
 <div id="menu">
+ <div class="seccion principal">
   <div class="menu-titulo">Menú</div>
   <ul>
-    <li><a href="/" aria-current="page">Inicio</a></li>
-    <li><a href="/calculadora.html">Calculadora</a></li>
+    <li><a href="/" aria-current="page">Calculadora</a></li>
     <li><a href="/validacion.html">Validación</a></li>
     <li><a href="/citar.html">Cómo citar</a></li>
+    <li><a href="/acerca.html">Acerca de</a></li>
     <li><a href="/apoyar.html">Apoyar el proyecto</a></li>
   </ul>
+ </div>
+ <div class="seccion ejemplos">
+  <div class="menu-titulo">Ejemplos de la norma</div>
+  <ul>
+    <li><a href="/?ejemplo=casa_rural" data-ejemplo="casa_rural">E.2 Casa rural</a></li>
+    <li><a href="/?ejemplo=E3_oficinas" data-ejemplo="E3_oficinas">E.3 Oficinas</a></li>
+    <li><a href="/?ejemplo=E4_hospital" data-ejemplo="E4_hospital">E.4 Hospital</a></li>
+    <li><a href="/?ejemplo=E5_apartamentos" data-ejemplo="E5_apartamentos">E.5 Apartamentos</a></li>
+  </ul>
+ </div>
+ <div class="seccion enlaces">
   <div class="menu-titulo">Enlaces</div>
   <ul>
     <li><a href="https://github.com/sergioesv/charlightning" target="_blank" rel="noopener">Código fuente</a></li>
     <li><a href="https://github.com/sergioesv/charlightning/issues" target="_blank" rel="noopener">Reportar un error</a></li>
     <li><a href="https://ghrc.nsstc.nasa.gov/" target="_blank" rel="noopener">NASA GHRC</a></li>
   </ul>
-  <div class="insignias">
-    <span class="insignia python"><b>PYTHON</b>powered</span>
-    <span class="insignia gpl"><b>GPL</b>v3</span>
-    <span class="insignia ntc"><b>NTC</b>4552-2</span>
+ </div>
+ <div class="seccion visitas">
+  <div class="menu-titulo">Visitas</div>
+  <div class="contador">Usted es el visitante n.&ordm;<br>
+    <span id="contador" class="odometro" aria-label="contador de visitas"><span>-</span><span>-</span><span>-</span><span>-</span><span>-</span><span>-</span><span>-</span></span>
   </div>
+ </div>
+ <div class="seccion insignias">
+  <a class="b88 linux" href="https://www.kernel.org/" target="_blank" rel="noopener" title="Linux"><b>&#128039;</b><i>LINUX<small>powered</small></i></a>
+  <a class="b88 gnu" href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener" title="GNU GPL v3"><b>GNU</b><i>GPL v3<small>software libre</small></i></a>
+  <a class="b88 python" href="https://www.python.org/" target="_blank" rel="noopener" title="Python"><b>Py</b><i>PYTHON<small>powered</small></i></a>
+  <a class="b88 debian" href="https://www.debian.org/" target="_blank" rel="noopener" title="Debian"><b>@</b><i>debian<small>GNU/Linux</small></i></a>
+  <a class="b88 firefox" href="https://www.mozilla.org/firefox/" target="_blank" rel="noopener" title="Firefox"><b>&#129418;</b><i>Get<small>Firefox!</small></i></a>
+  <a class="b88 w3c" href="https://validator.w3.org/" target="_blank" rel="noopener" title="W3C"><b>W3C</b><i>HTML<small>v&aacute;lido</small></i></a>
+ </div>
 </div>
 <main>
-<h1>Riesgo por descargas atmosféricas, calculado a la vista</h1>
-<p class="subtitulo">Charlightning evalúa los riesgos R1 a R4 de una estructura según la
-NTC 4552-2:2023 (equivalente a la IEC 62305-2) y entrega la memoria de cálculo en PDF.</p>
-<p><a class="boton" href="/calculadora.html">Abrir la calculadora</a>
-<a class="boton secundario" href="/validacion.html">Ver la validación</a></p>
+<h1>Calculadora</h1>
+<p class="subtitulo">Evaluación del riesgo por descargas atmosféricas según la NTC 4552-2:2023
+(IEC 62305-2), con los mismos formularios del programa de escritorio. Llene el caso o abra un
+ejemplo desde «Ejemplos de la norma» en el menú.</p>
 
-<div class="rejilla">
-  <div class="tarjeta">
-    <h2>Todo el desarrollo</h2>
-    <p>Cada componente (R_A, R_B, R_C, R_M, R_U, R_V, R_W, R_Z) por zona, con el
-    valor tolerable R_T y si cumple o no.</p>
+<div id="cargando" class="pequeno">Cargando las tablas de la norma…</div>
+
+<div id="calculadora" hidden>
+  <div class="barra-herramientas">
+    <div class="grupo-archivo">
+      <span class="botones-archivo">
+        <button type="button" id="b-nuevo" title="Borrar todo y empezar un caso nuevo">Nuevo</button>
+        <button type="button" id="b-abrir" title="Abrir un caso guardado (.json)">Abrir…</button>
+        <button type="button" id="b-guardar" title="Descargar el caso como .json">Guardar</button>
+      </span>
+      <input type="file" id="archivo" accept=".json,application/json" hidden>
+      <span class="evaluar">Evaluar:
+        <label><input type="checkbox" name="tipo" value="1" checked> R1 vidas</label>
+        <label><input type="checkbox" name="tipo" value="2"> R2 servicio</label>
+        <label><input type="checkbox" name="tipo" value="3"> R3 patrimonio</label>
+        <label><input type="checkbox" name="tipo" value="4"> R4 económica</label>
+      </span>
+    </div>
+    <div class="grupo-acciones">
+      <button type="button" id="b-calcular" class="grande verde">&#9654; Calcular</button>
+      <button type="button" id="b-informe" class="grande azul">&#128196; Informe PDF</button>
+    </div>
   </div>
-  <div class="tarjeta">
-    <h2>N_G con procedencia</h2>
-    <p>La densidad de descargas a tierra sale de la climatología LIS/OTD de la NASA
-    (1998–2013) a partir de latitud y longitud, o se declara con su fuente.</p>
-  </div>
-  <div class="tarjeta">
-    <h2>Memoria de cálculo</h2>
-    <p>Un PDF con los datos, las ecuaciones, las figuras y, para los riesgos que no
-    cumplen, combinaciones de medidas de protección.</p>
-  </div>
-  <div class="tarjeta">
-    <h2>Validado contra la norma</h2>
-    <p>Reproduce los casos del Anexo E (casa rural, oficinas, hospital y apartamentos);
-    las pruebas corren en cada cambio del código.</p>
-  </div>
+  <p id="estado" role="status" class="pequeno"></p>
+
+  <details class="proyecto">
+    <summary>Datos del proyecto (para el informe)</summary>
+    <div id="datos-proyecto"></div>
+  </details>
+
+  <div id="editor"></div>
+
+  <fieldset id="panel-resultados" class="resultados">
+    <legend>Resultados</legend>
+    <div class="tabla-envuelta">
+      <table>
+        <thead><tr><th>Riesgo y zonas</th><th class="num">Riesgo calculado [1/año]</th>
+          <th class="num">Tolerable R_T</th><th class="num">Veredicto</th></tr></thead>
+        <tbody id="filas-resultados"><tr><td colspan="4" class="pequeno">Pulse «Calcular».</td></tr></tbody>
+      </table>
+    </div>
+    <p class="fila"><span id="resumen"></span>
+      <button type="button" id="b-desglose" disabled>¿De dónde viene el riesgo?</button></p>
+    <div id="notas"></div>
+  </fieldset>
+
+  <fieldset id="panel-desglose" class="resultados" hidden>
+    <legend>De dónde viene el riesgo</legend>
+    <p id="desglose-titulo"></p>
+    <div class="tabla-envuelta"><table>
+      <thead><tr><th>Componente</th><th class="num">1/año</th><th class="num">Parte del riesgo</th></tr></thead>
+      <tbody id="desglose-componentes"></tbody>
+    </table></div>
+    <h2 id="desglose-medidas-titulo">Medidas</h2>
+    <div class="tabla-envuelta"><table>
+      <thead><tr><th>Medida</th><th class="num">Lo deja en</th><th class="num" id="desglose-queda">Queda en</th>
+        <th class="num">¿Basta con ella?</th></tr></thead>
+      <tbody id="desglose-medidas"></tbody>
+    </table></div>
+  </fieldset>
 </div>
-
-<h2>Programa de escritorio</h2>
-<p>La calculadora web usa el mismo motor que el programa de escritorio (Python/Tkinter).
-Los casos guardados desde el programa se pueden cargar aquí tal cual. El código está en
-<a href="https://github.com/sergioesv/charlightning" target="_blank" rel="noopener">GitHub</a>.</p>
 </main>
 </div>
 <div id="pie">
   Charlightning &copy; 2022&ndash;2026 Sergio Andrés Estrada Vélez &middot; Licencia GPL-3.0<br>
   Herramienta de apoyo al diseño: no reemplaza el criterio ni la firma del ingeniero responsable.<br>
-  <div class="contador">Usted es el visitante n.&ordm;
-    <span id="contador" class="odometro" aria-label="contador de visitas"><span>-</span><span>-</span><span>-</span><span>-</span><span>-</span><span>-</span><span>-</span></span>
-  </div>
   <span class="resolucion">Se ve mejor a 1024&times;768 con Internet Explorer 6 o Firefox 1.5</span>
 </div>
 </div>
+<script type="module" src="/calculadora.js"></script>
 <script src="/contador.js" defer></script>
 </body>
 </html>

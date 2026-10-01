@@ -11,14 +11,6 @@ const $ = (id) => document.getElementById(id);
 const TITULOS = {1: "R1 · Pérdida de vidas humanas", 2: "R2 · Pérdida de servicio público",
                  3: "R3 · Pérdida de patrimonio cultural", 4: "R4 · Pérdida económica"};
 
-// Los ejemplos resueltos del Anexo E que vienen con el programa.
-const EJEMPLOS_DE_LA_NORMA = [
-  ["E.2  Casa rural (1 zona)", "casa_rural"],
-  ["E.3  Edificio de oficinas (5 zonas)", "E3_oficinas"],
-  ["E.4  Hospital (4 zonas)", "E4_hospital"],
-  ["E.5  Edificio de apartamentos (1 zona)", "E5_apartamentos"],
-];
-
 // 2.506e-05 -> «2,506e-05», como el panel del programa.
 function numero(valor) {
   if (valor === 0) return "0";
@@ -351,12 +343,11 @@ class Calculadora {
     $("b-calcular").addEventListener("click", () => this.trabajar("b-calcular", () => this.calcular()));
     $("b-informe").addEventListener("click", () => this.trabajar("b-informe", () => this.informe()));
     $("b-desglose").addEventListener("click", () => this.trabajar("b-desglose", () => this.deDondeViene()));
-    for (const [texto, archivo] of EJEMPLOS_DE_LA_NORMA) $("b-ejemplos").add(new Option(texto, archivo));
-    $("b-ejemplos").addEventListener("change", (e) => {
-      const archivo = e.target.value;
-      e.target.value = "";
-      if (archivo) this.trabajar("b-ejemplos", () => this.abrirEjemplo(archivo));
-    });
+    // Los ejemplos del Anexo E están en el menú de la izquierda: aquí se abren sin recargar.
+    document.querySelectorAll("a[data-ejemplo]").forEach((a) => a.addEventListener("click", (e) => {
+      e.preventDefault();
+      this.pedirEjemplo(a.dataset.ejemplo);
+    }));
     // Cualquier cambio en el caso deja en gris el resultado que ya no le corresponde,
     // y se guarda como borrador (un momento después de dejar de escribir).
     for (const evento of ["input", "change"]) {
@@ -368,6 +359,19 @@ class Calculadora {
     // Al salir de la página (otro enlace, recargar) se guarda lo último.
     window.addEventListener("pagehide", () => this.guardarBorrador());
     this.recuperarBorrador();
+    // Desde otra página, el ejemplo llega como /?ejemplo=E3_oficinas
+    const ejemplo = new URLSearchParams(location.search).get("ejemplo");
+    if (ejemplo) {
+      history.replaceState(null, "", location.pathname);
+      this.pedirEjemplo(ejemplo);
+    }
+  }
+
+  // Abrir un ejemplo reemplaza lo escrito: se pregunta antes si hay algo.
+  pedirEjemplo(archivo) {
+    if (tieneDatos(this.editor.foto()) &&
+        !confirm("Abrir el ejemplo reemplaza el caso que está escribiendo.\n¿Seguir?")) return;
+    this.trabajar(null, () => this.abrirEjemplo(archivo));
   }
 
   // --- borrador --------------------------------------------------------------
@@ -405,10 +409,7 @@ class Calculadora {
       });
       this.proyecto.ponerFoto(foto.proyecto);
       this.editor.ponerFoto(foto.editor || {});
-      const e = foto.editor || {};
-      const algo = (e.zonas || []).length || (e.lineas || []).length ||
-        ["L", "W", "H"].some((c) => (e.estructura?.[c] ?? "") !== "");
-      if (algo) decir("Se recuperó el caso que estaba escribiendo (se guarda solo en este navegador).");
+      if (tieneDatos(foto.editor)) decir("Se recuperó el caso que estaba escribiendo (se guarda solo en este navegador).");
     } catch (error) {
       almacen.borrar(CLAVE_BORRADOR);
       this.editor.construir();
@@ -424,8 +425,8 @@ class Calculadora {
   async trabajar(id, accion) {
     if (this.ocupado) return;
     this.ocupado = true;
-    const boton = $(id);
-    boton.disabled = true;
+    const boton = id ? $(id) : null;
+    if (boton) boton.disabled = true;
     document.body.classList.add("trabajando");
     try {
       await accion();
@@ -434,7 +435,7 @@ class Calculadora {
       else decir(`Algo falló: ${error.message}`, true);
     } finally {
       this.ocupado = false;
-      boton.disabled = false;
+      if (boton) boton.disabled = false;
       document.body.classList.remove("trabajando");
     }
   }
@@ -542,6 +543,12 @@ class Calculadora {
     mostrarDesglose(d);
     decir("");
   }
+}
+
+// ¿Hay algo escrito en el editor? (los valores por defecto no cuentan)
+function tieneDatos(e = {}) {
+  return Boolean((e.zonas || []).length || (e.lineas || []).length ||
+    ["L", "W", "H"].some((c) => (e.estructura?.[c] ?? "") !== ""));
 }
 
 function descargar(blob, nombre) {
