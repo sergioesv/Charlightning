@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from web import servicio
+from web.contacto import Buzon, MensajeInvalido
 from web.contador import Contador, ruta_por_omision
 from web.limite import Limite
 
@@ -31,10 +32,12 @@ app = FastAPI(title="Charlightning", version=VERSION, docs_url="/api/docs",
               redoc_url=None, openapi_url="/api/openapi.json")
 
 contador = Contador(ruta_por_omision())
+buzon = Buzon.desde_entorno(ruta_por_omision().parent)
 _ESQUEMA = servicio.esquema()      # no cambia mientras el servicio está arriba
 
 limite_calculo = Limite(maximo=int(os.environ.get("LIMITE_CALCULOS", 120)), segundos=60)
 limite_informe = Limite(maximo=int(os.environ.get("LIMITE_INFORMES", 5)), segundos=60)
+limite_contacto = Limite(maximo=3, segundos=600)
 
 # matplotlib (pyplot) no se lleva bien con dos hilos dibujando a la vez.
 _un_informe_a_la_vez = threading.Lock()
@@ -151,6 +154,21 @@ def visita_nueva(request: Request):
     """Una visita más (la página la manda una vez por sesión del navegador)."""
     _revisar_limite(limite_calculo, request)
     return {"visitas": contador.sumar()}
+
+
+@app.post("/api/contacto")
+async def contacto(request: Request):
+    """El formulario de contacto. El correo de destino solo lo conoce el servidor."""
+    datos = await _leer_json(request)
+    # Campo trampa: una persona no lo ve; un robot lo llena. Se le contesta igual.
+    if isinstance(datos, dict) and str(datos.get("sitio_web", "")).strip():
+        return {"enviado": True}
+    _revisar_limite(limite_contacto, request)
+    try:
+        enviado = await run_in_threadpool(buzon.recibir, datos)
+    except MensajeInvalido as error:
+        raise HTTPException(422, str(error)) from error
+    return {"enviado": enviado}
 
 
 @app.get("/api/ejemplos")

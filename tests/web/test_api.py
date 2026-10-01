@@ -168,7 +168,7 @@ def test_limite_de_peticiones(cliente, monkeypatch):
 
 def test_las_paginas_se_sirven(cliente):
     for pagina in ("/", "/calculadora.html", "/acerca.html", "/validacion.html", "/citar.html",
-                   "/apoyar.html", "/estilos.css", "/calculadora.js", "/campos.js",
+                   "/apoyar.html", "/contacto.html", "/estilos.css", "/calculadora.js", "/campos.js",
                    "/formularios.js"):
         assert cliente.get(pagina).status_code == 200, pagina
 
@@ -197,3 +197,33 @@ def test_contador_por_la_api(cliente, monkeypatch, tmp_path):
     assert cliente.get("/api/visitas").json() == {"visitas": 0}
     assert cliente.post("/api/visitas").json() == {"visitas": 1}
     assert cliente.get("/api/visitas").json() == {"visitas": 1}
+
+
+def test_contacto_guarda_y_envia(tmp_path):
+    from web.contacto import Buzon
+    enviados = []
+    buzon = Buzon(tmp_path / "mensajes.jsonl", destino="autor@ejemplo.org", clave="x",
+                  enviar=lambda clave, destino, m: enviados.append((destino, m)) or True)
+    assert buzon.recibir({"nombre": "Ana", "correo": "ana@ejemplo.org", "mensaje": "Hola"})
+    assert enviados[0][0] == "autor@ejemplo.org"
+    assert "Hola" in (tmp_path / "mensajes.jsonl").read_text(encoding="utf-8")
+
+
+def test_contacto_sin_configurar_solo_guarda(tmp_path):
+    from web.contacto import Buzon
+    buzon = Buzon(tmp_path / "mensajes.jsonl")
+    assert buzon.recibir({"nombre": "Ana", "mensaje": "Hola"}) is False
+    assert (tmp_path / "mensajes.jsonl").exists()
+
+
+def test_contacto_por_la_api(cliente, monkeypatch, tmp_path):
+    from web.contacto import Buzon
+    monkeypatch.setattr(api, "buzon", Buzon(tmp_path / "m.jsonl"))
+    monkeypatch.setattr(api, "limite_contacto", Limite(2, 600))
+    assert cliente.post("/api/contacto", json={"nombre": "", "mensaje": "x"}).status_code == 422
+    assert cliente.post("/api/contacto", json={"nombre": "A", "correo": "malo", "mensaje": "x"}).status_code == 422
+    # El robot que llena el campo trampa recibe «enviado» y no se guarda nada.
+    assert cliente.post("/api/contacto", json={"nombre": "R", "mensaje": "spam",
+                                               "sitio_web": "http://spam"}).json() == {"enviado": True}
+    assert not (tmp_path / "m.jsonl").exists()
+    assert cliente.post("/api/contacto", json={"nombre": "A", "mensaje": "x"}).status_code == 429

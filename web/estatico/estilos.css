@@ -525,3 +525,7 @@ button.grande:active { filter: brightness(0.92); }
 @media (max-width: 640px) {
   .publicidad { position: static; transform: none; max-width: none; margin-top: 8px; display: inline-block; }
 }
+
+/* Formulario de contacto: el campo trampa no se ve (solo lo llenan los robots). */
+.trampa { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+#contacto textarea { width: 100%; min-height: 140px; font: 12px Verdana, Tahoma, sans-serif; }
