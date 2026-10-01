@@ -12,7 +12,7 @@
   --enlace: #0033cc;
   --visitado: #551a8b;
   --bien: #1f5fae;      /* cumple: azul, como el programa (no verde: daltonismo) */
-  --mal: #c2410c;       /* no cumple: naranja */
+  --mal: #ff0000;       /* no cumple: rojo puro */
   --error: #c0392b;
   --aviso-fondo: #fdf3ec;
   --aviso-borde: #d9a27e;
