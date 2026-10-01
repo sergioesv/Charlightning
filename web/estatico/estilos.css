@@ -504,26 +504,19 @@ button.grande:active { filter: brightness(0.92); }
   #menu li a.apoyar { animation: none; }
 }
 
-/* BROMA (temporal): el anuncio de la derecha. Para quitarlo, borrar este bloque y el
-   <div class="publicidad"> del encabezado de cada página. */
-#cabecera { position: relative; }
+/* BROMA (temporal): el enlace de Laura, arriba a la derecha del contenido. Para quitarlo,
+   borrar este bloque y el <a class="publicidad"> al comienzo del <main> de cada página. */
 .publicidad {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  max-width: 45%;
-  padding: 4px 10px 6px;
-  background: #fff;
-  border: 1px solid #7f9db9;
-  box-shadow: 2px 2px 0 #0a3ca6;
-  text-align: center;
+  float: right;
+  margin: 4px 0 4px 12px;
+  color: #0000ee;
+  text-decoration: underline;
+  font: bold 13px Verdana, sans-serif;
+  cursor: pointer;
 }
-.publicidad small { display: block; color: #888; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; }
-.publicidad a { color: #0000ee; text-decoration: underline; font: bold 13px Verdana, sans-serif; cursor: pointer; }
-.publicidad a:visited { color: #0000ee; }
+.publicidad:visited { color: #0000ee; }
 @media (max-width: 640px) {
-  .publicidad { position: static; transform: none; max-width: none; margin-top: 8px; display: inline-block; }
+  .publicidad { float: none; display: block; text-align: right; margin: 0 0 6px; }
 }
 
 /* Formulario de contacto: el campo trampa no se ve (solo lo llenan los robots). */
