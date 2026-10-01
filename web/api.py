@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from web import servicio
+from web.contador import Contador, ruta_por_omision
 from web.limite import Limite
 
 MAX_BYTES = 200_000                  # un caso real pesa unos pocos kB
@@ -29,6 +30,7 @@ COMMIT = os.environ.get("RAILWAY_GIT_COMMIT_SHA", "")[:7]
 app = FastAPI(title="Charlightning", version=VERSION, docs_url="/api/docs",
               redoc_url=None, openapi_url="/api/openapi.json")
 
+contador = Contador(ruta_por_omision())
 _ESQUEMA = servicio.esquema()      # no cambia mientras el servicio está arriba
 
 limite_calculo = Limite(maximo=int(os.environ.get("LIMITE_CALCULOS", 120)), segundos=60)
@@ -136,6 +138,19 @@ async def desglose(request: Request, tipo: int = Query(..., ge=1, le=4)):
     _revisar_limite(limite_calculo, request)
     datos = await _leer_json(request)
     return await run_in_threadpool(servicio.desglose, datos, tipo)
+
+
+@app.get("/api/visitas")
+def visitas():
+    """El número que muestra el contador de la página."""
+    return {"visitas": contador.leer()}
+
+
+@app.post("/api/visitas")
+def visita_nueva(request: Request):
+    """Una visita más (la página la manda una vez por sesión del navegador)."""
+    _revisar_limite(limite_calculo, request)
+    return {"visitas": contador.sumar()}
 
 
 @app.get("/api/ejemplos")

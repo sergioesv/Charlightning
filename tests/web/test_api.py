@@ -181,3 +181,19 @@ def test_el_limite_se_libera_con_el_tiempo():
     assert limite.permitir("b")
     ahora[0] = 61
     assert limite.permitir("a")
+
+
+def test_contador_de_visitas(tmp_path):
+    from web.contador import Contador
+    contador = Contador(tmp_path / "sub" / "visitas.json")
+    assert contador.leer() == 0
+    assert [contador.sumar() for _ in range(3)] == [1, 2, 3]
+    assert Contador(tmp_path / "sub" / "visitas.json").leer() == 3
+
+
+def test_contador_por_la_api(cliente, monkeypatch, tmp_path):
+    from web.contador import Contador
+    monkeypatch.setattr(api, "contador", Contador(tmp_path / "visitas.json"))
+    assert cliente.get("/api/visitas").json() == {"visitas": 0}
+    assert cliente.post("/api/visitas").json() == {"visitas": 1}
+    assert cliente.get("/api/visitas").json() == {"visitas": 1}

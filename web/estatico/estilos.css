@@ -1,4 +1,5 @@
-/* Charlightning: hoja de estilos con aire de 2005 (Verdana, degradados, menú lateral). */
+/* Charlightning: hoja de estilos con aire de 2005. Paleta de Windows XP «Luna»: azul de la
+   barra de título, verde del botón Inicio, beige #ECE9D8 de las ventanas y #7F9DB9 de las casillas. */
 
 :root {
   --fondo: #d9dfe8;
@@ -13,8 +14,13 @@
   --bien: #1f5fae;      /* cumple: azul, como el programa (no verde: daltonismo) */
   --mal: #c2410c;       /* no cumple: naranja */
   --error: #c0392b;
-  --aviso-fondo: #ffffcc;
-  --aviso-borde: #e0c000;
+  --aviso-fondo: #fdf3ec;
+  --aviso-borde: #d9a27e;
+  --verde-xp: #3c9b3c;
+  --verde-xp-oscuro: #2a7a2a;
+  --beige-xp: #ece9d8;
+  --casilla-xp: #7f9db9;
+  --seleccion-xp: #c5d9f3;
   color-scheme: light;
 }
 
@@ -46,8 +52,8 @@ a:hover { color: var(--error); }
 
 #cabecera {
   padding: 18px 16px 14px;
-  background: linear-gradient(#3d6fb8, #1c3f7a);
-  border-bottom: 3px solid #f2b705;
+  background: linear-gradient(#3a80f3 0%, #1f5fd8 45%, #0a3ca6 100%);
+  border-bottom: 3px solid var(--verde-xp);
   color: #fff;
 }
 
@@ -62,8 +68,8 @@ a:hover { color: var(--error); }
 
 #barra {
   padding: 3px 16px;
-  background: linear-gradient(#f4f4f4, #dcdcdc);
-  border-bottom: 1px solid #b0b0b0;
+  background: linear-gradient(#fbfaf6, var(--beige-xp));
+  border-bottom: 1px solid #aca899;
   font-size: 10px;
   color: var(--suave);
 }
@@ -99,7 +105,7 @@ a:hover { color: var(--error); }
   position: relative;
 }
 
-#menu li a::before { content: "»"; position: absolute; left: 3px; color: #f2a000; }
+#menu li a::before { content: "»"; position: absolute; left: 3px; color: var(--verde-xp); }
 #menu li a:hover { background: #fff; text-decoration: underline; }
 #menu li a[aria-current="page"] { font-weight: bold; color: var(--texto); background: #fff; }
 
@@ -123,7 +129,8 @@ a:hover { color: var(--error); }
   display: flex;
   align-items: center;
   padding: 0 4px;
-  background: #f2b705;
+  color: #fff;
+  background: var(--color-insignia, var(--azul));
   border-right: 1px solid #000;
 }
 
@@ -179,17 +186,20 @@ h2 {
 
 .boton, button {
   display: inline-block;
-  font: bold 11px Verdana, Tahoma, sans-serif;
+  font: bold 11px Tahoma, Verdana, sans-serif;
   padding: 3px 12px;
   color: #000;
-  background: linear-gradient(#ffffff, #d4d0c8);
-  border: 2px outset #d4d0c8;
+  background: linear-gradient(#ffffff, #f3f2ec 60%, #d6d0c0);
+  border: 1px solid #003c74;
+  border-radius: 3px;
   text-decoration: none;
   cursor: pointer;
 }
 
+.boton:hover, button:hover:not(:disabled) { box-shadow: inset 0 0 0 2px #b9d1f3, 0 0 0 1px #3a80f3; }
+
 .boton:visited { color: #000; }
-.boton:active, button:active { border-style: inset; }
+.boton:active, button:active { background: linear-gradient(#d6d0c0, #f3f2ec); }
 .boton.secundario, button.secundario { font-weight: normal; }
 button:disabled { color: #888; cursor: wait; }
 
@@ -199,7 +209,7 @@ input, select, textarea {
   font: 12px Verdana, Tahoma, sans-serif;
   color: #000;
   background: #fff;
-  border: 2px inset #d4d0c8;
+  border: 1px solid var(--casilla-xp);
   padding: 2px 3px;
   max-width: 100%;
 }
@@ -240,7 +250,7 @@ td.num { white-space: nowrap; }
   margin: 6px 0;
 }
 
-.aviso::before { content: "\26A0  "; }
+.aviso::before { content: "\26A0  "; color: #b5471b; }
 
 .error { color: var(--error); font-weight: bold; }
 .multilinea { white-space: pre-line; }
@@ -258,8 +268,8 @@ pre {
 /* --- Pie ------------------------------------------------------------------- */
 
 #pie {
-  border-top: 3px solid #f2b705;
-  background: linear-gradient(#2c548f, #1c3f7a);
+  border-top: 3px solid var(--verde-xp);
+  background: linear-gradient(#1f5fd8, #0a3ca6);
   color: #d6e2f5;
   font-size: 10px;
   text-align: center;
@@ -355,8 +365,8 @@ fieldset fieldset { background: #fff; }
   gap: 4px;
   align-items: center;
   padding: 4px;
-  background: linear-gradient(#f4f4f4, #dcdcdc);
-  border: 1px solid #b0b0b0;
+  background: linear-gradient(#fbfaf6, var(--beige-xp));
+  border: 1px solid #aca899;
 }
 .barra-herramientas .evaluar { margin-left: 8px; font-size: 11px; }
 .barra-herramientas .evaluar label { display: inline; font-weight: normal; margin: 0 4px 0 0; }
@@ -369,7 +379,7 @@ details.proyecto summary { cursor: pointer; font-weight: bold; color: var(--azul
 .resultados tr.riesgo.cumple td, .resultados tr.cumple td { color: var(--bien); }
 .resultados tr.riesgo.no-cumple td { color: var(--mal); }
 .resultados tbody tr { cursor: pointer; }
-.resultados tr.elegida td { background: #fff3c4 !important; }
+.resultados tr.elegida td { background: var(--seleccion-xp) !important; }
 .resultados td.sangria { padding-left: 22px; }
 .resultados.obsoleto td, .resultados.obsoleto .aviso { color: #8a8a8a !important; }
 .resultados.obsoleto #resumen { color: #8a8a8a; font-style: italic; }
@@ -380,4 +390,30 @@ body.trabajando, body.trabajando * { cursor: progress !important; }
 
 @media (max-width: 640px) {
   .campo { grid-template-columns: 1fr; }
+}
+
+/* Las insignias de 80x15 de la época, cada una con su color */
+.insignia.python { --color-insignia: #306998; }
+.insignia.gpl { --color-insignia: #a42e2b; }
+.insignia.ntc { --color-insignia: var(--verde-xp-oscuro); }
+
+/* El contador de visitas: dígitos de odómetro, verde fósforo sobre negro */
+.contador { margin: 6px 0 4px; color: #fff; }
+.odometro {
+  display: inline-flex;
+  gap: 1px;
+  padding: 2px;
+  background: #222;
+  border: 2px outset #777;
+  vertical-align: middle;
+}
+.odometro span {
+  display: inline-block;
+  width: 1.05em;
+  padding: 1px 0;
+  text-align: center;
+  font: bold 14px/1.1 "Courier New", Courier, monospace;
+  color: #39ff14;
+  text-shadow: 0 0 4px #39ff14aa;
+  background: linear-gradient(#000 0%, #1c1c1c 50%, #000 51%, #111 100%);
 }

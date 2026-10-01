@@ -19,3 +19,5 @@ memoria_*.csv
 
 # Cache de pytest
 .pytest_cache/
+# El contador de visitas cuando se prueba la web en el computador
+datos/

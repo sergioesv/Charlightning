@@ -27,14 +27,14 @@
   </ul>
   <div class="menu-titulo">Enlaces</div>
   <ul>
-    <li><a href="https://github.com/sergioesv/charlightning" target="_blank" rel="noopener">>Código fuente</a></li>
-    <li><a href="https://github.com/sergioesv/charlightning/issues" target="_blank" rel="noopener">>Reportar un error</a></li>
-    <li><a href="https://ghrc.nsstc.nasa.gov/" target="_blank" rel="noopener">>NASA GHRC</a></li>
+    <li><a href="https://github.com/sergioesv/charlightning" target="_blank" rel="noopener">Código fuente</a></li>
+    <li><a href="https://github.com/sergioesv/charlightning/issues" target="_blank" rel="noopener">Reportar un error</a></li>
+    <li><a href="https://ghrc.nsstc.nasa.gov/" target="_blank" rel="noopener">NASA GHRC</a></li>
   </ul>
   <div class="insignias">
-    <span class="insignia"><b>PYTHON</b>powered</span>
-    <span class="insignia"><b>GPL</b>v3</span>
-    <span class="insignia"><b>NTC</b>4552-2</span>
+    <span class="insignia python"><b>PYTHON</b>powered</span>
+    <span class="insignia gpl"><b>GPL</b>v3</span>
+    <span class="insignia ntc"><b>NTC</b>4552-2</span>
   </div>
 </div>
 <main>
@@ -55,7 +55,7 @@ mismo motor de la calculadora, junto al valor que imprime la norma.</p>
 cada cambio: componentes por zona, las soluciones con medidas de protección de cada ejemplo
 y los 16 escenarios de la Tabla E.45. La tolerancia es medio dígito de lo que imprime la
 norma o 1 %, la que sea mayor. Vea
-<a href="https://github.com/sergioesv/charlightning/tree/master/tests/norma" target="_blank" rel="noopener">>tests/norma</a>.</p>
+<a href="https://github.com/sergioesv/charlightning/tree/master/tests/norma" target="_blank" rel="noopener">tests/norma</a>.</p>
 <p class="pequeno">Diferencia conocida: en E.4, solución c), la norma imprime 0,244 y el
 modelo da 0,2505. La IEC 62305-2:2010 imprime lo mismo; se documenta en las pruebas.</p>
 </main>
@@ -63,7 +63,10 @@ modelo da 0,2505. La IEC 62305-2:2010 imprime lo mismo; se documenta en las prue
 <div id="pie">
   Charlightning &copy; 2022&ndash;2026 Sergio Andrés Estrada Vélez &middot; Licencia GPL-3.0<br>
   Herramienta de apoyo al diseño: no reemplaza el criterio ni la firma del ingeniero responsable.<br>
-  <span class="resolucion">Se ve mejor a 1024&times;768</span>
+  <div class="contador">Usted es el visitante n.&ordm;
+    <span id="contador" class="odometro" aria-label="contador de visitas"><span>-</span><span>-</span><span>-</span><span>-</span><span>-</span><span>-</span><span>-</span></span>
+  </div>
+  <span class="resolucion">Se ve mejor a 1024&times;768 con Internet Explorer 6 o Firefox 1.5</span>
 </div>
 </div>
 <script>
@@ -77,5 +80,6 @@ fetch("/api/validacion").then(r => r.json()).then(filas => {
   document.getElementById("filas").innerHTML = '<tr><td colspan="4" class="error">No se pudo calcular la tabla.</td></tr>';
 });
 </script>
+<script src="/contador.js" defer></script>
 </body>
 </html>
