@@ -460,3 +460,30 @@ button.grande:active { filter: brightness(0.92); }
   .grupo-acciones { margin-left: 0; width: 100%; }
   button.grande { flex: 1; }
 }
+
+/* --- Lo hecho a mano en 2005 ---------------------------------------------------------- */
+
+/* La franja: la fecha a la izquierda y un letrero que corre, como un <marquee>. */
+#barra { display: flex; gap: 12px; align-items: center; overflow: hidden; white-space: nowrap; }
+#barra .fecha { flex: none; }
+#barra .letrero { flex: 1; overflow: hidden; color: #b00000; font-weight: bold; }
+#barra .letrero span { display: inline-block; padding-left: 100%; animation: letrero 28s linear infinite; }
+@keyframes letrero { to { transform: translateX(-100%); } }
+@media (prefers-reduced-motion: reduce) {
+  #barra .letrero span { animation: none; padding-left: 0; }
+}
+
+/* Cuadros que quedaron un poquito corridos (nadie los arregló nunca). */
+#menu .visitas { position: relative; left: 3px; top: 1px; }
+.b88.debian { position: relative; left: 4px; }
+#cabecera .lema { position: relative; left: 1px; top: 2px; }
+.tarjeta:nth-of-type(3) { position: relative; top: 3px; }
+
+.en-construccion {
+  margin: 12px 0;
+  padding: 6px 10px;
+  border: 2px dashed #000;
+  background: repeating-linear-gradient(45deg, #ffffff 0 10px, #e9e9e9 10px 20px);
+  font-weight: bold;
+  text-align: center;
+}
