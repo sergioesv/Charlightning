@@ -39,9 +39,13 @@ que dice el informe.
 
 1. En Railway: **New Project → Deploy from GitHub repo →** `sergioesv/charlightning`.
 2. En el servicio, **Settings → Source → Branch**: `web` (luego `master` cuando se una).
-3. Railway detecta Python con `requirements.txt` y `.python-version`, y arranca con
-   el comando de `railway.json`. Cada `git push` a la rama vuelve a publicar.
-4. **Settings → Networking → Generate Domain** da una URL `*.up.railway.app` para probar.
+3. **Settings → Deploy**:
+   - **Custom Start Command**: `uvicorn web.api:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'`
+     (es el mismo del `Procfile`; ponerlo aquí no depende de que Railway lea ese archivo).
+   - **Healthcheck Path**: `/api/salud`
+4. Railway detecta Python con `requirements.txt` y `.python-version`. Cada `git push`
+   a la rama vuelve a publicar.
+5. **Settings → Networking → Generate Domain** da una URL `*.up.railway.app` para probar.
 
 Variables opcionales (Settings → Variables):
 
