@@ -487,3 +487,19 @@ button.grande:active { filter: brightness(0.92); }
   font-weight: bold;
   text-align: center;
 }
+
+/* «Apoyar el proyecto»: verde fosforescente parpadeando, sobre negro para que se lea. */
+#menu li a.apoyar,
+#menu li a.apoyar[aria-current="page"] {
+  color: #39ff14;
+  background: #000;
+  font-weight: bold;
+  text-shadow: 0 0 4px #39ff14;
+  animation: parpadeo 1s steps(1, end) infinite;
+}
+#menu li a.apoyar::before { color: #39ff14; }
+#menu li a.apoyar:hover { background: #111; text-decoration: underline; }
+@keyframes parpadeo { 50% { color: transparent; text-shadow: none; } }
+@media (prefers-reduced-motion: reduce) {
+  #menu li a.apoyar { animation: none; }
+}
