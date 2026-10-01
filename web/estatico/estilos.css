@@ -263,7 +263,14 @@ pre {
   #menu ul { display: flex; flex-wrap: wrap; }
   #menu li a { border-bottom: 0; }
   #menu .enlaces, #menu .insignias { display: none; }
-  #menu .visitas .menu-titulo { display: none; }
+  /* El menú se reparte: Menú y Ejemplos arriba, el contador al final de la página. */
+  #menu { display: contents; }
+  #menu > .seccion { background: var(--azul-claro); padding: 4px 8px; }
+  #menu > .seccion.principal { padding-top: 6px; }
+  #menu > .seccion.ejemplos { padding-bottom: 8px; border-bottom: 1px solid var(--borde); }
+  main { order: 1; }
+  #menu > .seccion.visitas { order: 2; left: 0; top: 0; padding: 6px 8px 10px; border-top: 1px solid var(--borde); }
+  #menu .contador { margin: 4px 0 0; }
   #menu .contador br { display: none; }
   main { padding: 12px 16px 16px; }
 }
