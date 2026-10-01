@@ -30,9 +30,12 @@ class Contador:
 
     def leer(self) -> int:
         try:
-            return int(json.loads(self.ruta.read_text(encoding="utf-8"))["visitas"])
+            guardadas = int(json.loads(self.ruta.read_text(encoding="utf-8"))["visitas"])
         except (OSError, ValueError, KeyError, TypeError):
-            return 0
+            guardadas = 0
+        # Un piso por si el archivo se pierde (una mudanza del volumen, por ejemplo):
+        # el contador nunca baja de CONTADOR_MINIMO.
+        return max(guardadas, int(os.environ.get("CONTADOR_MINIMO", 0) or 0))
 
     def sumar(self) -> int:
         with self._candado:

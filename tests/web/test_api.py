@@ -227,3 +227,11 @@ def test_contacto_por_la_api(cliente, monkeypatch, tmp_path):
                                                "sitio_web": "http://spam"}).json() == {"enviado": True}
     assert not (tmp_path / "m.jsonl").exists()
     assert cliente.post("/api/contacto", json={"nombre": "A", "mensaje": "x"}).status_code == 429
+
+
+def test_el_contador_no_baja_del_minimo(tmp_path, monkeypatch):
+    from web.contador import Contador
+    monkeypatch.setenv("CONTADOR_MINIMO", "57")
+    contador = Contador(tmp_path / "visitas.json")
+    assert contador.leer() == 57
+    assert contador.sumar() == 58

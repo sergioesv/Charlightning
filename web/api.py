@@ -58,6 +58,12 @@ async def _cache(request: Request, siguiente):
 
 contador = Contador(ruta_por_omision())
 buzon = Buzon.desde_entorno(ruta_por_omision().parent)
+
+# Al arrancar se anota cuánto hay guardado: sirve para saber que el volumen sigue ahí.
+_mensajes = ruta_por_omision().parent / "mensajes.jsonl"
+print(f"Charlightning: {contador.leer()} visitas guardadas en {contador.ruta}; "
+      f"{sum(1 for _ in _mensajes.open(encoding='utf-8')) if _mensajes.exists() else 0} mensajes de contacto",
+      flush=True)
 _ESQUEMA = servicio.esquema()      # no cambia mientras el servicio está arriba
 
 limite_calculo = Limite(maximo=int(os.environ.get("LIMITE_CALCULOS", 120)), segundos=60)
