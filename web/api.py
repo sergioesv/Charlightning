@@ -15,6 +15,7 @@ os.environ.setdefault("MPLBACKEND", "Agg")      # el servidor no tiene pantalla
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.concurrency import run_in_threadpool
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
@@ -30,6 +31,30 @@ COMMIT = os.environ.get("RAILWAY_GIT_COMMIT_SHA", "")[:7]
 
 app = FastAPI(title="Charlightning", version=VERSION, docs_url="/api/docs",
               redoc_url=None, openapi_url="/api/openapi.json")
+app.add_middleware(GZipMiddleware, minimum_size=800)
+
+# Cuánto puede guardar el navegador cada cosa. El servidor está lejos (cada viaje
+# cuesta), así que los CSS y JS se reutilizan unos minutos sin volver a preguntar; las
+# páginas y las respuestas de cálculo siempre se piden de nuevo.
+CACHE_ESTATICOS = "public, max-age=600, stale-while-revalidate=86400"
+CACHE_PAGINAS = "no-cache"
+
+
+@app.middleware("http")
+async def _cache(request: Request, siguiente):
+    respuesta = await siguiente(request)
+    ruta = request.url.path
+    if "cache-control" in respuesta.headers:
+        return respuesta
+    if ruta.endswith((".css", ".js", ".png", ".ico", ".svg")):
+        respuesta.headers["Cache-Control"] = CACHE_ESTATICOS
+    elif ruta in ("/api/esquema", "/api/validacion") or ruta.startswith("/api/ejemplos"):
+        respuesta.headers["Cache-Control"] = "public, max-age=3600"
+    elif ruta.startswith("/api/"):
+        respuesta.headers["Cache-Control"] = "no-store"
+    else:
+        respuesta.headers["Cache-Control"] = CACHE_PAGINAS
+    return respuesta
 
 contador = Contador(ruta_por_omision())
 buzon = Buzon.desde_entorno(ruta_por_omision().parent)
@@ -180,6 +205,15 @@ def ejemplos():
 def ejemplo(nombre: str):
     try:
         return servicio.ejemplo(nombre)
+    except KeyError:
+        raise HTTPException(404, "No existe ese ejemplo.") from None
+
+
+@app.get("/api/ejemplos/{nombre}/abierto")
+def ejemplo_abierto(nombre: str):
+    """El ejemplo ya listo para los formularios: un viaje en vez de dos."""
+    try:
+        return servicio.abrir(servicio.ejemplo(nombre))
     except KeyError:
         raise HTTPException(404, "No existe ese ejemplo.") from None
 

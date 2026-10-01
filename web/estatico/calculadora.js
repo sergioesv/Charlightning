@@ -478,7 +478,10 @@ class Calculadora {
   }
 
   async abrirDatos(datos, nombre) {
-    const abierto = await (await postJson("/api/abrir", datos)).json();
+    await this.ponerAbierto(await (await postJson("/api/abrir", datos)).json(), nombre);
+  }
+
+  async ponerAbierto(abierto, nombre) {
     const tipos = Object.keys(abierto.por_tipo).map(Number);
     document.querySelectorAll('input[name="tipo"]').forEach((c) => { c.checked = tipos.includes(Number(c.value)); });
     this.resultados.limpiar();
@@ -495,8 +498,8 @@ class Calculadora {
   }
 
   async abrirEjemplo(archivo) {
-    const datos = await (await pedir(`/api/ejemplos/${encodeURIComponent(archivo)}`)).json();
-    await this.abrirDatos(datos, archivo);
+    const abierto = await (await pedir(`/api/ejemplos/${encodeURIComponent(archivo)}/abierto`)).json();
+    await this.ponerAbierto(abierto, archivo);
   }
 
   async abrirArchivo(entrada) {
