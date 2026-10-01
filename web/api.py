@@ -17,11 +17,11 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, Response
-from fastapi.staticfiles import StaticFiles
 
 from web import servicio
 from web.contacto import Buzon, MensajeInvalido
 from web.contador import Contador, ruta_por_omision
+from web.estaticos import EstaticosVersionados
 from web.limite import Limite
 
 MAX_BYTES = 200_000                  # un caso real pesa unos pocos kB
@@ -33,10 +33,10 @@ app = FastAPI(title="Charlightning", version=VERSION, docs_url="/api/docs",
               redoc_url=None, openapi_url="/api/openapi.json")
 app.add_middleware(GZipMiddleware, minimum_size=800)
 
-# Cuánto puede guardar el navegador cada cosa. El servidor está lejos (cada viaje
-# cuesta), así que los CSS y JS se reutilizan unos minutos sin volver a preguntar; las
-# páginas y las respuestas de cálculo siempre se piden de nuevo.
-CACHE_ESTATICOS = "public, max-age=600, stale-while-revalidate=86400"
+# Cuánto puede guardar el navegador cada cosa. Los CSS y JS se piden siempre con su
+# versión (?v=...), que cambia con cada despliegue: esos se guardan un año sin volver a
+# preguntar. Las páginas se piden siempre de nuevo, y así traen la versión al día.
+CACHE_VERSIONADO = "public, max-age=31536000, immutable"
 CACHE_PAGINAS = "no-cache"
 
 
@@ -46,6 +46,16 @@ async def _cache(request: Request, siguiente):
     ruta = request.url.path
     if "cache-control" in respuesta.headers:
         return respuesta
+    if ruta.endswith((".css", ".js", ".png", ".ico", ".svg")):
+        versionado = "v" in request.query_params
+        respuesta.headers["Cache-Control"] = CACHE_VERSIONADO if versionado else CACHE_PAGINAS
+    elif ruta in ("/api/esquema", "/api/validacion") or ruta.startswith("/api/ejemplos"):
+        respuesta.headers["Cache-Control"] = "public, max-age=3600"
+    elif ruta.startswith("/api/"):
+        respuesta.headers["Cache-Control"] = "no-store"
+    else:
+        respuesta.headers["Cache-Control"] = CACHE_PAGINAS
+    return respuesta
     if ruta.endswith((".css", ".js", ".png", ".ico", ".svg")):
         respuesta.headers["Cache-Control"] = CACHE_ESTATICOS
     elif ruta in ("/api/esquema", "/api/validacion") or ruta.startswith("/api/ejemplos"):
@@ -230,4 +240,4 @@ def validacion():
 
 
 # Las páginas (index.html, calculadora.html, ...) van al final para no tapar /api.
-app.mount("/", StaticFiles(directory=CARPETA_ESTATICA, html=True), name="estatico")
+app.mount("/", EstaticosVersionados(directory=CARPETA_ESTATICA, html=True), name="estatico")

@@ -61,7 +61,7 @@
  </div>
 </div>
 <main>
-<a class="publicidad" href="#" onclick="return false">&#128152; &iexcl;&iexcl;Laura te quiere conocer!!</a>
+<div class="publicidad" id="laura"><button type="button" class="cerrar" aria-label="Cerrar">x</button><a href="#">&#128152; &iexcl;&iexcl;Laura te quiere conocer!!</a></div>
 <h1>Validación contra el Anexo E</h1>
 <p class="subtitulo">Los casos resueltos de la NTC 4552-2:2023, evaluados en vivo por el
 mismo motor de la calculadora, junto al valor que imprime la norma.</p>
@@ -102,5 +102,6 @@ fetch("/api/validacion").then(r => r.json()).then(filas => {
 });
 </script>
 <script src="/contador.js" defer></script>
+<script src="/laura.js" defer></script>
 </body>
 </html>

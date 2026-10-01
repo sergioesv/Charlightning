@@ -235,3 +235,15 @@ def test_el_contador_no_baja_del_minimo(tmp_path, monkeypatch):
     contador = Contador(tmp_path / "visitas.json")
     assert contador.leer() == 57
     assert contador.sumar() == 58
+
+
+def test_los_archivos_van_con_su_version(cliente):
+    """La página nueva nunca se mezcla con una hoja de estilos vieja guardada en caché."""
+    html = cliente.get("/").text
+    import re
+    css = re.search(r'href="(/estilos\.css\?v=\w+)"', html).group(1)
+    assert cliente.get("/").headers["cache-control"] == "no-cache"
+    assert "immutable" in cliente.get(css).headers["cache-control"]
+    js = cliente.get(re.search(r'src="(/calculadora\.js\?v=\w+)"', html).group(1)).text
+    assert re.search(r'from "\./campos\.js\?v=\w+"', js)
+    assert cliente.get("/estilos.css").headers["cache-control"] == "no-cache"
