@@ -47,6 +47,9 @@ que dice el informe.
    a la rama vuelve a publicar.
 5. **Settings → Networking → Generate Domain** da una URL `*.up.railway.app` para probar.
 
+Publicada en **https://charlightning.org** (y `www.charlightning.org`), con el DNS en Cloudflare
+(dos CNAME en «DNS only» hacia Railway y dos TXT `_railway-verify` de verificación).
+
 Variables opcionales (Settings → Variables):
 
 | Variable | Por omisión | Para qué |
