@@ -165,7 +165,7 @@ class Calculo_DDT:
             lon = data.variables['Longitude'][:]
             
             # Almacena las variables de rayos y los multiplica por ratio 
-            rayos = data.variables['VHRFC_LIS_FRD'][:] * 0.227
+            rayos = data.variables['VHRFC_LIS_FRD'][:] * 0.25
             
             # Almacena la lat. y long. que ingresa el usuario
             lat_x = lat_x

@@ -29,8 +29,8 @@ def test_un_caso_guardado_y_reabierto_conserva_coordenadas_y_procedencia(tmp_pat
     casos.guardar_caso(ruta, {1: _caso_por_coordenadas()})
     abierto = casos.cargar_casos(ruta)[1]
     assert abierto["emplazamiento"] == Emplazamiento(
-        modo="coordenadas", lat=2.44, lon=-76.61, fraccion_nube_tierra=0.227)
-    assert abierto["N_G"] == pytest.approx(2.64, abs=0.01)
+        modo="coordenadas", lat=2.44, lon=-76.61, fraccion_nube_tierra=0.25)
+    assert abierto["N_G"] == pytest.approx(2.91, abs=0.01)
 
 
 def test_un_n_g_declarado_conserva_su_fuente(tmp_path):
@@ -89,7 +89,7 @@ def test_por_coordenadas_no_pide_fuente():
 
 def test_ficha_de_un_emplazamiento_por_coordenadas():
     ficha = densidad.ficha_de(Emplazamiento(modo="coordenadas", lat=2.44, lon=-76.61))
-    assert ficha.N_G == pytest.approx(2.64, abs=0.01)
+    assert ficha.N_G == pytest.approx(2.91, abs=0.01)
 
 
 def test_un_declarado_no_tiene_ficha():

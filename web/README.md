@@ -70,14 +70,10 @@ Variables opcionales (Settings → Variables):
    permita CNAME en la raíz (Cloudflare lo hace).
 4. El certificado HTTPS lo pone Railway solo.
 
-## Códigos QR para donaciones
+## Código QR para donaciones
 
-Guardar las imágenes como:
-
-- `web/estatico/img/qr-nequi.png` (Nequi → Cobrar con QR)
-- `web/estatico/img/qr-bancolombia.png` (Bancolombia → Mi QR)
-
-Mientras no estén, la página «Apoyar» dice «QR pendiente».
+`web/estatico/img/qr-breb.png`: el QR Bre-B de Nequi Negocios (sirve desde cualquier banco),
+recortado de la captura de la app. La llave va escrita en `apoyar.html`.
 
 ## Supabase (siguiente fase)
 

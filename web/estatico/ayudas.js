@@ -16,7 +16,7 @@ export const AYUDAS = {
   "Longitud": "Longitud del sitio en grados decimales (por ejemplo -75,56 para Medellín). " +
     "Negativa al oeste de Greenwich, como toda Colombia.",
   "Fracción nube-tierra": "El satélite de la NASA cuenta todos los destellos; solo una parte cae a " +
-    "tierra. 0,227 es la fracción usual (unos 3,4 destellos entre nubes por cada uno a tierra). " +
+    "tierra. 0,25 es la fracción usual: cerca de la cuarta parte cae a tierra (Rakov, 2016). " +
     "Cámbiela solo si tiene un dato local.",
   "Fuente de N_G": "De dónde sale el N_G que escribe: red local de detección de rayos, mapa oficial, " +
     "un estudio… La norma pide que el dato tenga su fuente.",

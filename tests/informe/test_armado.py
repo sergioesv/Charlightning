@@ -187,7 +187,7 @@ def test_por_coordenadas_con_ficha_imprime_todo_lo_que_hace_falta_para_reproduci
             "emplazamiento": Emplazamiento(modo="coordenadas", lat=2.44, lon=-76.61)}
     texto = _texto(_armar(caso, ficha=ficha))
     for esperado in ("Tropical Rainfall Measuring Mission", "2,450° N", "76,650° O",
-                     "4,6 km", "11,64", "158 h", "0,227", "Z = 3,4", "2,643",
+                     "4,6 km", "11,64", "158 h", "0,250", "Z = 3,0", "2,910",
                      "adoptado por el diseñador"):
         assert esperado in texto, esperado
     assert "doi:10.5067/LIS/LIS/DATA301" in texto        # las referencias del dato

@@ -10,9 +10,9 @@ from calculate_risk.norma.densidad import n_g_desde_lat_lon
 
 def test_medellin_coincide_con_el_valor_que_ya_usaba_el_programa_viejo():
     # Comentario original en ventana_calculo_ddt.py: 10,32396 flashes/km^2/year
-    # para (6.251, -75.563); N_G = 10,32396 x 0,227 = 2,3435...
+    # para (6.251, -75.563); N_G = 10,32396 x 0,25 = 2,5810...
     n_g = n_g_desde_lat_lon(lat=6.251, lon=-75.563)
-    assert n_g == approx(2.3435, rel=1e-3)
+    assert n_g == approx(2.5810, rel=1e-3)
 
 
 def test_lat_lon_cero_es_una_coordenada_valida():
@@ -20,7 +20,7 @@ def test_lat_lon_cero_es_una_coordenada_valida():
     # el ecuador/meridiano de Greenwich nunca se calculaba. Aqui si debe dar
     # un N_G real (no cero, no una excepcion).
     n_g = n_g_desde_lat_lon(lat=0.0, lon=0.0)
-    assert n_g == approx(0.4654, rel=1e-3)
+    assert n_g == approx(0.5126, rel=1e-3)
     assert n_g > 0
 
 
@@ -37,9 +37,9 @@ def test_la_ficha_de_popayan_trae_los_valores_verificados_en_el_archivo():
     assert (f.celda_lat, f.celda_lon) == approx((2.45, -76.65), abs=1e-6)
     assert f.distancia_km == approx(4.6, abs=0.1)
     assert f.destellos_totales == approx(11.64, abs=0.01)
-    assert f.N_G == approx(2.64, abs=0.01)
+    assert f.N_G == approx(2.91, abs=0.01)
     assert f.horas_observadas == approx(158.0, abs=0.1)
-    assert f.relacion_ic_cg == approx(3.4, abs=0.05)
+    assert f.relacion_ic_cg == approx(3.0, abs=0.05)
 
 
 def test_la_ficha_lee_los_metadatos_del_archivo_y_no_del_codigo():

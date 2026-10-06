@@ -89,7 +89,7 @@ def html_de_tabla(filas) -> str:
   <table>
     <thead><tr><th>Ciudad</th><th>Departamento</th><th class="num">Latitud</th>
       <th class="num">Longitud</th><th class="num">Destellos totales<br>(NASA)</th>
-      <th class="num">DDT / N_G<br>f = 0,227</th><th class="num">DDT / N_G<br>Prentice-Mackerras</th><th></th></tr></thead>
+      <th class="num">DDT / N_G<br>f = 0,25</th><th class="num">DDT / N_G<br>Prentice-Mackerras</th><th></th></tr></thead>
     <tbody>
 {renglones}
     </tbody>
@@ -114,7 +114,7 @@ def preguntas(filas) -> list:
          "como DDT. Es el dato de partida del análisis de riesgo por rayos de la NTC 4552-2:2023 "
          "(IEC 62305-2) que exige el RETIE."),
         ("¿Cuál es la DDT de Bogotá?",
-         f"Con la climatología LIS/OTD de la NASA y una fracción nube-tierra de 0,227, unos "
+         f"Con la climatología LIS/OTD de la NASA y una fracción nube-tierra de 0,25, unos "
          f"{_coma(bogota[4], 1)} rayos/km² año en el centro de la ciudad; con la fracción de "
          f"Prentice y Mackerras, unos "
          f"{_coma(bogota[5].destellos_totales * fraccion_prentice_mackerras(bogota[2]), 1)}."),
@@ -185,15 +185,16 @@ cambia con la latitud, el tipo de tormenta y la región, y los estudios publicad
 valores desde menos de 2 hasta más de 6. Con el valor que se escoja, la DDT puede cambiar en más de un 60 %, y eso se nota
 en R1:</p>
 <ul>
-  <li><b>f = {_coma(f, 3)}</b> (Z ≈ {_coma(1 / f - 1, 1)}): es el valor que usa la calculadora
-  por omisión y el de la columna principal. Es cercano a la relación media medida en
-  continente por Boccippio y otros (2001), y del lado conservador para el riesgo.</li>
-  <li><b>f ≈ 0,25</b> (Z ≈ 3): Rakov (2016), en <i>Fundamentals of Lightning</i>, da que cerca de
-  la cuarta parte de los destellos en el mundo son nube-tierra. Es casi el mismo valor: la DDT
-  sale un {round(100 * 0.25 / f - 100)} % más alta que con {_coma(f, 3)}.</li>
+  <li><b>f = {_coma(f, 2)}</b> (Z ≈ {_coma(1 / f - 1, 1)}): es el valor que usa la calculadora
+  por omisión y el de la columna principal. Rakov (2016), en <i>Fundamentals of Lightning</i>,
+  da que cerca de la cuarta parte de los destellos en el mundo son nube-tierra. Está del lado
+  conservador para el riesgo.</li>
+  <li><b>f = 0,227</b> (Z ≈ 3,4): el valor que usaba antes Charlightning, cercano a la relación
+  media medida en continente por Boccippio y otros (2001). Da una DDT un
+  {round(100 - 100 * 0.227 / f)} % más baja.</li>
   <li><b>Prentice y Mackerras (1977)</b>: Z = 4,16 + 2,16·cos(3λ), con λ la latitud. Cerca del
   ecuador da Z ≈ 6,3 y f ≈ {_coma(f_pm, 3)}: una DDT cerca de {round(100 * f_pm / f)} % de la
-  anterior.</li>
+  columna principal.</li>
   <li>Una <b>red de detección local</b> mide directamente los rayos a tierra y no necesita
   esta fracción. Si tiene ese dato con su fuente, úselo en la calculadora con «Declarado».</li>
 </ul>

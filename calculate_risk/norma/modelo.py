@@ -117,5 +117,5 @@ class Emplazamiento:
     modo: str = "declarado"
     lat: float = None
     lon: float = None
-    fraccion_nube_tierra: float = 0.227
+    fraccion_nube_tierra: float = 0.25
     fuente: str = ""

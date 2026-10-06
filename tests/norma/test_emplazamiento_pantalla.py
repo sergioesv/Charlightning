@@ -29,7 +29,7 @@ from calculate_risk.norma.modelo import Emplazamiento               # noqa: E402
 from ventanas import campos, editor_caso, emplazamiento            # noqa: E402
 
 CASA_RURAL = str(pathlib.Path(__file__).resolve().parents[2] / "casos" / "casa_rural.json")
-N_G_MEDELLIN = 2.3435
+N_G_MEDELLIN = 2.5810
 
 
 @pytest.fixture
@@ -82,7 +82,7 @@ def test_lat_lon_cero_se_puede_calcular(panel):
     _escribir(panel, 0, 0)
 
     assert panel.buscar() is not None
-    assert panel.N_G.valor() == approx(0.4654, rel=1e-3)
+    assert panel.N_G.valor() == approx(0.5126, rel=1e-3)
 
 
 def test_la_coma_decimal_tambien_sirve(panel):
@@ -97,7 +97,7 @@ def test_la_ficha_se_lee_en_el_aviso(panel):
     panel.buscar()
 
     texto = panel.aviso.cget("text")
-    assert "4,6 km" in texto and "158 h" in texto and "0,227" in texto
+    assert "4,6 km" in texto and "158 h" in texto and "0,25" in texto
 
 
 def test_la_fraccion_se_puede_cambiar(panel):
@@ -123,8 +123,8 @@ def test_resolver_recalcula_desde_las_coordenadas(panel):
 
     n_g, donde = panel.resolver()
 
-    assert n_g == approx(2.64, abs=0.01)
-    assert panel.N_G.valor() == approx(2.64, abs=0.01)
+    assert n_g == approx(2.91, abs=0.01)
+    assert panel.N_G.valor() == approx(2.91, abs=0.01)
     assert donde.modo == "coordenadas" and donde.lat == 2.44 and donde.lon == -76.61
 
 
@@ -174,7 +174,7 @@ def test_al_corregir_lat_lon_al_reves_se_calcula_y_se_quita_la_marca(panel):
     panel.buscar()
     _escribir(panel, POPAYAN_LAT, POPAYAN_LON)
 
-    assert panel.buscar().N_G == approx(2.64, abs=0.01)
+    assert panel.buscar().N_G == approx(2.91, abs=0.01)
     assert not panel.lat.en_error and not panel.lon.en_error
 
 def test_una_celda_en_cero_no_se_calcula_en_silencio(panel):
@@ -254,7 +254,7 @@ def test_guardar_y_reabrir_por_coordenadas_conserva_todo(editor, raiz, tmp_path)
 
     assert otro.emplazamiento.modo.get() == emplazamiento.COORDENADAS
     assert otro.emplazamiento.lat.valor() == 2.44
-    assert otro.N_G.valor() == approx(2.64, abs=0.01)
+    assert otro.N_G.valor() == approx(2.91, abs=0.01)
     assert otro.casos_por_tipo(tipos=(1,))[1]["emplazamiento"].lat == 2.44
 
 

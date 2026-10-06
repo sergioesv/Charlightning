@@ -2,8 +2,9 @@
 Paso 35: densidad de descargas a tierra N_G a partir de latitud/longitud,
 usando la climatología LIS/OTD de la NASA (archivos/lis_vhrfc_1998_2013_v01.2.nc).
 
-N_G = FRD (descargas/km²/año) del punto de grilla más cercano x 0,227 -- el
-mismo factor que ya usaba el programa viejo (calculo_ddt_plot/ventana_calculo_ddt.py).
+N_G = FRD (descargas/km²/año) del punto de grilla más cercano x 0,25: cerca de la
+cuarta parte de los destellos son nube-tierra (Rakov, V. A., 2016, Fundamentals of
+Lightning, Cambridge University Press). Antes se usaba 0,227; 0,25 es más conservador.
 
 A diferencia del programa viejo, aquí lat=0 y lon=0 son coordenadas válidas
 (ecuador / meridiano de Greenwich): el bug viejo usaba `if float(lat):`, que
@@ -16,7 +17,7 @@ from pathlib import Path
 from netCDF4 import Dataset
 from calculate_risk.norma.modelo import Emplazamiento
 
-FACTOR_LIS_A_NG = 0.227
+FACTOR_LIS_A_NG = 0.25
 
 RUTA_POR_DEFECTO = str(
     Path(__file__).resolve().parent.parent.parent / "archivos" / "lis_vhrfc_1998_2013_v01.2.nc"

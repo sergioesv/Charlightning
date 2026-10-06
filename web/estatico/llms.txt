@@ -6,7 +6,7 @@ El motor de cálculo es el mismo del programa de escritorio Charlightning y se v
 
 ## Nota sobre la DDT
 
-Los satélites LIS/OTD de la NASA cuentan todos los destellos (intranube y nube-tierra). La DDT que pide la NTC 4552-2 es solo la de nube a tierra: DDT = destellos totales × f, con f = 1/(1+Z) y Z la relación intranube/nube-tierra. Charlightning usa f = 0,227 por omisión (Z ≈ 3,4), editable y registrada en la memoria de cálculo; Rakov (2016, Fundamentals of Lightning) da cerca del 25 % de destellos nube-tierra en el mundo; con Prentice y Mackerras (1977) cerca del ecuador f ≈ 0,14. Si hay un dato de una red de detección local, es preferible.
+Los satélites LIS/OTD de la NASA cuentan todos los destellos (intranube y nube-tierra). La DDT que pide la NTC 4552-2 es solo la de nube a tierra: DDT = destellos totales × f, con f = 1/(1+Z) y Z la relación intranube/nube-tierra. Charlightning usa f = 0,25 por omisión (Z ≈ 3), de Rakov (2016, Fundamentals of Lightning): cerca del 25 % de los destellos en el mundo son nube-tierra. Es editable y queda registrada en la memoria de cálculo; con Prentice y Mackerras (1977) cerca del ecuador f ≈ 0,14. Si hay un dato de una red de detección local, es preferible.
 
 ## Páginas
 
