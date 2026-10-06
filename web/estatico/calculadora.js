@@ -164,12 +164,20 @@ class EditorCaso {
         ...comun,
         perdidas: Object.fromEntries(tipos.map((t) => [String(t), perdidas[t]])),
       })),
+      // Qué fila de cada tabla se eligió: el motor no lo necesita (usa los valores), pero
+      // al abrir el caso se ve la fila elegida y no otra que tenga el mismo valor.
+      filas: {
+        estructura: this.estructura.filas(),
+        lineas: this.lineas.filas(),
+        zonas: this.zonas.filas(tipos),
+      },
     };
   }
 
   // Abre lo que devuelve /api/abrir: {por_tipo: {tipo: caso}, N_G_guardado}.
-  poner({por_tipo: casos, N_G_guardado}) {
+  poner({por_tipo: casos, N_G_guardado, filas}) {
     this.construir();
+    pegarFilas(casos, filas);
     const tipos = Object.keys(casos).sort();
     const alguno = casos[tipos[0]];
     const problemas = [];
@@ -204,6 +212,21 @@ class EditorCaso {
     this.estructura.ponerFoto(foto.estructura);
     this.zonas.ponerFoto(foto.zonas);
     this.lineas.ponerFoto(foto.lineas);
+  }
+}
+
+// Pega a cada objeto del caso las filas que se habían elegido (si el archivo las trae).
+function pegarFilas(casos, filas) {
+  if (!filas || typeof filas !== "object") return;
+  for (const [tipo, caso] of Object.entries(casos)) {
+    if (filas.estructura) caso.estructura._filas = filas.estructura;
+    (caso.lineas || []).forEach((linea, i) => { linea._filas = filas.lineas?.[i]; });
+    (caso.zonas || []).forEach((zona, i) => {
+      const f = filas.zonas?.[i];
+      if (!f) return;
+      zona._filas = {...(f.comun || {}), ...(f.perdidas?.[tipo] || {})};
+      (zona.sistemas_internos || []).forEach((s, j) => { s._filas = f.sistemas?.[j]; });
+    });
   }
 }
 

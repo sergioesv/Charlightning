@@ -256,7 +256,9 @@ def abrir(datos: dict) -> dict:
         }
     # Con coordenadas, leer_casos ya puso el N_G de la NASA; el original se
     # devuelve aparte por si no coincide (la pantalla lo avisa).
-    return {"por_tipo": salida, "N_G_guardado": datos.get("N_G")}
+    filas = datos.get("filas")
+    return {"por_tipo": salida, "N_G_guardado": datos.get("N_G"),
+            "filas": filas if isinstance(filas, dict) else None}
 
 
 def desglose(datos: dict, tipo: int) -> dict:

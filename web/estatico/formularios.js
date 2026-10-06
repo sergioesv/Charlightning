@@ -8,7 +8,7 @@
 // además nombre() y raiz (el elemento que se muestra u oculta).
 
 import {CampoLista, CampoNumero, CampoSiNo, CampoTabla, CampoTexto, DatoFaltante,
-        fotoDe, juntar, ponerFotoEn, recoger} from "./campos.js";
+        filasDe, fotoDe, juntar, ponerFotoEn, recoger} from "./campos.js";
 
 let E = null;                       // el esquema de /api/esquema
 export function configurar(esquema) {
@@ -30,8 +30,8 @@ function marco(contenedor, titulo) {
   return fieldset;
 }
 
-function ponerEn(campo, valor) {
-  if (campo instanceof CampoTabla) campo.ponerValor(valor);
+function ponerEn(campo, valor, llave) {
+  if (campo instanceof CampoTabla) campo.ponerValor(valor, llave);
   else campo.poner(valor);
 }
 
@@ -40,7 +40,7 @@ function ponerTodos(campos, objeto) {
   const problemas = [];
   for (const [nombre, campo] of Object.entries(campos)) {
     try {
-      ponerEn(campo, objeto[nombre]);
+      ponerEn(campo, objeto[nombre], objeto._filas?.[nombre]);
     } catch (error) {
       if (!(error instanceof DatoFaltante)) throw error;
       problemas.push(error.message);
@@ -121,6 +121,10 @@ export class FormularioEstructura {
   ponerFoto(foto) {
     ponerFotoEn(this.campos, foto);
   }
+
+  filas() {
+    return filasDe(this.campos);
+  }
 }
 
 // --- Sistemas internos ----------------------------------------------------------
@@ -158,6 +162,10 @@ export class FormularioSistemaInterno {
 
   ponerFoto(foto) {
     ponerFotoEn(this.campos, foto);
+  }
+
+  filas() {
+    return filasDe(this.campos);
   }
 }
 
@@ -309,6 +317,10 @@ export class ListaDeFormularios {
     return this.formularios.map((f) => f.foto());
   }
 
+  filas(...argumentos) {
+    return this.formularios.map((f) => f.filas(...argumentos));
+  }
+
   ponerFoto(fotos = []) {
     this.formularios.forEach((f) => f.raiz.remove());
     this.formularios = [];
@@ -396,6 +408,10 @@ class FormularioZonaComun {
     ponerFotoEn(this._todos(), foto);
     this._verMalla();
   }
+
+  filas() {
+    return filasDe(this.campos);
+  }
 }
 
 // Las pérdidas de una zona para UN riesgo. Lo que no aplica se deja en «no aplica» y
@@ -475,6 +491,10 @@ class PestanaPerdidas {
   ponerFoto(foto) {
     ponerFotoEn(this._todos(), foto);
   }
+
+  filas() {
+    return filasDe(this.campos);
+  }
 }
 
 // La zona completa: lo común arriba y una pestaña por riesgo abajo, más sus sistemas.
@@ -540,6 +560,14 @@ export class FormularioZona {
     this.comun.ponerFoto(foto.comun);
     for (const t of [1, 2, 3, 4]) this.pestanas[t].ponerFoto(foto.perdidas?.[t]);
     this.sistemas.ponerFoto(foto.sistemas);
+  }
+
+  filas(tipos = [1, 2, 3, 4]) {
+    return {
+      comun: this.comun.filas(),
+      perdidas: Object.fromEntries(tipos.map((t) => [String(t), this.pestanas[t].filas()])),
+      sistemas: this.sistemas.filas(),
+    };
   }
 }
 
@@ -648,7 +676,8 @@ export class FormularioLinea {
       }
     };
     intentar(() => ponerTodos(this.campos, linea));
-    intentar(() => this.derivados.cld_cli.ponerValor({CLD: linea.C_LD, CLI: linea.C_LI}));
+    intentar(() => this.derivados.cld_cli.ponerValor({CLD: linea.C_LD, CLI: linea.C_LI},
+                                                      linea._filas?.cld_cli));
     const u = String(linea.U_W);
     for (const [campo, tabla, valor, nombre] of [["blindaje", "PLD", linea.P_LD, "Tabla B.8"],
                                                  ["tipo_linea", "PLI", linea.P_LI, "Tabla B.9"]]) {
@@ -659,7 +688,7 @@ export class FormularioLinea {
     this.hayAdyacente.poner(Boolean(linea.adyacente));
     if (linea.adyacente) {
       this.adyacente.poner(linea.adyacente);
-      intentar(() => this.C_DJ.ponerValor(linea.C_DJ));
+      intentar(() => this.C_DJ.ponerValor(linea.C_DJ, linea._filas?.C_DJ));
     }
     this._verAdyacente();
     if (problemas.length) throw new DatoFaltante(problemas.join("\n"));
@@ -677,6 +706,12 @@ export class FormularioLinea {
   ponerFoto(foto) {
     ponerFotoEn(this._todos(), foto);
     this._verAdyacente();
+  }
+
+  filas() {
+    const filas = {...filasDe(this.campos), cld_cli: this.derivados.cld_cli.llaveElegida()};
+    if (this.hayAdyacente.valor()) filas.C_DJ = this.C_DJ.llaveElegida();
+    return filas;
   }
 }
 

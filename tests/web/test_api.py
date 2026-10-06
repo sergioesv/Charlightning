@@ -257,3 +257,12 @@ def test_el_motivo_del_contacto(tmp_path):
     buzon.recibir({"nombre": "Ana", "mensaje": "Necesito un estudio", "motivo": "estudio"})
     buzon.recibir({"nombre": "Ana", "mensaje": "Hola", "motivo": "cualquier cosa"})
     assert [m["motivo"] for m in enviados] == ["estudio", "otro"]
+
+
+def test_las_filas_elegidas_van_y_vuelven(cliente):
+    """El caso guardado desde la web anota qué fila se eligió; el motor la ignora."""
+    caso = {**CASA_RURAL, "filas": {"zonas": [{"perdidas": {"1": {"L_F": "otros"}}}]}}
+    assert cliente.post("/api/evaluar", json=caso).status_code == 200
+    abierto = cliente.post("/api/abrir", json=caso).json()
+    assert abierto["filas"]["zonas"][0]["perdidas"]["1"]["L_F"] == "otros"
+    assert cliente.post("/api/abrir", json=CASA_RURAL).json()["filas"] is None

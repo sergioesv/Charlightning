@@ -73,6 +73,16 @@ export function ponerFotoEn(campos, foto = {}) {
   for (const [nombre, campo] of Object.entries(campos)) campo.ponerFoto(foto[nombre]);
 }
 
+// Qué fila de la norma se eligió en cada lista: {campo: llave}. Va con el caso guardado
+// para que, al abrirlo, se vea la fila que se eligió y no otra con el mismo valor.
+export function filasDe(campos) {
+  const filas = {};
+  for (const [nombre, campo] of Object.entries(campos)) {
+    if (campo instanceof CampoTabla && campo.llaveElegida()) filas[nombre] = campo.llaveElegida();
+  }
+  return filas;
+}
+
 export class CampoNumero extends Campo {
   constructor(contenedor, etiqueta, {valor = null, unidad = "", positivo = false,
                                      minimo = null, maximo = null, ayuda = ""} = {}) {
@@ -174,12 +184,12 @@ export class CampoTabla extends Campo {
     this.control.append(this.select);
   }
 
-  fila_() {
-    return this.select.value === "" ? -1 : Number(this.select.value);
-  }
-
   valor() {
     const fila = this.fila_();
+    if (fila === "ambiguo") {
+      this.marcar(false);
+      return this.ambiguo;
+    }
     if (fila < 0) {
       if (this.opcional) {
         this.marcar(false);
@@ -191,21 +201,81 @@ export class CampoTabla extends Campo {
     return this.opciones[fila].valor;
   }
 
-  // Un caso guardado trae el valor, no la fila: se elige la primera fila con ese valor.
-  ponerValor(valor) {
+  // La llave de la fila elegida, o "" si no hay una fila concreta.
+  llaveElegida() {
+    const fila = this.fila_();
+    return Number.isInteger(fila) && fila >= 0 ? this.opciones[fila].llave : "";
+  }
+
+  // Un caso guardado trae el valor y, si se guardó desde la web, también la fila (llave).
+  // Sin la fila, y si varias filas de la tabla tienen ese valor, no se adivina: la lista
+  // lo dice y pide elegir, y mientras tanto el cálculo usa el valor guardado.
+  ponerValor(valor, llave = null) {
+    this._quitarAmbiguo();
     if (this.opcional && iguales(valor, this.valorVacio)) {
       this.select.value = "";
       this.marcar(false);
       return;
     }
-    const fila = this.opciones.findIndex((o) => iguales(o.valor, valor));
-    if (fila < 0) {
+    const filas = this.opciones.flatMap((o, i) => (iguales(o.valor, valor) ? [i] : []));
+    if (!filas.length) {
       this.select.value = "";
       this.fallar(`${this.etiqueta}: ${JSON.stringify(valor)} no es ninguna fila de ${this.tabla.nombre}`);
     }
-    this.select.value = String(fila);
+    const porLlave = filas.find((i) => this.opciones[i].llave === llave);
+    if (porLlave !== undefined || filas.length === 1) {
+      this.select.value = String(porLlave ?? filas[0]);
+    } else {
+      this._ponerAmbiguo(valor, filas);
+    }
     this.marcar(false);
   }
+
+  _ponerAmbiguo(valor, filas) {
+    this.ambiguo = valor;
+    const textos = filas.map((i) => this.opciones[i].texto);
+    const opcion = new Option(`Valor ${textoDeValor(valor)}: ${textos.join(" o ")} — elija cuál`, "ambiguo");
+    this.select.add(opcion, 1);
+    this.select.value = "ambiguo";
+    this.select.classList.add("por-elegir");
+    this.select.addEventListener("change", () => {
+      if (this.select.value !== "ambiguo") this._quitarAmbiguo();
+    }, {once: true});
+  }
+
+  _quitarAmbiguo() {
+    this.ambiguo = undefined;
+    this.select.querySelector('option[value="ambiguo"]')?.remove();
+    this.select.classList.remove("por-elegir");
+  }
+
+  fila_() {
+    if (this.select.value === "ambiguo") return "ambiguo";
+    return this.select.value === "" ? -1 : Number(this.select.value);
+  }
+
+  foto() {
+    return this.select.value === "ambiguo" ? {ambiguo: this.ambiguo} : this.select.value;
+  }
+
+  ponerFoto(valor) {
+    if (valor === undefined) return;
+    if (valor && typeof valor === "object" && "ambiguo" in valor) {
+      try {
+        this.ponerValor(valor.ambiguo);
+      } catch { /* la tabla cambió: queda sin elegir */ }
+      return;
+    }
+    this._quitarAmbiguo();
+    this.select.value = valor;
+  }
+}
+
+function textoDeValor(valor) {
+  if (valor && typeof valor === "object") {
+    return Object.entries(valor).map(([k, v]) => `${k} = ${String(v).replace(".", ",")}`).join(", ");
+  }
+  return String(valor).replace(".", ",");
 }
 
 export class CampoLista extends Campo {
