@@ -1,13 +1,17 @@
 # Charlightning
 
-> Calculadora gratuita y de código abierto para el análisis de riesgo por descargas atmosféricas (rayos) según la NTC 4552-2:2023, equivalente a la IEC 62305-2, que exige el RETIE en Colombia. Calcula los riesgos R1 a R4 por zona, toma la densidad de descargas a tierra N_G de la climatología LIS/OTD de la NASA y genera la memoria de cálculo en PDF.
+> Calculadora gratuita y de código abierto para el análisis de riesgo por descargas atmosféricas (rayos) según la NTC 4552-2:2023, equivalente a la IEC 62305-2, que exige el RETIE en Colombia. Calcula los riesgos R1 a R4 por zona, toma la densidad de descargas a tierra (DDT o N_G) de la climatología LIS/OTD de la NASA y genera la memoria de cálculo en PDF.
 
 El motor de cálculo es el mismo del programa de escritorio Charlightning y se valida en vivo contra los ejemplos del Anexo E de la norma. Autor: Sergio Andrés Estrada Vélez. Código: https://github.com/sergioesv/charlightning
+
+## Nota sobre la DDT
+
+Los satélites LIS/OTD de la NASA cuentan todos los destellos (intranube y nube-tierra). La DDT que pide la NTC 4552-2 es solo la de nube a tierra: DDT = destellos totales × f, con f = 1/(1+Z) y Z la relación intranube/nube-tierra. Charlightning usa f = 0,227 por omisión (Z ≈ 3,4), editable y registrada en la memoria de cálculo; con Prentice y Mackerras (1977) cerca del ecuador f ≈ 0,14. Si hay un dato de una red de detección local, es preferible.
 
 ## Páginas
 
 - [Calculadora](https://charlightning.org/): estructura, zonas y líneas; R1 (vida humana), R2 (servicio público), R3 (patrimonio cultural), R4 (valor económico); medidas de protección sugeridas.
-- [N_G en Colombia](https://charlightning.org/ng-colombia.html): densidad de descargas a tierra de las capitales y principales ciudades de Colombia.
+- [DDT en Colombia](https://charlightning.org/ng-colombia.html): densidad de descargas a tierra (DDT o N_G, rayos/km² año) de las capitales y principales ciudades de Colombia, con los destellos totales de la NASA y la discusión de la fracción nube-tierra.
 - [Validación](https://charlightning.org/validacion.html): los ejemplos del Anexo E de la NTC 4552-2 / IEC 62305-2 calculados con el motor y comparados con la norma.
 - [Servicios](https://charlightning.org/servicios.html): estudios de riesgo por rayos, revisión de estudios y capacitación.
 - [Cómo citar](https://charlightning.org/citar.html): referencia APA y BibTeX.
