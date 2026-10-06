@@ -51,9 +51,9 @@ function ponerTodos(campos, objeto) {
 
 // --- Pestañas ------------------------------------------------------------------
 
-export function pestanas(contenedor, titulos) {
+export function pestanas(contenedor, titulos, {clase = ""} = {}) {
   const caja = document.createElement("div");
-  caja.className = "pestanas";
+  caja.className = clase ? `pestanas ${clase}` : "pestanas";
   const barra = document.createElement("div");
   barra.className = "pestanas-barra";
   barra.setAttribute("role", "tablist");
@@ -79,7 +79,7 @@ export function pestanas(contenedor, titulos) {
   }
   elegir(0);
   contenedor.append(caja);
-  return {paneles: paneles.map((p) => p.panel), elegir};
+  return {paneles: paneles.map((p) => p.panel), botones: paneles.map((p) => p.boton), elegir};
 }
 
 // --- Estructura -----------------------------------------------------------------
@@ -174,6 +174,7 @@ export class FormularioSistemaInterno {
 export class ListaDeFormularios {
   constructor(contenedor, fabrica, {titulo = "Elementos", singular = "elemento", minimo = 0} = {}) {
     Object.assign(this, {fabrica, singular, minimo});
+    this.alCambiarCuantos = () => {};
     this.formularios = [];
     const m = marco(contenedor, titulo);
     this.raiz = m;
@@ -271,6 +272,7 @@ export class ListaDeFormularios {
   }
 
   refrescarNombres() {
+    this.alCambiarCuantos(this.formularios.length);
     const seleccion = this.lista.value;
     this.lista.replaceChildren(...this.nombres().map((n, i) => new Option(n, String(i))));
     if (seleccion !== "" && Number(seleccion) < this.formularios.length) this.lista.value = seleccion;

@@ -135,14 +135,24 @@ class EditorCaso {
   construir() {
     this.contenedor.replaceChildren();
     this.emplazamiento = new PanelEmplazamiento(this.contenedor);
-    const p = pestanas(this.contenedor, ["Estructura", "Zonas", "Líneas"]);
+    // Las tres pestañas grandes son los pasos del caso: van numeradas y con cuántas hay.
+    const p = pestanas(this.contenedor, ["Estructura", "Zonas", "Líneas"], {clase: "principales"});
     this.elegirPestana = p.elegir;
+    const rotular = (boton, numero, nombre, cuantas) => {
+      boton.innerHTML = `<span class="paso">${numero}</span> ${nombre}` +
+        (cuantas === undefined ? "" : ` <span class="cuantas">(${cuantas})</span>`);
+    };
+    rotular(p.botones[0], 1, "Estructura");
     this.estructura = new FormularioEstructura(p.paneles[0]);
     // Sin zonas no hay riesgo que calcular: el mínimo es 1. Las líneas pueden ser cero.
     this.zonas = new ListaDeFormularios(p.paneles[1], (c) => new FormularioZona(c),
                                         {titulo: "Zonas de la estructura", singular: "zona", minimo: 1});
     this.lineas = new ListaDeFormularios(p.paneles[2], (c) => new FormularioLinea(c),
                                          {titulo: "Líneas que entran a la estructura", singular: "línea"});
+    this.zonas.alCambiarCuantos = (n) => rotular(p.botones[1], 2, "Zonas", n);
+    this.lineas.alCambiarCuantos = (n) => rotular(p.botones[2], 3, "Líneas", n);
+    this.zonas.alCambiarCuantos(0);
+    this.lineas.alCambiarCuantos(0);
   }
 
   // El caso en el formato de casos/*.json, con las pérdidas de cada riesgo pedido.
