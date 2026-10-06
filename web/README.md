@@ -72,7 +72,7 @@ Variables opcionales (Settings → Variables):
 
 ## Código QR para donaciones
 
-`web/estatico/img/qr-breb.png`: el QR Bre-B de Nequi Negocios (sirve desde cualquier banco),
+`web/estatico/img/qr-breb.png`: el QR de Nequi Negocios,
 recortado de la captura de la app. La llave va escrita en `apoyar.html`.
 
 ## Supabase (siguiente fase)
