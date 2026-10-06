@@ -188,6 +188,9 @@ en R1:</p>
   <li><b>f = {_coma(f, 3)}</b> (Z ≈ {_coma(1 / f - 1, 1)}): es el valor que usa la calculadora
   por omisión y el de la columna principal. Es cercano a la relación media medida en
   continente por Boccippio y otros (2001), y del lado conservador para el riesgo.</li>
+  <li><b>f ≈ 0,25</b> (Z ≈ 3): Rakov (2016), en <i>Fundamentals of Lightning</i>, da que cerca de
+  la cuarta parte de los destellos en el mundo son nube-tierra. Es casi el mismo valor: la DDT
+  sale un {round(100 * 0.25 / f - 100)} % más alta que con {_coma(f, 3)}.</li>
   <li><b>Prentice y Mackerras (1977)</b>: Z = 4,16 + 2,16·cos(3λ), con λ la latitud. Cerca del
   ecuador da Z ≈ 6,3 y f ≈ {_coma(f_pm, 3)}: una DDT cerca de {round(100 * f_pm / f)} % de la
   anterior.</li>
@@ -214,6 +217,7 @@ cálculo, o un valor de una red local de detección con su fuente.</p>
 <ul>
   <li>Cecil, D. J. (2015). LIS/OTD 0.1 Degree Very High Resolution Gridded Lightning Full
   Climatology (VHRFC). NASA GHRC DAAC. doi:10.5067/LIS/LIS-OTD/DATA302</li>
+  <li>Rakov, V. A. (2016). <i>Fundamentals of Lightning</i>. Cambridge University Press.</li>
   <li>Prentice, S. A. y Mackerras, D. (1977). The ratio of cloud to cloud-ground lightning
   flashes in thunderstorms. <i>Journal of Applied Meteorology</i>, 16(5), 545–550.</li>
   <li>Boccippio, D. J., Cummins, K. L., Christian, H. J. y Goodman, S. J. (2001). Combined
