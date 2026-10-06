@@ -169,8 +169,16 @@ def test_limite_de_peticiones(cliente, monkeypatch):
 def test_las_paginas_se_sirven(cliente):
     for pagina in ("/", "/calculadora.html", "/acerca.html", "/validacion.html", "/citar.html",
                    "/apoyar.html", "/contacto.html", "/servicios.html", "/estilos.css", "/calculadora.js", "/campos.js",
-                   "/formularios.js"):
+                   "/formularios.js", "/ng-colombia.html", "/robots.txt", "/sitemap.xml", "/llms.txt"):
         assert cliente.get(pagina).status_code == 200, pagina
+
+
+def test_el_sitemap_trae_cada_pagina_con_su_canonica(cliente):
+    import re
+    mapa = cliente.get("/sitemap.xml").text
+    for url in re.findall(r"<loc>https://charlightning\.org([^<]*)</loc>", mapa):
+        pagina = cliente.get(url).text
+        assert f'<link rel="canonical" href="https://charlightning.org{url}">' in pagina, url
 
 
 def test_el_limite_se_libera_con_el_tiempo():

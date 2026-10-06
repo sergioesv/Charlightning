@@ -434,12 +434,29 @@ class Calculadora {
     window.addEventListener("pagehide", () => this.guardarBorrador());
     this.recuperarBorrador();
     this.marcarRiesgos();
+    // Desde «N_G en Colombia» llegan las coordenadas de una ciudad: /?lat=6.244&lon=-75.581
+    const parametros = new URLSearchParams(location.search);
+    if (parametros.has("lat") && parametros.has("lon")) {
+      history.replaceState(null, "", location.pathname);
+      this.irACoordenadas(parametros.get("lat"), parametros.get("lon"));
+    }
     // Desde otra página, el ejemplo llega como /?ejemplo=E3_oficinas
-    const ejemplo = new URLSearchParams(location.search).get("ejemplo");
+    const ejemplo = parametros.get("ejemplo");
     if (ejemplo) {
       history.replaceState(null, "", location.pathname);
       this.pedirEjemplo(ejemplo);
     }
+  }
+
+  // Pone las coordenadas en el panel de N_G y busca el dato de la NASA.
+  irACoordenadas(lat, lon) {
+    const e = this.editor.emplazamiento;
+    e.ponerModo("coordenadas");
+    e.lat.poner(lat);
+    e.lon.poner(lon);
+    e.N_G.poner("");
+    e.buscar();
+    e.raiz.scrollIntoView({block: "center"});
   }
 
   // Abrir un ejemplo reemplaza lo escrito: se pregunta antes si hay algo.

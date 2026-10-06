@@ -8,8 +8,12 @@ web/
 ├── api.py         rutas HTTP (delgadas): /api/evaluar, /api/ng, /api/informe, ...
 ├── servicio.py    lo que la web le pide al motor, sin nada de HTTP
 ├── limite.py      límite de peticiones por IP
-└── estatico/      index, calculadora, validación, cómo citar, apoyar
+├── ng_colombia.py genera estatico/ng-colombia.html (python -m web.ng_colombia)
+└── estatico/      páginas, robots.txt, sitemap.xml y llms.txt
 ```
+
+Al agregar una página: ponerla en `sitemap.xml` con su `<link rel="canonical">` (una
+prueba lo revisa).
 
 ## Probarla en el computador
 

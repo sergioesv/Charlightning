@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "Si usó Charlightning en un trabajo, informe o artículo, cítelo así."
+title: "Charlightning: evaluación del riesgo por descargas atmosféricas según la NTC 4552-2:2023"
+type: software
+authors:
+  - family-names: "Estrada Vélez"
+    given-names: "Sergio Andrés"
+version: 0.1.0
+date-released: 2026-10-06
+url: "https://charlightning.org"
+repository-code: "https://github.com/sergioesv/charlightning"
+license: GPL-3.0
+keywords:
+  - rayos
+  - lightning protection
+  - risk assessment
+  - IEC 62305-2
+  - NTC 4552-2
+  - RETIE
