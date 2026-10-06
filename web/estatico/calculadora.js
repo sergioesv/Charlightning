@@ -92,7 +92,8 @@ const postJson = (url, datos) => pedir(url, {
 // --- Datos del proyecto (la primera ventana del programa) -------------------------
 
 class DatosProyecto {
-  constructor(contenedor) {
+  constructor(contenedor, resumen) {
+    this.resumen = resumen;
     this.campos = {
       Proyecto: new CampoTexto(contenedor, "Proyecto:", {obligatorio: false, ancho: 40}),
       "Diseñador": new CampoTexto(contenedor, "Diseñador:", {obligatorio: false}),
@@ -105,6 +106,24 @@ class DatosProyecto {
       '<textarea id="descripcion" rows="4" cols="40"></textarea></span>';
     contenedor.append(fila);
     this.descripcion = fila.querySelector("textarea");
+    contenedor.addEventListener("input", () => this.resumir());
+    this.resumir();
+  }
+
+  // Cerrado, el recuadro dice qué tiene: así no se olvida que existe.
+  resumir() {
+    const d = this.leer();
+    const algo = [d.Proyecto, d["Diseñador"]].filter(Boolean).join(" · ");
+    this.resumen.textContent = algo ? `Datos del proyecto: ${algo}`
+                                    : "Datos del proyecto (para el informe) — sin llenar";
+    this.resumen.classList.toggle("sin-llenar", !algo);
+  }
+
+  // Los datos que vienen en un caso guardado («proyecto»: {Proyecto, Diseñador, …}).
+  ponerDatos(datos = {}) {
+    for (const [nombre, campo] of Object.entries(this.campos)) campo.poner(datos[nombre] ?? "");
+    this.descripcion.value = datos["Descripción"] ?? "";
+    this.resumir();
   }
 
   leer() {
@@ -121,6 +140,7 @@ class DatosProyecto {
   ponerFoto(foto = {}) {
     ponerFotoEn(this.campos, foto);
     this.descripcion.value = foto.descripcion ?? "";
+    this.resumir();
   }
 }
 
@@ -382,7 +402,7 @@ function mostrarDesglose(d) {
 class Calculadora {
   constructor(firmaEsquema) {
     this.firmaEsquema = firmaEsquema;
-    this.proyecto = new DatosProyecto($("datos-proyecto"));
+    this.proyecto = new DatosProyecto($("datos-proyecto"), $("resumen-proyecto"));
     this.editor = new EditorCaso($("editor"));
     this.resultados = new PanelResultados();
     this.ultimo = null;          // {caso, datos}
@@ -530,7 +550,7 @@ class Calculadora {
   nuevo() {
     if (!confirm("Se va a borrar todo lo escrito y los resultados.\n¿Seguir?")) return;
     this.editor.construir();
-    this.proyecto.ponerFoto({});
+    this.proyecto.ponerDatos({});
     this.resultados.limpiar();
     $("panel-desglose").hidden = true;
     this.ultimo = null;
@@ -549,6 +569,7 @@ class Calculadora {
     this.resultados.limpiar();
     $("panel-desglose").hidden = true;
     this.ultimo = null;
+    if (abierto.proyecto) this.proyecto.ponerDatos(abierto.proyecto);
     try {
       this.editor.poner(abierto);
     } catch (error) {
@@ -587,6 +608,8 @@ class Calculadora {
       throw new DatoFaltante(`Faltan datos:\n\n${error.message}`);
     }
     const nombre = (this.proyecto.leer().Proyecto || "caso").replace(/[^\w\- áéíóúñÁÉÍÓÚÑ]/g, "") || "caso";
+    // Los datos del proyecto van en el archivo: el motor y el programa de escritorio los ignoran.
+    caso.proyecto = this.proyecto.leer();
     descargar(new Blob([JSON.stringify(caso, null, 2)], {type: "application/json"}), `${nombre}.json`);
     decir("Caso guardado. Se puede abrir aquí o en el programa de escritorio.");
   }

@@ -266,3 +266,10 @@ def test_las_filas_elegidas_van_y_vuelven(cliente):
     abierto = cliente.post("/api/abrir", json=caso).json()
     assert abierto["filas"]["zonas"][0]["perdidas"]["1"]["L_F"] == "otros"
     assert cliente.post("/api/abrir", json=CASA_RURAL).json()["filas"] is None
+
+
+def test_los_datos_del_proyecto_vuelven_al_abrir(cliente):
+    caso = {**CASA_RURAL, "proyecto": {"Proyecto": "Bodega 4", "Diseñador": "S. Estrada"}}
+    assert cliente.post("/api/evaluar", json=caso).status_code == 200
+    assert cliente.post("/api/abrir", json=caso).json()["proyecto"]["Proyecto"] == "Bodega 4"
+    assert cliente.post("/api/abrir", json=CASA_RURAL).json()["proyecto"] is None

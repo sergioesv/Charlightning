@@ -654,3 +654,10 @@ body.sin-r4 .pestanas.riesgos .riesgo-4 {
   font-weight: normal;
   font-style: italic;
 }
+
+/* Datos del proyecto: el resumen de lo escrito se ve aunque el recuadro esté cerrado. */
+details.proyecto { background: linear-gradient(#f5f9ff, #e4edf9); border-color: #7f9db9; }
+details.proyecto summary { padding: 2px 0; }
+details.proyecto summary::before { content: "\1F4CB  "; }
+details.proyecto summary .sin-llenar { color: var(--suave); font-weight: normal; font-style: italic; }
+details.proyecto[open] { background: #fafbfd; }
