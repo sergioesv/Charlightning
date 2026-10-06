@@ -10,7 +10,24 @@
 // Cuando un dato está mal, el rótulo se pone rojo. recoger() lee un grupo de campos y,
 // si falta más de uno, los dice TODOS juntos.
 
+import {ayudaDe} from "./ayudas.js";
+
 export class DatoFaltante extends Error {}
+
+// El globo de ayuda: al tocar una casilla se abre el suyo y se cierra el de antes.
+let activa = null;
+function activar(fila) {
+  if (activa === fila) return;
+  activa?.classList.remove("activo");
+  activa = fila;
+  activa?.classList.add("activo");
+}
+for (const evento of ["focusin", "pointerdown"]) {
+  document.addEventListener(evento, (e) => {
+    const fila = e.target.closest?.(".campo");
+    activar(fila && fila.querySelector(".globo") ? fila : null);
+  });
+}
 
 let contador = 0;
 
@@ -27,6 +44,19 @@ class Campo {
     this.control.className = "control";
     this.fila.append(rotulo, this.control);
     contenedor.append(this.fila);
+    this.explicar(ayudaDe(etiqueta));
+  }
+
+  // El texto del globo de ayuda de la casilla (qué es el dato y de dónde sale).
+  explicar(texto) {
+    if (!texto) return;
+    if (!this.globo) {
+      this.globo = document.createElement("div");
+      this.globo.className = "globo";
+      this.globo.setAttribute("role", "note");
+      this.fila.append(this.globo);
+    }
+    this.globo.textContent = texto;
   }
 
   // Una línea gris debajo de la casilla: qué es el dato y cuándo cambiarlo.
@@ -182,6 +212,8 @@ export class CampoTabla extends Campo {
     this.select = lista(this.id, opcional ? NO_APLICA : SIN_ELEGIR, this.opciones.map((o) => o.texto));
     this.select.title = tabla.nombre;
     this.control.append(this.select);
+    // L_F y L_O tienen el mismo rótulo en R1, R2 y R4: la ayuda depende de la tabla.
+    this.explicar(ayudaDe(etiqueta, tabla.nombre));
   }
 
   valor() {

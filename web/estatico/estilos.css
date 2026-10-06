@@ -555,3 +555,33 @@ button.grande:active { filter: brightness(0.92); }
 
 /* Una lista cuyo valor guardado coincide con varias filas de la norma: hay que elegir cuál. */
 .campo select.por-elegir { border: 1px dashed #3a80f3; background: #eef3fa; font-style: italic; }
+
+/* El globo de ayuda de una casilla, como los globos de Windows XP (pero sin amarillo). */
+.campo .globo {
+  display: none;
+  grid-column: 1 / -1;
+  position: relative;
+  margin: 4px 0 6px;
+  padding: 6px 9px 6px 26px;
+  background: #f3f7fd;
+  border: 1px solid #7f9db9;
+  border-radius: 4px;
+  box-shadow: 2px 2px 0 #c5d9f3;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.campo .globo::before {
+  content: "i";
+  position: absolute;
+  left: 7px;
+  top: 6px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #2c6fe0;
+  color: #fff;
+  font: bold italic 10px/13px Georgia, serif;
+  text-align: center;
+}
+.campo.activo .globo { display: block; }
+.campo.activo > label { color: var(--azul); font-weight: bold; }
