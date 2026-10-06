@@ -23,18 +23,29 @@ MAX_NOMBRE = 120
 MAX_CORREO = 200
 MAX_MENSAJE = 4000
 
+# Por qué escriben: va en el asunto del correo, para ver de un vistazo cuáles son trabajo.
+MOTIVOS = {
+    "estudio": "Estudio de riesgo (RETIE / NTC 4552-2)",
+    "revision": "Revisión de un diseño",
+    "capacitacion": "Capacitación",
+    "otro": "Otro",
+}
+
 
 class MensajeInvalido(ValueError):
     """Falta algo o sobra: el texto dice qué."""
 
 
 def revisar(datos: dict) -> dict:
-    """{nombre, correo, mensaje} limpios, o MensajeInvalido con el motivo."""
+    """{nombre, correo, motivo, mensaje} limpios, o MensajeInvalido con la razón."""
     if not isinstance(datos, dict):
         raise MensajeInvalido("El mensaje no llegó bien.")
     nombre = str(datos.get("nombre", "")).strip()
     correo = str(datos.get("correo", "")).strip()
     mensaje = str(datos.get("mensaje", "")).strip()
+    motivo = str(datos.get("motivo", "") or "otro").strip()
+    if motivo not in MOTIVOS:
+        motivo = "otro"
     if not nombre:
         raise MensajeInvalido("Falta su nombre.")
     if not mensaje:
@@ -43,7 +54,7 @@ def revisar(datos: dict) -> dict:
         raise MensajeInvalido("El correo no parece válido.")
     if len(nombre) > MAX_NOMBRE or len(correo) > MAX_CORREO or len(mensaje) > MAX_MENSAJE:
         raise MensajeInvalido(f"El mensaje es muy largo (máximo {MAX_MENSAJE} caracteres).")
-    return {"nombre": nombre, "correo": correo, "mensaje": mensaje}
+    return {"nombre": nombre, "correo": correo, "motivo": motivo, "mensaje": mensaje}
 
 
 class Buzon:
@@ -79,8 +90,9 @@ def _enviar_por_resend(clave: str, destino: str, m: dict) -> bool:
     cuerpo = {
         "from": REMITENTE,
         "to": [destino],
-        "subject": f"[Charlightning] Mensaje de {m['nombre']}",
-        "text": (f"Nombre: {m['nombre']}\nCorreo: {m['correo'] or '(no lo dejó)'}\n\n"
+        "subject": f"[Charlightning] {MOTIVOS[m['motivo']]} — {m['nombre']}",
+        "text": (f"Motivo: {MOTIVOS[m['motivo']]}\nNombre: {m['nombre']}\n"
+                 f"Correo: {m['correo'] or '(no lo dejó)'}\n\n"
                  f"{m['mensaje']}\n\n— Enviado desde el formulario de contacto de Charlightning"),
     }
     if m["correo"]:

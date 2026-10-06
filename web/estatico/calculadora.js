@@ -221,6 +221,7 @@ class PanelResultados {
   }
 
   limpiar() {
+    $("cta-servicio").hidden = true;
     this.cuerpo.innerHTML = '<tr><td colspan="4" class="pequeno">Pulse «Calcular».</td></tr>';
     this.resumen.textContent = "";
     this.resumen.className = "";
@@ -254,6 +255,7 @@ class PanelResultados {
       ? `No cumple: ${incumplen.join(", ")}. Hace falta protección.`
       : "Los riesgos evaluados están por debajo del tolerable.";
     this.resumen.className = incumplen.length ? "no-cumple" : "cumple";
+    $("cta-servicio").hidden = !incumplen.length;
     this.notas.replaceChildren(...datos.avisos.map((a) => {
       const p = document.createElement("p");
       p.className = "aviso";

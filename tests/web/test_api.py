@@ -168,7 +168,7 @@ def test_limite_de_peticiones(cliente, monkeypatch):
 
 def test_las_paginas_se_sirven(cliente):
     for pagina in ("/", "/calculadora.html", "/acerca.html", "/validacion.html", "/citar.html",
-                   "/apoyar.html", "/contacto.html", "/estilos.css", "/calculadora.js", "/campos.js",
+                   "/apoyar.html", "/contacto.html", "/servicios.html", "/estilos.css", "/calculadora.js", "/campos.js",
                    "/formularios.js"):
         assert cliente.get(pagina).status_code == 200, pagina
 
@@ -247,3 +247,13 @@ def test_los_archivos_van_con_su_version(cliente):
     js = cliente.get(re.search(r'src="(/calculadora\.js\?v=\w+)"', html).group(1)).text
     assert re.search(r'from "\./campos\.js\?v=\w+"', js)
     assert cliente.get("/estilos.css").headers["cache-control"] == "no-cache"
+
+
+def test_el_motivo_del_contacto(tmp_path):
+    from web.contacto import Buzon
+    enviados = []
+    buzon = Buzon(tmp_path / "m.jsonl", destino="a@b.co", clave="x",
+                  enviar=lambda clave, destino, m: enviados.append(m) or True)
+    buzon.recibir({"nombre": "Ana", "mensaje": "Necesito un estudio", "motivo": "estudio"})
+    buzon.recibir({"nombre": "Ana", "mensaje": "Hola", "motivo": "cualquier cosa"})
+    assert [m["motivo"] for m in enviados] == ["estudio", "otro"]
