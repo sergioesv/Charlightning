@@ -588,15 +588,15 @@ button.grande:active { filter: brightness(0.92); }
 
 /* Las tres pestañas grandes del caso (Estructura, Zonas, Líneas): son los pasos, se notan. */
 .pestanas.principales { margin-top: 14px; }
-.pestanas.principales > .pestanas-barra { gap: 4px; border-bottom: 3px solid #0a3ca6; padding-left: 4px; }
+.pestanas.principales > .pestanas-barra { gap: 3px; border-bottom: 2px solid #0a3ca6; padding-left: 4px; }
 .pestanas.principales > .pestanas-barra > button {
-  font: bold 14px Tahoma, Verdana, sans-serif;
-  padding: 8px 18px 7px;
+  font: bold 12px Tahoma, Verdana, sans-serif;
+  padding: 4px 10px 3px;
   color: #fff;
   background: linear-gradient(#5b9cf5, #2c6fe0 55%, #1a4fb0);
   border: 1px solid #0b3a8a;
   border-bottom: 0;
-  border-radius: 6px 6px 0 0;
+  border-radius: 4px 4px 0 0;
   text-shadow: 1px 1px 0 #0005;
   margin-bottom: 0;
 }
@@ -606,28 +606,28 @@ button.grande:active { filter: brightness(0.92); }
   background: #fff;
   border: 2px solid #0a3ca6;
   border-bottom: 0;
-  border-top: 4px solid var(--verde-xp);
+  border-top: 2px solid var(--verde-xp);
   box-shadow: none;
   text-shadow: none;
   position: relative;
-  top: 3px;
-  padding-bottom: 10px;
+  top: 2px;
+  padding-bottom: 5px;
 }
 .pestanas.principales > .pestanas-barra .paso {
   display: inline-block;
-  width: 20px;
-  height: 20px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: #fff;
   color: #0a3ca6;
-  font-size: 12px;
-  line-height: 20px;
+  font-size: 9px;
+  line-height: 14px;
   text-align: center;
   margin-right: 2px;
 }
 .pestanas.principales > .pestanas-barra > button[aria-selected="true"] .paso { background: #0a3ca6; color: #fff; }
-.pestanas.principales > .pestanas-barra .cuantas { font-weight: normal; font-size: 12px; opacity: .9; }
-.pestanas.principales > .pestanas-panel { border: 2px solid #0a3ca6; border-top: 0; padding: 10px; }
+.pestanas.principales > .pestanas-barra .cuantas { font-weight: normal; font-size: 11px; opacity: .9; }
+.pestanas.principales > .pestanas-panel { border: 1px solid #0a3ca6; border-top: 0; padding: 8px; }
 @media (max-width: 640px) {
-  .pestanas.principales > .pestanas-barra > button { flex: 1; padding: 8px 6px 7px; font-size: 13px; }
+  .pestanas.principales > .pestanas-barra > button { flex: 1; padding: 4px 4px 3px; font-size: 12px; }
 }
