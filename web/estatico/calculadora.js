@@ -3,8 +3,8 @@
 // (en el servidor) y muestra lo que vuelve. Aquí no se calcula ningún riesgo.
 
 import {CampoTexto, DatoFaltante, fotoDe, juntar, ponerFotoEn} from "./campos.js";
-import {FormularioEstructura, FormularioLinea, FormularioZona, ListaDeFormularios,
-        PanelEmplazamiento, configurar, pestanas} from "./formularios.js";
+import {FormularioEstructura, FormularioLinea, FormularioZona, LISTA_DE_LINEAS, ListaDeFormularios,
+        PanelEmplazamiento, configurar, conocerLineas, pestanas} from "./formularios.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -150,9 +150,26 @@ class EditorCaso {
     this.lineas = new ListaDeFormularios(p.paneles[2], (c) => new FormularioLinea(c),
                                          {titulo: "Líneas que entran a la estructura", singular: "línea"});
     this.zonas.alCambiarCuantos = (n) => rotular(p.botones[1], 2, "Zonas", n);
-    this.lineas.alCambiarCuantos = (n) => rotular(p.botones[2], 3, "Líneas", n);
+    this.lineas.alCambiarCuantos = (n) => {
+      rotular(p.botones[2], 3, "Líneas", n);
+      this.sugerirLineas();
+    };
+    // Los sistemas internos revisan contra estas líneas el nombre de la que los alimenta.
+    conocerLineas(() => this.lineas.formularios.map((f) => f.nombre()).filter(Boolean));
     this.zonas.alCambiarCuantos(0);
     this.lineas.alCambiarCuantos(0);
+  }
+
+  // Las sugerencias de «Lo alimenta la línea»: los nombres de las líneas que hay.
+  sugerirLineas() {
+    let lista = document.getElementById(LISTA_DE_LINEAS);
+    if (!lista) {
+      lista = document.createElement("datalist");
+      lista.id = LISTA_DE_LINEAS;
+      document.body.append(lista);
+    }
+    const nombres = [...new Set(this.lineas.formularios.map((f) => f.nombre()).filter(Boolean))];
+    lista.replaceChildren(...nombres.map((n) => new Option(n)));
   }
 
   // El caso en el formato de casos/*.json, con las pérdidas de cada riesgo pedido.

@@ -129,6 +129,14 @@ export class FormularioEstructura {
 
 // --- Sistemas internos ----------------------------------------------------------
 
+// Los nombres de las líneas del caso, para revisar «Lo alimenta la línea». Los pone el
+// editor (que es el que tiene la lista de líneas); sin él no se revisa nada.
+let nombresDeLineas = () => null;
+export function conocerLineas(funcion) {
+  nombresDeLineas = funcion;
+}
+export const LISTA_DE_LINEAS = "nombres-de-lineas";     // el <datalist> con las sugerencias
+
 // P_DPS sale de la Tabla B.3 por su cuenta, no deducido del nivel del SPCR (H17).
 export class FormularioSistemaInterno {
   constructor(contenedor, titulo = "Sistema interno") {
@@ -142,6 +150,29 @@ export class FormularioSistemaInterno {
       U_W: new CampoNumero(m, "Tensión soportada (U_W)", {valor: d.U_W, unidad: "kV", positivo: true}),
       P_DPS: new CampoTabla(m, T("PDPS"), "DPS coordinado (P_DPS)"),
     };
+    // Al escribir salen las líneas que existen; al salir de la casilla se revisa el nombre.
+    const linea = this.campos.linea;
+    linea.entrada.setAttribute("list", LISTA_DE_LINEAS);
+    linea.entrada.addEventListener("change", () => {
+      try {
+        this._revisarLinea(linea.crudo());
+      } catch (error) {
+        if (!(error instanceof DatoFaltante)) throw error;
+      }
+    });
+  }
+
+  // Vacío vale (un sistema puede no estar conectado a ninguna línea); un nombre que no
+  // es de ninguna línea es casi seguro un error de tipeo, y el motor lo ignoraría callado.
+  _revisarLinea(nombre) {
+    const lineas = nombresDeLineas();
+    const campo = this.campos.linea;
+    if (!nombre || !lineas || lineas.includes(nombre)) {
+      campo.marcar(false);
+      return;
+    }
+    const hay = lineas.length ? `Las líneas del caso son: ${lineas.join(", ")}.` : "El caso no tiene líneas.";
+    campo.fallar(`${campo.etiqueta}: no hay ninguna línea llamada «${nombre}» en ③ Líneas. ${hay}`);
   }
 
   nombre() {
@@ -149,7 +180,9 @@ export class FormularioSistemaInterno {
   }
 
   leer() {
-    return recoger(this.campos);
+    const valores = recoger(this.campos);
+    this._revisarLinea(valores.linea);
+    return valores;
   }
 
   poner(sistema) {
