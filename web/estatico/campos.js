@@ -29,6 +29,15 @@ class Campo {
     contenedor.append(this.fila);
   }
 
+  // Una línea gris debajo de la casilla: qué es el dato y cuándo cambiarlo.
+  ayudar(texto) {
+    if (!texto) return;
+    const ayuda = document.createElement("span");
+    ayuda.className = "ayuda";
+    ayuda.textContent = texto;
+    this.control.append(ayuda);
+  }
+
   marcar(hayError) {
     this.fila.classList.toggle("en-error", hayError);
   }
@@ -66,7 +75,7 @@ export function ponerFotoEn(campos, foto = {}) {
 
 export class CampoNumero extends Campo {
   constructor(contenedor, etiqueta, {valor = null, unidad = "", positivo = false,
-                                     minimo = null, maximo = null} = {}) {
+                                     minimo = null, maximo = null, ayuda = ""} = {}) {
     super(contenedor, etiqueta);
     Object.assign(this, {positivo, minimo, maximo});
     this.entrada = document.createElement("input");
@@ -82,6 +91,7 @@ export class CampoNumero extends Campo {
       this.control.append(u);
     }
     if (valor !== null) this.poner(valor);
+    this.ayudar(ayuda);
   }
 
   poner(valor) {
@@ -221,13 +231,14 @@ export class CampoLista extends Campo {
 }
 
 export class CampoSiNo extends Campo {
-  constructor(contenedor, etiqueta, {valor = false} = {}) {
+  constructor(contenedor, etiqueta, {valor = false, ayuda = ""} = {}) {
     super(contenedor, etiqueta);
     this.casilla = document.createElement("input");
     this.casilla.type = "checkbox";
     this.casilla.id = this.id;
     this.control.append(this.casilla);
     this.poner(valor);
+    this.ayudar(ayuda);
   }
 
   valor() {

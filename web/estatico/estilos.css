@@ -545,3 +545,6 @@ button.grande:active { filter: brightness(0.92); }
 /* Formulario de contacto: el campo trampa no se ve (solo lo llenan los robots). */
 .trampa { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 #contacto textarea { width: 100%; min-height: 140px; font: 12px Verdana, Tahoma, sans-serif; }
+
+/* Ayuda de un campo: qué es el dato y cuándo cambiarlo. */
+.campo .ayuda { flex-basis: 100%; color: var(--suave); font-size: 10px; line-height: 1.35; }

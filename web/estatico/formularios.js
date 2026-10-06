@@ -407,15 +407,20 @@ class PestanaPerdidas {
     this.campos = {};
     this.banderas = {};
     if (tipo === 1) {
-      this.campos.L_T = new CampoNumero(m, "Pérdida por lesiones (L_T)",
-                                        {valor: c.LT_L1, minimo: 0, maximo: 1, unidad: "Tabla C.2"});
+      this.campos.L_T = new CampoNumero(m, "Pérdida por lesiones (L_T)", {
+        valor: c.LT_L1, minimo: 0, maximo: 1,
+        ayuda: "Ya trae el valor típico de la Tabla C.2 (0,01), que vale para cualquier " +
+               "estructura. Déjelo así salvo que tenga un dato propio."});
       this.campos.L_F = new CampoTabla(m, T("LF_L1"), "Pérdida por daño físico (L_F)", {opcional: true});
       this.campos.L_O = new CampoTabla(m, T("LO_L1"), "Pérdida por falla de sistemas (L_O)", {opcional: true});
       this.campos.h_z = new CampoTabla(m, T("HZ"), "Daño especial (h_z)");
-      this.campos.t_e = new CampoNumero(m, "Horas al año con personas en peligro afuera (t_e)",
-                                        {valor: d.t_e, minimo: 0, maximo: 8760, unidad: "h"});
-      this.campos.L_FE = new CampoNumero(m, "Pérdida típica por daño físico fuera (L_FE)",
-                                         {valor: d.L_FE, minimo: 0, maximo: 1});
+      this.campos.t_e = new CampoNumero(m, "Horas al año con personas en peligro afuera (t_e)", {
+        valor: d.t_e, minimo: 0, maximo: 8760, unidad: "h",
+        ayuda: "Solo si un daño en la estructura pone en peligro a gente de afuera " +
+               "(explosión, emisiones tóxicas). Si no, déjelo en 0."});
+      this.campos.L_FE = new CampoNumero(m, "Pérdida típica por daño físico fuera (L_FE)", {
+        valor: d.L_FE, minimo: 0, maximo: 1,
+        ayuda: "Solo cuenta si t_e es mayor que 0. Si no se conoce, la norma usa 1."});
     } else if (tipo === 2) {
       this.campos.L_F = new CampoTabla(m, T("LF_L2"), "Pérdida por daño físico (L_F)", {opcional: true});
       this.campos.L_O = new CampoTabla(m, T("LO_L2"), "Pérdida por falla de sistemas (L_O)", {opcional: true});
@@ -432,11 +437,14 @@ class PestanaPerdidas {
       this.campos.c_s = new CampoNumero(m, "Valor de los sistemas internos (c_s)", {valor: d.c_s, minimo: 0});
       this.campos.c_e = new CampoNumero(m, "Valor de los bienes en sitios peligrosos fuera (c_e)",
                                         {valor: d.c_e, minimo: 0});
-      this.campos.L_FE = new CampoNumero(m, "Pérdida típica por daño físico fuera (L_FE)",
-                                         {valor: d.L_FE, minimo: 0, maximo: 1});
+      this.campos.L_FE = new CampoNumero(m, "Pérdida típica por daño físico fuera (L_FE)", {
+        valor: d.L_FE, minimo: 0, maximo: 1,
+        ayuda: "Solo cuenta si c_e es mayor que 0. Si no se conoce, la norma usa 1."});
       // Nota «a» de la Tabla C.11. Arranca en SÍ, como en la pantalla del programa.
       this.campos.razones_l4_unitarias = new CampoSiNo(
-        m, "Comparar R4 contra el valor representativo (nota «a», Tabla C.11)", {valor: true});
+        m, "Comparar R4 contra el valor representativo (nota «a», Tabla C.11)", {
+          valor: true,
+          ayuda: "Déjelo marcado si no va a hacer el análisis de costo-beneficio del Anexo D."});
     }
   }
 
