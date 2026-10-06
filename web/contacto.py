@@ -27,7 +27,6 @@ MAX_MENSAJE = 4000
 MOTIVOS = {
     "estudio": "Estudio de riesgo (RETIE / NTC 4552-2)",
     "revision": "Revisión de un diseño",
-    "capacitacion": "Capacitación",
     "otro": "Otro",
 }
 
