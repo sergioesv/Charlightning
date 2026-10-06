@@ -392,8 +392,11 @@ class Calculadora {
       $("calculadora").addEventListener(evento, () => this.guardarBorradorLuego());
     }
     // Al salir de la página (otro enlace, recargar) se guarda lo último.
+    document.querySelectorAll('input[name="tipo"]').forEach((c) =>
+      c.addEventListener("change", () => this.marcarRiesgos()));
     window.addEventListener("pagehide", () => this.guardarBorrador());
     this.recuperarBorrador();
+    this.marcarRiesgos();
     // Desde otra página, el ejemplo llega como /?ejemplo=E3_oficinas
     const ejemplo = new URLSearchParams(location.search).get("ejemplo");
     if (ejemplo) {
@@ -450,6 +453,12 @@ class Calculadora {
       this.editor.construir();
       decir("No se pudo recuperar el borrador anterior.");
     }
+  }
+
+  // Las pestañas R1–R4 de las zonas se apagan si ese riesgo no está marcado en «Evaluar».
+  marcarRiesgos() {
+    const tipos = this.tipos();
+    for (const t of [1, 2, 3, 4]) document.body.classList.toggle(`sin-r${t}`, !tipos.includes(t));
   }
 
   tipos() {
@@ -519,6 +528,7 @@ class Calculadora {
   async ponerAbierto(abierto, nombre) {
     const tipos = Object.keys(abierto.por_tipo).map(Number);
     document.querySelectorAll('input[name="tipo"]').forEach((c) => { c.checked = tipos.includes(Number(c.value)); });
+    this.marcarRiesgos();
     this.resultados.limpiar();
     $("panel-desglose").hidden = true;
     this.ultimo = null;

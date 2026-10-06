@@ -505,13 +505,20 @@ export class FormularioZona {
     this.raiz = document.createElement("div");
     contenedor.append(this.raiz);
     this.comun = new FormularioZonaComun(this.raiz, titulo);
-    const p = pestanas(this.raiz, [...Object.values(TITULOS_PESTANA), "Sistemas internos"]);
+    const p = pestanas(this.raiz, [...Object.values(TITULOS_PESTANA), "Sistemas internos"],
+                       {clase: "riesgos"});
     this.pestanas = {};
     [1, 2, 3, 4].forEach((tipo, i) => {
       this.pestanas[tipo] = new PestanaPerdidas(p.paneles[i], tipo);
+      // Cada pestaña sabe de qué riesgo es: la calculadora apaga las que no se evalúan.
+      p.botones[i].classList.add(`riesgo-${tipo}`);
+      p.botones[i].title = `${TITULOS_PESTANA[tipo]}. En gris: este riesgo no está marcado en «Evaluar».`;
     });
+    p.botones[4].classList.add("sistemas");
     this.sistemas = new ListaDeFormularios(p.paneles[4], (c) => new FormularioSistemaInterno(c),
                                            {titulo: "Sistemas internos de la zona", singular: "sistema"});
+    this.sistemas.alCambiarCuantos = (n) => { p.botones[4].textContent = `Sistemas internos (${n})`; };
+    this.sistemas.alCambiarCuantos(0);
   }
 
   nombre() {

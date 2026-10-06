@@ -631,3 +631,26 @@ button.grande:active { filter: brightness(0.92); }
 @media (max-width: 640px) {
   .pestanas.principales > .pestanas-barra > button { flex: 1; padding: 4px 4px 3px; font-size: 12px; }
 }
+
+/* Las pestañas de cada zona (R1–R4 y Sistemas internos): un escalón por debajo de las grandes.
+   Las de los riesgos que no están marcados en «Evaluar» quedan en gris. */
+.pestanas.riesgos > .pestanas-barra > button {
+  font: bold 11px Tahoma, Verdana, sans-serif;
+  color: #0a3ca6;
+  background: linear-gradient(#f5f9ff, #c5d9f3);
+  border-color: #7f9db9;
+}
+.pestanas.riesgos > .pestanas-barra > button[aria-selected="true"] {
+  background: #fff;
+  border-top: 2px solid var(--verde-xp);
+}
+body.sin-r1 .pestanas.riesgos .riesgo-1,
+body.sin-r2 .pestanas.riesgos .riesgo-2,
+body.sin-r3 .pestanas.riesgos .riesgo-3,
+body.sin-r4 .pestanas.riesgos .riesgo-4 {
+  color: #8a8a8a;
+  background: linear-gradient(#fafafa, #e4e4e4);
+  border-color: #c0c0c0;
+  font-weight: normal;
+  font-style: italic;
+}
