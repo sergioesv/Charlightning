@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+{#
+  Plantilla de la memoria de cálculo de Charlightning. Jinja2 + HTML5 + CSS3 de impresión.
+  Tamaño Carta (Letter). Se renderiza a PDF con Chromium (Puppeteer/Playwright:
+  page.pdf({format: "Letter", printBackground: true, preferCSSPageSize: true})) o con
+  WeasyPrint. No tiene JavaScript: todo sale del servidor.
+
+  El backend entrega los números YA formateados (coma decimal, notación científica) como
+  texto: la plantilla no calcula nada de la norma. Variables:
+
+    marca            "™" (cámbiela por "®" cuando la marca esté registrada)
+    version          "1.0"
+    fuentes_url      carpeta de las fuentes (calculate_risk/informe/fuentes), como URL
+    codigo           "CHL-2026-0892"          registro de la memoria
+    huella           "3F9A21C07B"             huella de los datos de entrada
+    qr_svg           SVG del QR (cadena) para la portada          (se marca |safe)
+    qr_uri           el mismo QR como data:image/svg+xml;base64   (pie de página)
+    verify_url       "charlightning.org/verify"
+    texto_autoria    (opcional) el texto fijo del módulo derecho del cajetín
+
+    proyecto         {nombre, ubicacion, coordenadas, disenador, matricula, fecha}
+    veredicto        {cumple, titulo, detalle}
+    riesgos          [{id, nombre, calculado, tolerable, cumple}]
+    emplazamiento    {modo, N_G, fuente, ficha: {celda, distancia, destellos, fraccion,
+                      horas, producto} | None}
+    estructura       {L, W, H, Hp, CD, nt, ct}   (números; L, W, H se usan en el plano)
+    A_D, N_D         texto
+    lineas           [{nombre, L, CI, CT, CE, UW}]
+    zonas            [{nombre, nz, tz, PB, rf, rp, LF}]
+    desarrollo       {riesgo, ecuaciones: [texto con <sub>], componentes: [{id,
+                      descripcion, valor, parte (0-100)}], total}
+    medidas          [{n, texto, reduce}]
+    conclusion       texto
+#}
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Memoria de cálculo · {{ proyecto.nombre }} · {{ codigo }}</title>
+<style>
+/* ------------------------------------------------------------------ fuentes */
+@font-face { font-family: "Inter"; font-weight: 400; font-style: normal;
+             src: url("{{ fuentes_url }}/Inter-Regular.ttf"); }
+@font-face { font-family: "Inter"; font-weight: 700; font-style: normal;
+             src: url("{{ fuentes_url }}/Inter-Bold.ttf"); }
+@font-face { font-family: "Inter"; font-weight: 400; font-style: italic;
+             src: url("{{ fuentes_url }}/Inter-Italic.ttf"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 400;
+             src: url("{{ fuentes_url }}/JetBrainsMono-Regular.ttf"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 700;
+             src: url("{{ fuentes_url }}/JetBrainsMono-Bold.ttf"); }
+
+/* ------------------------------------------------------------------ paleta */
+:root {
+  --navy: #0F172A;      --navy-2: #1E293B;   --slate: #475569;   --slate-2: #64748B;
+  --linea: #E2E8F0;     --linea-2: #CBD5E1;  --fondo: #F8FAFC;   --azul: #2563EB;
+  --rojo: #DC2626;      --rojo-fondo: #FEF2F2;
+  --verde: #16A34A;     --verde-fondo: #F0FDF4;
+  --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+
+/* ------------------------------------------------------------------ página */
+@page {
+  size: Letter;
+  margin: 25mm 17mm 24mm 17mm;
+
+  /* Chromium estira el fondo de una caja de margen a todo el margen: por eso el «badge»
+     es texto con regla, no una píldora de color. */
+  @top-left {
+    content: "Charlightning{{ marca }}  |  Motor de cálculo por el Ing. Sergio Estrada Vélez";
+    font: 700 7pt/1 "Inter", sans-serif; letter-spacing: .03em; color: var(--navy);
+    vertical-align: bottom; padding-bottom: 2.6mm; border-bottom: .5mm solid var(--navy);
+    white-space: nowrap; width: 125mm;
+  }
+  @top-right {
+    content: "{{ codigo }}";
+    font: 400 7pt/1 var(--mono); color: var(--slate-2);
+    vertical-align: bottom; padding-bottom: 2.6mm; border-bottom: .5mm solid var(--navy);
+  }
+  @bottom-left {
+    content: "Memoria de Cálculo NTC 4552-2  |  Charlightning{{ marca }} Engine v{{ version }}  |  Creado por Ing. Sergio Estrada V.  |  charlightning.org";
+    font: 400 6.3pt/1.5 "Inter", sans-serif; color: var(--slate-2); white-space: normal;
+    border-top: .3mm solid var(--linea-2); padding-top: 2.4mm; align-self: start;
+    width: 125mm;
+  }
+  @bottom-right {
+    content: "Página " counter(page) " de " counter(pages);
+    font: 700 6.8pt/1.5 "Inter", sans-serif; color: var(--navy-2);
+    border-top: .3mm solid var(--linea-2); padding-top: 2.4mm; align-self: start;
+  }
+  @bottom-right-corner {
+    content: url("{{ qr_uri }}"); vertical-align: top; padding-top: 1.6mm;
+  }
+}
+
+/* ------------------------------------------------------------------ base */
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { margin: 0; font: 400 9pt/1.5 "Inter", "Public Sans", Arial, sans-serif; color: var(--navy-2);
+       font-variant-numeric: tabular-nums; }
+h1, h2, h3 { color: var(--navy); margin: 0; font-weight: 700; break-after: avoid; }
+h2 { font-size: 12pt; margin: 8mm 0 3mm; padding-bottom: 1.6mm;
+     border-bottom: .4mm solid var(--navy); }
+h2 .n { color: var(--azul); margin-right: 2mm; font-family: var(--mono); }
+h3 { font-size: 9.4pt; margin: 5mm 0 2mm; color: var(--navy-2); }
+p { margin: 0 0 2.6mm; }
+.nota { font-size: 7.6pt; color: var(--slate-2); font-style: italic; }
+.mono, code, .eq { font-family: var(--mono); }
+sub, sup { font-size: .72em; line-height: 0; }
+.salto { break-before: page; }
+section { break-inside: auto; }
+
+/* ------------------------------------------------------------------ portada */
+.hero { background: var(--navy); color: #fff; border-radius: 3mm; padding: 11mm 11mm 10mm;
+        position: relative; overflow: hidden; }
+.hero::after { content: ""; position: absolute; right: -14mm; top: -14mm; width: 62mm; height: 62mm;
+               border-radius: 50%; background: radial-gradient(circle, rgba(37,99,235,.55), rgba(37,99,235,0) 70%); }
+.hero .kicker { font: 700 7.4pt/1 "Inter"; letter-spacing: .24em; text-transform: uppercase;
+                color: #93C5FD; margin-bottom: 5mm; }
+.hero h1 { color: #fff; font-size: 23pt; line-height: 1.12; max-width: 130mm; position: relative; z-index: 1; }
+.hero .sub { color: #CBD5E1; font-size: 9.6pt; margin-top: 3.4mm; max-width: 140mm;
+             position: relative; z-index: 1; }
+.hero .id { position: absolute; right: 10mm; top: 9mm; z-index: 1; text-align: right;
+            font: 400 7pt/1.5 var(--mono); color: #94A3B8; }
+.hero .id b { color: #fff; font-weight: 700; }
+
+.meta { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 6mm 0 6mm;
+        border: .3mm solid var(--linea-2); border-radius: 2.4mm; overflow: hidden; }
+.meta div { padding: 2.6mm 4mm; border-bottom: .3mm solid var(--linea); }
+.meta div:nth-last-child(-n+2) { border-bottom: 0; }
+.meta div:nth-child(odd) { border-right: .3mm solid var(--linea); }
+.meta div:nth-child(4n+1), .meta div:nth-child(4n+2) { background: var(--fondo); }
+.meta span { display: block; font: 700 6.2pt/1.2 "Inter"; letter-spacing: .1em;
+             text-transform: uppercase; color: var(--slate-2); margin-bottom: .8mm; }
+.meta strong { font-size: 9.2pt; color: var(--navy); font-weight: 700; }
+
+/* ------------------------------------------------------------------ veredicto */
+.callout { display: flex; align-items: stretch; border-radius: 3mm; background: var(--fondo);
+           box-shadow: 0 .6mm 2.6mm rgba(15, 23, 42, .16); border: .3mm solid var(--linea-2);
+           overflow: hidden; break-inside: avoid; margin: 4mm 0; }
+.callout .icono { flex: 0 0 19mm; display: flex; align-items: center; justify-content: center; }
+.callout .icono svg { width: 9mm; height: 9mm; }
+.callout .cuerpo { padding: 4mm 5mm 4mm 4.5mm; flex: 1; }
+.callout .estado { font: 700 12.4pt/1.2 "Inter"; letter-spacing: .01em; margin-bottom: 1.4mm; }
+.callout .detalle { font-size: 8.4pt; color: var(--navy-2); margin: 0; }
+.callout .detalle .mono { font-size: 8pt; }
+.callout.no { background: var(--rojo-fondo); border-color: #FECACA; }
+.callout.no .icono { background: var(--rojo); } .callout.no .estado { color: var(--rojo); }
+.callout.si { background: var(--verde-fondo); border-color: #BBF7D0; }
+.callout.si .icono { background: var(--verde); } .callout.si .estado { color: var(--verde); }
+
+.chip { display: inline-block; font: 700 6.6pt/1 "Inter"; letter-spacing: .05em; padding: 1.1mm 2.4mm;
+        border-radius: 5mm; text-transform: uppercase; }
+.chip.no { background: var(--rojo-fondo); color: var(--rojo); border: .25mm solid #FECACA; }
+.chip.si { background: var(--verde-fondo); color: var(--verde); border: .25mm solid #BBF7D0; }
+
+/* ------------------------------------------------------------------ verificación */
+.verificar { display: flex; gap: 6mm; align-items: center; border: .3mm dashed var(--linea-2);
+             border-radius: 2.4mm; padding: 4mm 5mm; margin-top: 5mm; break-inside: avoid; }
+.verificar svg { width: 27mm; height: 27mm; flex: none; }
+.verificar .t { font-weight: 700; color: var(--navy); font-size: 9pt; margin-bottom: 1.2mm; }
+.verificar .c { font: 400 7pt/1.55 var(--mono); color: var(--slate); }
+
+/* ------------------------------------------------------------------ tablas */
+table.tabla { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 8pt;
+              break-inside: auto; }
+.tabla thead th { background: var(--navy-2); color: #fff; font-weight: 700; text-align: left;
+                  padding: 2.1mm 3mm; font-size: 7.2pt; letter-spacing: .02em; }
+.tabla td { padding: 1.9mm 3mm; border-bottom: .25mm solid var(--linea); vertical-align: top; }
+.tabla tbody tr:nth-child(even) td { background: var(--fondo); }
+.tabla tbody tr:last-child td { border-bottom: .4mm solid var(--navy-2); }
+.tabla .num { text-align: right; font-family: var(--mono); white-space: nowrap; }
+.tabla .txt { text-align: right; }
+.tabla th.num { text-align: right; font-family: "Inter"; }
+.tabla .sim { font-family: var(--mono); font-weight: 700; color: var(--navy); white-space: nowrap; }
+.tabla tr { break-inside: avoid; }
+.tabla tfoot td { font-weight: 700; border-top: .4mm solid var(--navy-2); background: #fff !important; }
+
+.eq { background: var(--fondo); border: .3mm solid var(--linea); border-left: 1.2mm solid var(--azul);
+      border-radius: 0 1.6mm 1.6mm 0; padding: 2.4mm 4mm; margin: 0 0 2mm; font-size: 8.2pt;
+      color: var(--navy); break-inside: avoid; }
+
+/* ------------------------------------------------------------------ barras (aporte) */
+.barras { margin: 2mm 0 4mm; break-inside: avoid; }
+.barra { display: grid; grid-template-columns: 11mm 1fr 34mm; align-items: center; gap: 3mm;
+         margin-bottom: 1.8mm; font-size: 7.8pt; }
+.barra .id { font: 700 7.8pt var(--mono); color: var(--navy); }
+.barra .pista { height: 4.4mm; background: var(--linea); border-radius: 2.2mm; overflow: hidden; }
+.barra .relleno { height: 100%; border-radius: 2.2mm; background: var(--navy-2);
+                  min-width: 1.6mm; }
+.barra.mayor .relleno { background: var(--rojo); }
+.barra .v { font: 400 7.2pt var(--mono); color: var(--slate); text-align: right; white-space: nowrap; }
+.barra .v b { color: var(--navy); }
+
+/* ------------------------------------------------------------------ figuras / CAD */
+figure { margin: 3mm 0 4mm; break-inside: avoid; }
+figcaption { font-size: 7.4pt; color: var(--slate-2); text-align: center; margin-top: 1.6mm; }
+svg.plano { width: 100%; height: auto; display: block; background: #F8FAFC;
+            border: .3mm solid var(--navy-2); border-radius: 1.2mm; }
+svg.plano .trazo  { fill: none; stroke: var(--navy-2); stroke-width: 1; }
+svg.plano .fino   { fill: none; stroke: var(--slate-2); stroke-width: .6; }
+svg.plano .cota   { fill: none; stroke: var(--azul); stroke-width: .8; }
+svg.plano .ext    { fill: none; stroke: var(--azul); stroke-width: .5; stroke-dasharray: 2 2; }
+svg.plano .cuadro { fill: none; stroke: var(--navy-2); stroke-width: .8; }
+svg.plano text    { font-family: var(--mono); font-size: 9px; fill: var(--navy-2); }
+svg.plano .tcota  { fill: var(--azul); font-size: 8.6px; font-weight: 700; }
+svg.plano .tit    { font-family: "Inter"; font-weight: 700; font-size: 7px; letter-spacing: .12em; fill: var(--slate-2); }
+
+/* ------------------------------------------------------------------ cajetín dual */
+.cajetin { display: grid; grid-template-columns: 1.15fr 1fr; border: .5mm solid var(--navy-2);
+           border-radius: 2.4mm; overflow: hidden; margin-top: 6mm; break-inside: avoid; }
+.cajetin .modulo { padding: 0; }
+.cajetin .modulo + .modulo { border-left: .5mm solid var(--navy-2); background: var(--fondo); }
+.cajetin h4 { margin: 0; background: var(--navy-2); color: #fff; font: 700 7pt/1 "Inter";
+              letter-spacing: .14em; text-transform: uppercase; padding: 2.8mm 4mm; }
+.cajetin .campo { padding: 2.2mm 4mm; border-bottom: .25mm solid var(--linea-2); min-height: 11mm; }
+.cajetin .campo span { display: block; font: 700 5.9pt/1.2 "Inter"; letter-spacing: .1em;
+                       text-transform: uppercase; color: var(--slate-2); margin-bottom: .8mm; }
+.cajetin .campo b { font-size: 9pt; color: var(--navy); }
+.cajetin .firma { min-height: 27mm; border-bottom: 0; }
+.cajetin .decl { font-size: 6.9pt; color: var(--slate); padding: 2.2mm 4mm 3mm; margin: 0; }
+.cajetin .autor { padding: 4mm; font-size: 8pt; color: var(--navy-2); }
+.cajetin .autor .nombre { font-weight: 700; color: var(--navy); font-size: 9.6pt; margin-bottom: 1mm; }
+.cajetin .autor .sello { margin-top: 3mm; padding-top: 3mm; border-top: .25mm solid var(--linea-2);
+                         font: 400 6.9pt/1.6 var(--mono); color: var(--slate); }
+</style>
+</head>
+<body>
+
+<!-- =============================================================== PORTADA -->
+<header class="hero">
+  <div class="kicker">Memoria de cálculo</div>
+  <h1>Evaluación del riesgo por descargas atmosféricas</h1>
+  <div class="sub">NTC 4552-2:2023 · Protección contra el rayo. Parte 2: Evaluación del riesgo (IEC 62305-2)</div>
+  <div class="id">Registro <b>{{ codigo }}</b><br>Huella de datos <b>{{ huella }}</b></div>
+</header>
+
+<div class="meta">
+  <div><span>Proyecto</span><strong>{{ proyecto.nombre }}</strong></div>
+  <div><span>Ubicación</span><strong>{{ proyecto.ubicacion or "—" }}</strong></div>
+  <div><span>Coordenadas</span><strong class="mono">{{ proyecto.coordenadas or "—" }}</strong></div>
+  <div><span>Fecha</span><strong>{{ proyecto.fecha }}</strong></div>
+  <div><span>Responsable del proyecto</span><strong>{{ proyecto.disenador or "—" }}</strong></div>
+  <div><span>Riesgos evaluados</span><strong>{% for r in riesgos %}R<sub>{{ r.id }}</sub>{{ ", " if not loop.last }}{% endfor %}</strong></div>
+</div>
+
+<!-- Veredicto: tarjeta con estado -->
+<div class="callout {{ 'si' if veredicto.cumple else 'no' }}">
+  <div class="icono">
+    {% if veredicto.cumple %}
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.2 5.2L20 6.5"/></svg>
+    {% else %}
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    {% endif %}
+  </div>
+  <div class="cuerpo">
+    <div class="estado">{{ veredicto.titulo }}</div>
+    <p class="detalle">{{ veredicto.detalle|safe }}</p>
+  </div>
+</div>
+
+<table class="tabla">
+  <thead><tr><th>Riesgo</th><th class="num">Calculado [1/año]</th><th class="num">Tolerable [1/año]</th><th>Estado</th></tr></thead>
+  <tbody>
+  {% for r in riesgos %}
+    <tr><td><span class="sim">R<sub>{{ r.id }}</sub></span> &nbsp;{{ r.nombre }}</td>
+        <td class="num">{{ r.calculado|safe }}</td><td class="num">{{ r.tolerable|safe }}</td>
+        <td><span class="chip {{ 'si' if r.cumple else 'no' }}">{{ 'Cumple' if r.cumple else 'No cumple' }}</span></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<div class="verificar">
+  {{ qr_svg|safe }}
+  <div>
+    <div class="t">Escanee para verificar autenticidad en {{ verify_url }}</div>
+    <div class="c">Registro {{ codigo }}<br>Huella de datos {{ huella }}<br>
+      La huella cambia si cambia cualquiera de los datos de entrada.</div>
+  </div>
+</div>
+
+<!-- =============================================================== 1. ALCANCE -->
+<section class="salto">
+  <h2><span class="n">1</span>Alcance y base normativa</h2>
+  <p>Este documento contiene la evaluación del riesgo debido a descargas eléctricas atmosféricas
+  para la estructura identificada en la portada, conforme al procedimiento de la
+  <b>NTC 4552-2:2023</b> (equivalente a la IEC 62305-2). Cada componente de riesgo se compara con
+  su riesgo tolerable R<sub>T</sub> (Tabla 4) y, cuando alguno lo supera, se buscan las medidas de
+  protección que lo llevan por debajo.</p>
+  <p class="nota">No forman parte de este alcance el diseño detallado del sistema de protección,
+  la coordinación de aislamiento ni la verificación del estado de las instalaciones existentes.
+  Los resultados dependen de los datos de entrada declarados: su veracidad es responsabilidad del
+  profesional que firma la memoria.</p>
+
+  <h3>Notación</h3>
+  <table class="tabla">
+    <thead><tr><th style="width:22mm">Símbolo</th><th>Significado</th><th class="num" style="width:26mm">Unidad</th></tr></thead>
+    <tbody>
+      <tr><td class="sim">N<sub>G</sub></td><td>Densidad de descargas a tierra</td><td class="num">1/km²·año</td></tr>
+      <tr><td class="sim">A<sub>D</sub></td><td>Área de captación equivalente de la estructura</td><td class="num">m²</td></tr>
+      <tr><td class="sim">N<sub>D</sub></td><td>Eventos peligrosos en la estructura</td><td class="num">1/año</td></tr>
+      <tr><td class="sim">P<sub>X</sub>, L<sub>X</sub></td><td>Probabilidad de daño y pérdida del componente X</td><td class="num">—</td></tr>
+      <tr><td class="sim">R<sub>X</sub></td><td>Componente de riesgo X</td><td class="num">1/año</td></tr>
+      <tr><td class="sim">R<sub>T</sub></td><td>Riesgo tolerable (Tabla 4)</td><td class="num">1/año</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- =============================================================== 2. EMPLAZAMIENTO -->
+<section>
+  <h2><span class="n">2</span>Emplazamiento y densidad de descargas</h2>
+  <table class="tabla">
+    <thead><tr><th>Dato</th><th>Valor</th></tr></thead>
+    <tbody>
+      <tr><td>N<sub>G</sub> adoptado</td><td class="num"><b>{{ emplazamiento.N_G }}</b> rayos/km²·año</td></tr>
+      <tr><td>Procedencia</td><td class="txt">{{ emplazamiento.fuente }}</td></tr>
+      {% if emplazamiento.ficha %}
+      <tr><td>Celda de la grilla NASA</td><td class="txt">{{ emplazamiento.ficha.celda }} (a {{ emplazamiento.ficha.distancia }})</td></tr>
+      <tr><td>Destellos totales</td><td class="num">{{ emplazamiento.ficha.destellos }} /km²·año</td></tr>
+      <tr><td>Fracción nube-tierra</td><td class="num">{{ emplazamiento.ficha.fraccion }}</td></tr>
+      <tr><td>Observación del sensor</td><td class="txt">{{ emplazamiento.ficha.horas }} · {{ emplazamiento.ficha.producto }}</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</section>
+
+<!-- =============================================================== 3. DATOS -->
+<section>
+  <h2><span class="n">3</span>Datos de la estructura, las zonas y las líneas</h2>
+
+  <h3>Estructura</h3>
+  <table class="tabla">
+    <thead><tr><th>Parámetro</th><th class="num">Valor</th></tr></thead>
+    <tbody>
+      <tr><td>Longitud L [m]</td><td class="num">{{ estructura.L }}</td></tr>
+      <tr><td>Ancho W [m]</td><td class="num">{{ estructura.W }}</td></tr>
+      <tr><td>Altura H [m]</td><td class="num">{{ estructura.H }}</td></tr>
+      <tr><td>Altura del saliente del techo H<sub>p</sub> [m]</td><td class="num">{{ estructura.Hp }}</td></tr>
+      <tr><td>Factor de localización C<sub>D</sub> (Tabla A.1)</td><td class="num">{{ estructura.CD }}</td></tr>
+      <tr><td>Personas en la estructura n<sub>t</sub></td><td class="num">{{ estructura.nt }}</td></tr>
+    </tbody>
+  </table>
+
+  <figure>
+    <svg class="plano" viewBox="0 0 560 340" role="img" aria-label="Planta de la estructura y su área de captación">
+      {% set L = estructura.L|float %}{% set W = estructura.W|float %}{% set H = estructura.H|float %}
+      {% set sc = [330 / (L + 6 * H), 200 / (W + 6 * H)]|min %}
+      {% set cx = 280 %}{% set cy = 165 %}
+      {% set x0 = cx - L * sc / 2 %}{% set y0 = cy - W * sc / 2 %}
+      {% set w = L * sc %}{% set h = W * sc %}{% set r = 3 * H * sc %}
+      <defs>
+        <pattern id="achurado" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="5" stroke="#64748B" stroke-width=".6"/>
+        </pattern>
+        <pattern id="malla" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M20 0H0V20" fill="none" stroke="#E2E8F0" stroke-width=".5"/>
+        </pattern>
+        <marker id="fl" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0 0L8 4L0 8z" fill="#2563EB"/>
+        </marker>
+      </defs>
+      <rect x="0" y="0" width="560" height="340" fill="url(#malla)"/>
+      <rect x="5" y="5" width="550" height="330" class="cuadro"/>
+      <!-- envolvente A_D: achurada -->
+      <rect x="{{ x0 - r }}" y="{{ y0 - r }}" width="{{ w + 2 * r }}" height="{{ h + 2 * r }}" rx="{{ r }}"
+            class="trazo" style="fill:url(#achurado)" stroke-dasharray="5 3"/>
+      <!-- estructura -->
+      <rect x="{{ x0 }}" y="{{ y0 }}" width="{{ w }}" height="{{ h }}" class="trazo" style="fill:#fff;stroke-width:1.6"/>
+      {# Una estructura angosta no deja leer el rótulo en horizontal: va girado. #}
+      <g transform="translate({{ cx }} {{ cy }}){{ ' rotate(-90)' if w < 130 }}" text-anchor="middle">
+        <text y="-2" style="font-weight:700">ESTRUCTURA</text>
+        <text y="10">{{ estructura.L }} × {{ estructura.W }} × {{ estructura.H }} m</text>
+      </g>
+      <!-- cota L (abajo) -->
+      <line class="ext" x1="{{ x0 }}" y1="{{ y0 + h }}" x2="{{ x0 }}" y2="{{ y0 + h + r + 20 }}"/>
+      <line class="ext" x1="{{ x0 + w }}" y1="{{ y0 + h }}" x2="{{ x0 + w }}" y2="{{ y0 + h + r + 20 }}"/>
+      <line class="cota" x1="{{ x0 }}" y1="{{ y0 + h + r + 16 }}" x2="{{ x0 + w }}" y2="{{ y0 + h + r + 16 }}" marker-start="url(#fl)" marker-end="url(#fl)"/>
+      <text class="tcota" x="{{ cx }}" y="{{ y0 + h + r + 28 }}" text-anchor="middle">L = {{ estructura.L }} m</text>
+      <!-- cota W (izquierda) -->
+      <line class="ext" x1="{{ x0 }}" y1="{{ y0 }}" x2="{{ x0 - r - 20 }}" y2="{{ y0 }}"/>
+      <line class="ext" x1="{{ x0 }}" y1="{{ y0 + h }}" x2="{{ x0 - r - 20 }}" y2="{{ y0 + h }}"/>
+      <line class="cota" x1="{{ x0 - r - 16 }}" y1="{{ y0 }}" x2="{{ x0 - r - 16 }}" y2="{{ y0 + h }}" marker-start="url(#fl)" marker-end="url(#fl)"/>
+      <text class="tcota" transform="translate({{ x0 - r - 22 }} {{ cy }}) rotate(-90)" text-anchor="middle">W = {{ estructura.W }} m</text>
+      <!-- cota 3H (derecha) -->
+      <line class="cota" x1="{{ x0 + w }}" y1="{{ cy }}" x2="{{ x0 + w + r }}" y2="{{ cy }}" marker-start="url(#fl)" marker-end="url(#fl)"/>
+      <text class="tcota" x="{{ x0 + w + r + 6 }}" y="{{ cy + 3 }}">3H = {{ (3 * H)|round(1) }} m</text>
+      <!-- A_D -->
+      <rect x="392" y="262" width="150" height="56" class="cuadro" style="fill:#fff"/>
+      <text class="tit" x="400" y="276">ÁREA DE CAPTACIÓN</text>
+      <text x="400" y="296" style="font-weight:700;font-size:13px;fill:#2563EB">A<tspan dy="3" font-size="9">D</tspan><tspan dy="-3"> = {{ A_D }}</tspan></text>
+      <text x="400" y="311" style="font-size:8px;fill:#64748B">m² · ec. A.2</text>
+      <!-- líneas que entran -->
+      {% for l in lineas %}
+        {% set yy = 70 + loop.index0 * 26 %}
+        <line class="trazo" x1="22" y1="{{ yy }}" x2="{{ x0 - r - 30 }}" y2="{{ yy }}" marker-end="url(#fl)" style="stroke-width:1.4"/>
+        <text x="22" y="{{ yy - 4 }}" style="font-size:8px">LÍNEA · {{ l.nombre|upper }}</text>
+      {% endfor %}
+      <text class="tit" x="16" y="326">PLANTA · SIN ESCALA NUMÉRICA · COTAS EN METROS</text>
+    </svg>
+    <figcaption>Figura 1. Planta de la estructura y área de captación equivalente A<sub>D</sub> (achurado), con ampliación 3H.</figcaption>
+  </figure>
+
+  <h3>Zonas</h3>
+  <table class="tabla">
+    <thead><tr><th>Zona</th><th class="num">n<sub>z</sub></th><th class="num">t<sub>z</sub> [h]</th><th class="num">P<sub>B</sub></th><th class="num">r<sub>f</sub></th><th class="num">r<sub>p</sub></th><th class="num">L<sub>F</sub></th></tr></thead>
+    <tbody>{% for z in zonas %}
+      <tr><td>{{ z.nombre }}</td><td class="num">{{ z.nz }}</td><td class="num">{{ z.tz }}</td><td class="num">{{ z.PB }}</td><td class="num">{{ z.rf }}</td><td class="num">{{ z.rp }}</td><td class="num">{{ z.LF }}</td></tr>
+    {% endfor %}</tbody>
+  </table>
+
+  <h3>Líneas</h3>
+  <table class="tabla">
+    <thead><tr><th>Línea</th><th class="num">L<sub>L</sub> [m]</th><th class="num">C<sub>I</sub></th><th class="num">C<sub>T</sub></th><th class="num">C<sub>E</sub></th><th class="num">U<sub>W</sub> [kV]</th></tr></thead>
+    <tbody>{% for l in lineas %}
+      <tr><td>{{ l.nombre }}</td><td class="num">{{ l.L }}</td><td class="num">{{ l.CI }}</td><td class="num">{{ l.CT }}</td><td class="num">{{ l.CE }}</td><td class="num">{{ l.UW }}</td></tr>
+    {% endfor %}</tbody>
+  </table>
+</section>
+
+<!-- =============================================================== 4. CÁLCULO -->
+<section>
+  <h2><span class="n">4</span>Cálculo de R<sub>{{ desarrollo.riesgo }}</sub></h2>
+  <p>Frecuencia de eventos peligrosos en la estructura: N<sub>D</sub> = {{ N_D|safe }} 1/año.</p>
+  {% for e in desarrollo.ecuaciones %}<div class="eq">{{ e|safe }}</div>{% endfor %}
+
+  <h3>De dónde viene R<sub>{{ desarrollo.riesgo }}</sub></h3>
+  <div class="barras">
+    {% for c in desarrollo.componentes %}
+    <div class="barra {{ 'mayor' if loop.first }}">
+      <div class="id">{{ c.id|safe }}</div>
+      <div class="pista"><div class="relleno" style="width: {{ c.parte }}%"></div></div>
+      <div class="v"><b>{{ c.parte_texto }}</b> · {{ c.valor|safe }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <table class="tabla">
+    <thead><tr><th style="width:16mm">Componente</th><th>Descripción</th><th class="num">R<sub>{{ desarrollo.riesgo }}</sub> [1/año]</th></tr></thead>
+    <tbody>{% for c in desarrollo.componentes %}
+      <tr><td class="sim">{{ c.id|safe }}</td><td>{{ c.descripcion }}</td><td class="num">{{ c.valor|safe }}</td></tr>
+    {% endfor %}</tbody>
+    <tfoot><tr><td colspan="2">Total R<sub>{{ desarrollo.riesgo }}</sub></td><td class="num">{{ desarrollo.total|safe }}</td></tr></tfoot>
+  </table>
+</section>
+
+<!-- =============================================================== 5. VEREDICTO -->
+<section>
+  <h2><span class="n">5</span>Veredicto y medidas de protección</h2>
+  <div class="callout {{ 'si' if veredicto.cumple else 'no' }}">
+    <div class="icono">
+      {% if veredicto.cumple %}
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.2 5.2L20 6.5"/></svg>
+      {% else %}
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      {% endif %}
+    </div>
+    <div class="cuerpo"><div class="estado">{{ veredicto.titulo }}</div><p class="detalle">{{ veredicto.detalle|safe }}</p></div>
+  </div>
+
+  {% if medidas %}
+  <p>Combinaciones de medidas que llevan el riesgo por debajo del tolerable, de menos a más medidas.</p>
+  <table class="tabla">
+    <thead><tr><th class="num" style="width:10mm">N.º</th><th>Medidas</th><th class="num" style="width:24mm">Reduce</th></tr></thead>
+    <tbody>{% for m in medidas %}
+      <tr><td class="num">{{ m.n }}</td><td>{{ m.texto }}</td><td class="num">{{ m.reduce }}</td></tr>
+    {% endfor %}</tbody>
+  </table>
+  {% endif %}
+</section>
+
+<!-- =============================================================== 6. CONCLUSIÓN Y FIRMAS -->
+<section>
+  <h2><span class="n">6</span>Conclusión y firmas</h2>
+  <p>{{ conclusion|safe }}</p>
+
+  <div class="cajetin">
+    <div class="modulo">
+      <h4>Responsable del proyecto</h4>
+      <div class="campo"><span>Nombre completo</span><b>{{ proyecto.disenador }}</b></div>
+      <div class="campo"><span>Matrícula profesional</span><b class="mono">{{ proyecto.matricula }}</b></div>
+      <div class="campo firma"><span>Firma del ingeniero proyectista o sello</span></div>
+      <p class="decl">El profesional firmante declara que los datos de entrada de esta memoria
+      corresponden a la instalación o al diseño evaluado y responde por su veracidad.</p>
+    </div>
+    <div class="modulo">
+      <h4>Autoría del motor y verificación</h4>
+      <div class="autor">
+        <div class="nombre">Ing. Sergio Estrada Vélez</div>
+        <div>{{ texto_autoria or "Desarrollado y parametrizado por el Ing. Sergio Estrada Vélez, creador de Charlightning.org. Algoritmo NTC 4552-2 / IEC 62305-2 verificado contra los ejemplos resueltos del Anexo E de la norma." }}</div>
+        <div class="sello">Charlightning{{ marca }} Engine v{{ version }}<br>Registro {{ codigo }}<br>Huella {{ huella }}<br>{{ verify_url }}</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
