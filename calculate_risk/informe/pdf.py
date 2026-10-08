@@ -100,7 +100,6 @@ MARGEN = 22 * mm
 ANCHO_UTIL = ANCHO_PAGINA - 2 * MARGEN
 DPI_FORMULA = 600
 LADO_QR_PIE = 9.5 * mm
-LADO_QR_PORTADA = 28 * mm
 
 CUERPO = ParagraphStyle("cuerpo", fontName=SERIF, fontSize=10, leading=13.6,
                         alignment=TA_JUSTIFY, spaceAfter=5, textColor=TINTA)
@@ -243,28 +242,6 @@ def _dibujo_qr(url: str, lado: float) -> Drawing:
     return dibujo
 
 
-def _verificacion(verificacion, advertencias):
-    """El recuadro de la portada: el QR y lo que hay que comparar."""
-    estilo = ParagraphStyle("verificar", fontName=SERIF, fontSize=9.4, leading=13, textColor=TINTA)
-    codigo = ParagraphStyle("verificar_codigo", fontName=MONO, fontSize=8, leading=12, textColor=GRIS)
-    lineas = [Paragraph(_legible(
-        "<b>Escanee para verificar autenticidad en charlightning.org/verify</b>", advertencias), estilo),
-        Spacer(1, 2),
-        Paragraph(_legible(f"Registro {verificacion.id}<br/>Huella de datos {verificacion.huella}",
-                           advertencias), codigo),
-        Spacer(1, 2),
-        Paragraph(_legible("La huella cambia si cambia cualquiera de los datos de entrada. "
-                           "Compare el veredicto y los riesgos de esta memoria con los del registro.",
-                           advertencias), NOTA)]
-    tabla = Table([[_dibujo_qr(verificacion.url, LADO_QR_PORTADA), lineas]],
-                  colWidths=[LADO_QR_PORTADA + 8 * mm, ANCHO_UTIL - LADO_QR_PORTADA - 8 * mm])
-    tabla.setStyle(TableStyle([
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("BOX", (0, 0), (-1, -1), 0.6, LINEA),
-        ("LEFTPADDING", (0, 0), (-1, -1), 8), ("TOPPADDING", (0, 0), (-1, -1), 7),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 7)]))
-    return tabla
-
-
 def _campo(rotulo, valor, advertencias):
     estilo = ParagraphStyle("campo", fontName=SERIF, fontSize=10, leading=13, textColor=TINTA)
     return Paragraph(f'<font name="{SERIF}" size="7" color="#475569">{_legible(rotulo.upper(), advertencias)}</font>'
@@ -285,7 +262,7 @@ def _firma(bloque, advertencias):
         derecha += [Spacer(1, 6), Paragraph(_legible(bloque.sello, advertencias), sello)]
     filas = [
         [Paragraph("FIRMA DEL PROYECTISTA RESPONSABLE", cabecera),
-         Paragraph("DESARROLLO Y VALIDACIÓN DEL MOTOR", cabecera)],
+         Paragraph("CÁLCULO REPRODUCIBLE Y AUDITABLE", cabecera)],
         [_campo("Nombre completo", bloque.proyectista, advertencias), derecha],
         [_campo("Matrícula profesional", bloque.matricula, advertencias), ""],
         [_campo("Firma o sello", "", advertencias), ""],
@@ -406,12 +383,9 @@ def _portada(documento, advertencias):
         flujo.append(Table([[""]], colWidths=[ANCHO_UTIL], rowHeights=[2],
                            style=[("LINEABOVE", (0, 0), (-1, 0), 0.6, TINTA)]))
         flujo.append(Paragraph(_legible(documento.credito, advertencias), estilo(
-            "credito", fontName=SERIF, fontSize=10, leading=14, textColor=TINTA,
-            alignment=TA_CENTER, spaceBefore=4, spaceAfter=10)))
-    flujo += _flujo(documento.portada, [], advertencias, [])
-    if documento.verificacion is not None:
-        flujo += [Spacer(1, 6), _verificacion(documento.verificacion, advertencias)]
-    return flujo
+            "credito", fontName=SERIF_I, fontSize=9, leading=12, textColor=GRIS,
+            alignment=TA_CENTER, spaceBefore=4, spaceAfter=8)))
+    return flujo + _flujo(documento.portada, [], advertencias, [])
 
 
 # ---------------------------------------------------------------------------

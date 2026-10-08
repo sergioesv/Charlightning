@@ -74,14 +74,15 @@ def test_el_documento_trae_la_marca_el_cajetin_y_el_veredicto_en_la_portada(dato
     registro = verificacion.registro_de(*datos, AHORA)
     documento = _armar(datos, verificacion=registro)
     assert documento.verificacion.id == registro.id
-    assert "Sergio A. Estrada Vélez" in documento.encabezado_izq
-    assert "Charlightning v" in documento.pie and "charlightning.org" in documento.pie
-    assert "Sergio Andrés Estrada Vélez" in documento.credito
+    assert "NTC 4552-2" in documento.encabezado_izq
+    assert documento.pie == "Charlightning v2.0 · charlightning.org"
+    assert documento.credito == "Calculado con Charlightning v2.0"
     portada = [b for b in documento.portada if isinstance(b, d.Recuadro)]
     assert len(portada) == 1 and "NO CUMPLE" in portada[0].etiqueta
     firma = next(b for b in documento.bloques if isinstance(b, d.Firma))
     assert firma.proyectista == "Ana Pérez" and firma.matricula == "CN-123"
-    assert "Sergio Andrés Estrada Vélez" in firma.autoria and registro.id in firma.sello
+    assert "código abierto" in firma.autoria and "Anexo E" in firma.autoria
+    assert registro.id in firma.sello and "github.com/sergioesv/Charlightning" in firma.sello
 
 
 def test_sin_registro_no_hay_qr_ni_codigo(datos):
@@ -89,6 +90,28 @@ def test_sin_registro_no_hay_qr_ni_codigo(datos):
     assert documento.verificacion is None
     firma = next(b for b in documento.bloques if isinstance(b, d.Firma))
     assert "CHL-" not in firma.sello
+
+
+def test_ningun_nombre_propio_en_el_documento(datos):
+    """El nombre del autor del motor no va en cada hoja: vive en el repositorio y en la web."""
+    documento = _armar(datos, verificacion=verificacion.registro_de(*datos, AHORA))
+    firma = next(b for b in documento.bloques if isinstance(b, d.Firma))
+    texto = " ".join([documento.encabezado_izq, documento.encabezado_der, documento.pie,
+                      documento.credito, firma.autoria, firma.sello])
+    assert "Estrada" not in texto and "Sergio" not in texto.replace("sergioesv", "")
+
+
+def test_la_portada_cabe_en_una_hoja_aunque_el_proyecto_sea_grande(datos, tmp_path):
+    largo = {"Proyecto": "Edificio de oficinas Torre Norte, fase 2, sede principal " * 2,
+             "Diseñador": "Ing. María Fernanda Rodríguez Gómez", "Dirección": "Carrera 45 # 12-34 " * 4,
+             "Teléfono": "300 123 4567", "Descripción": "Edificio de doce pisos con sótano. " * 12}
+    por_caso, por_tipo = datos
+    documento = armado.armar(por_caso, por_tipo, proyecto=largo,
+                             verificacion=verificacion.registro_de(*datos, AHORA))
+    resultado = pdf.dibujar(documento, str(tmp_path / "grande.pdf"))
+    primera = [seccion for seccion, pagina in resultado.secciones][0]
+    assert resultado.secciones[0][1] == 2        # «1. Alcance» abre la página 2: la portada es una hoja
+    assert primera.startswith("1.")
 
 
 def test_el_pdf_con_verificacion_sale_sin_advertencias(datos, tmp_path):

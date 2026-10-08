@@ -19,7 +19,7 @@ from dataclasses import fields, is_dataclass
 
 from calculate_risk.informe import documento as d
 from calculate_risk.informe.documento import escapar
-from calculate_risk.informe.verificacion import VERSION_MOTOR
+from calculate_risk.version import VERSION, VERSION_CORTA
 from calculate_risk.norma import etiquetas, medidas, perdidas, probabilidades, riesgos, tablas
 
 NOMBRES_COMPONENTES = {
@@ -57,11 +57,12 @@ MESES = ("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto
 
 MEDIDAS_QUE_SE_MUESTRAN = 10
 
-# La marca lleva ™ (marca de hecho). Cuando se registre ante la SIC se cambia por «®».
-MARCA = "™"
-AUTORIA = ("Algoritmo parametrizado conforme a la NTC 4552-2 por el Ing. Sergio Andrés Estrada "
-           "Vélez — Creador de Charlightning.org. Garantiza el rigor matemático del motor, "
-           "verificado contra los ejemplos resueltos del Anexo E de la norma.")
+# Lo único del proyecto que va en la portada; el resto (dirección, teléfono, descripción…)
+# puede ser largo y se pasa a la página 2 para que la portada siempre quepa en una hoja.
+EN_LA_PORTADA = ("Proyecto", "Diseñador")
+
+URL_CODIGO = "github.com/sergioesv/Charlightning"
+URL_VALIDACION = "charlightning.org/validacion.html"
 DECLARACION = ("El profesional firmante declara que los datos de entrada de esta memoria "
                "corresponden a la instalación o al diseño evaluado y responde por su veracidad. "
                "Charlightning solo realiza el cálculo con los datos suministrados.")
@@ -811,16 +812,21 @@ def _conclusion(por_tipo, tipos, soluciones, proyecto, verificacion=None):
                      f"de la NTC 4552-2:2023 para {_lista_de_riesgos(incumplen)}.")
 
     proyecto = proyecto or {}
-    sello = f"Charlightning v{VERSION_MOTOR}"
+    version = verificacion.engine_version if verificacion is not None else VERSION
+    sello = f"Charlightning {version}<br/>Código fuente: {URL_CODIGO}"
     if verificacion is not None:
         impreso = verificacion.impreso()
-        sello += f"<br/>Registro {impreso.id}<br/>Huella {impreso.huella}<br/>charlightning.org/verify"
+        sello += f"<br/>Registro {impreso.id}<br/>Huella de datos {impreso.huella}"
+    autoria = (f"Cálculo realizado con Charlightning v{VERSION_CORTA}, de código abierto y "
+               f"auditable, verificado contra los ejemplos resueltos del Anexo E de la NTC 4552-2 "
+               f"({URL_VALIDACION}). Cualquier revisor puede repetir este cálculo con los datos "
+               "de los numerales 3 y 4 de esta memoria.")
     return (
         [d.Titulo("7. Conclusión y firma"), d.Parrafo(principal)]
         + [d.Parrafo(_frase_de_riesgo(por_tipo, t, soluciones)) for t in incumplen]
         + [d.Firma(proyectista=escapar(proyecto.get("Diseñador", "")),
                    matricula=escapar(proyecto.get("Matrícula profesional", "")),
-                   declaracion=DECLARACION, autoria=AUTORIA, sello=sello)]
+                   declaracion=DECLARACION, autoria=autoria, sello=sello)]
     )
 
 
@@ -887,12 +893,13 @@ def armar(casos: dict, por_tipo: dict, proyecto: dict = None, ficha=None,
 
     incumplen, resumen = _resumen_del_veredicto(por_tipo, tipos)
     portada = [d.Espacio(2)]
-    portada += _tabla_del_proyecto(proyecto, _coordenadas_del(emplazamiento))
+    portada += _tabla_del_proyecto({k: v for k, v in proyecto.items() if k in EN_LA_PORTADA},
+                                   _coordenadas_del(emplazamiento))
     portada += [d.Espacio(4), d.Recuadro(resumen, cumple=not incumplen,
                                          etiqueta=_etiqueta(incumplen))]
     if figuras.get("mapa"):
         portada.append(d.Figura(
-            figuras["mapa"], 112,
+            figuras["mapa"], 105,
             "Figura 1. Densidad de descargas a tierra alrededor del sitio (climatología "
             "satelital LIS/OTD de la NASA) y su ubicación en el país."))
     if fecha is not None:
@@ -900,6 +907,9 @@ def armar(casos: dict, por_tipo: dict, proyecto: dict = None, ficha=None,
 
     nombre = str(proyecto.get("Proyecto", "")).strip()
     bloques = [d.Contenido()]
+    resto = {k: v for k, v in proyecto.items() if k not in EN_LA_PORTADA}
+    if any(str(v).strip() for v in resto.values()):
+        bloques += [d.Titulo("Datos del proyecto", 2)] + _tabla_del_proyecto(resto)
     bloques += _alcance(tipos) + _terminos() + [d.Salto()]
     bloques += _emplazamiento(emplazamiento, caso["N_G"], ficha)
     bloques += _datos(caso, figuras.get("area"))
@@ -918,13 +928,10 @@ def armar(casos: dict, por_tipo: dict, proyecto: dict = None, ficha=None,
                   "Parte 2: Evaluación del riesgo",
         sobretitulo="Memoria de cálculo",
         autor=str(proyecto.get("Diseñador", "")),
-        credito=(f"<b>Desarrollado en el motor Charlightning{MARCA}</b><br/>"
-                 "Autor del motor y algoritmo: <b>Ing. Sergio Andrés Estrada Vélez</b><br/>"
-                 "charlightning.org"),
-        encabezado_izq=f"Charlightning{MARCA} | Motor de cálculo desarrollado por el "
-                       "Ing. Sergio A. Estrada Vélez",
+        credito=f"Calculado con Charlightning v{VERSION_CORTA}",
+        encabezado_izq="Memoria de cálculo del riesgo por rayos · NTC 4552-2:2023",
         encabezado_der=nombre,
-        pie=f"Memoria de Cálculo NTC 4552-2 | Charlightning v{VERSION_MOTOR} | charlightning.org",
+        pie=f"Charlightning v{VERSION_CORTA} · charlightning.org",
         verificacion=verificacion.impreso() if verificacion is not None else None,
         portada=portada,
         bloques=bloques,

@@ -17,8 +17,7 @@ from dataclasses import asdict, dataclass, is_dataclass
 from datetime import datetime, timezone
 
 from calculate_risk.informe.documento import Verificacion
-
-VERSION_MOTOR = "1.0"
+from calculate_risk.version import VERSION as VERSION_MOTOR
 URL_BASE = "https://charlightning.org/verify"
 LARGO_HUELLA_IMPRESA = 10
 
@@ -31,7 +30,7 @@ class Registro:
     risk_r1: float          # R1 calculado; None si no se evaluó R1
     verdict: str            # «CUMPLE» / «NO CUMPLE»
     data_hash: str          # sha256 (hex) de los datos de entrada y los riesgos
-    engine_version: str = VERSION_MOTOR
+    engine_version: str = VERSION_MOTOR      # «2.0.0» o «2.0.0+290a637» (con la revisión del código)
 
     def impreso(self) -> Verificacion:
         return Verificacion(id=self.id, url=f"{URL_BASE}/{self.id}",
@@ -71,8 +70,9 @@ def _coordenadas(casos: dict) -> str:
     return ""
 
 
-def registro_de(casos: dict, por_tipo: dict, ahora: datetime = None) -> Registro:
-    """El registro de una memoria: todo lo que se guarda en el servidor."""
+def registro_de(casos: dict, por_tipo: dict, ahora: datetime = None, revision: str = "") -> Registro:
+    """El registro de una memoria: todo lo que se guarda en el servidor. `revision` es el
+    commit del código que hizo el cálculo, para poder bajar exactamente esa versión."""
     ahora = ahora or datetime.now(timezone.utc)
     return Registro(
         id=nuevo_id(ahora),
@@ -80,4 +80,5 @@ def registro_de(casos: dict, por_tipo: dict, ahora: datetime = None) -> Registro
         coordinates=_coordenadas(casos),
         risk_r1=por_tipo[1]["total"] if 1 in por_tipo else None,
         verdict="CUMPLE" if all(por_tipo[t]["cumple"] for t in por_tipo) else "NO CUMPLE",
-        data_hash=huella_de(casos, por_tipo))
+        data_hash=huella_de(casos, por_tipo),
+        engine_version=f"{VERSION_MOTOR}+{revision}" if revision else VERSION_MOTOR)

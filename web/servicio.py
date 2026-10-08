@@ -5,6 +5,7 @@ Recibe y devuelve datos simples (dict, bytes) para que api.py solo traduzca
 peticiones y respuestas. Aquí no se calcula ningún riesgo: todo sale de
 calculate_risk/, el mismo motor del programa de escritorio.
 """
+import os
 import tempfile
 from dataclasses import MISSING, asdict, fields
 from datetime import date
@@ -176,7 +177,8 @@ def informe_pdf(datos: dict, proyecto: dict = None, buscar_medidas: bool = True,
     proyecto = {str(k)[:40]: str(v)[:1000] for k, v in (proyecto or {}).items()}
     registro = None
     if verificaciones is not None:
-        candidato = verificacion.registro_de(por_caso, resultados)
+        revision = os.environ.get("RAILWAY_GIT_COMMIT_SHA", "")[:7]
+        candidato = verificacion.registro_de(por_caso, resultados, revision=revision)
         try:
             verificaciones.guardar(candidato)
             registro = candidato

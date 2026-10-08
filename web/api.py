@@ -18,6 +18,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, Response
 
+from calculate_risk.version import VERSION
 from web import servicio
 from web.contacto import Buzon, MensajeInvalido
 from web.contador import Contador, ruta_por_omision
@@ -27,7 +28,6 @@ from web.verificaciones import ID_VALIDO, desde_entorno
 
 MAX_BYTES = 200_000                  # un caso real pesa unos pocos kB
 CARPETA_ESTATICA = Path(__file__).resolve().parent / "estatico"
-VERSION = "0.1.0"
 COMMIT = os.environ.get("RAILWAY_GIT_COMMIT_SHA", "")[:7]
 
 app = FastAPI(title="Charlightning", version=VERSION, docs_url="/api/docs",

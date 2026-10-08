@@ -5,8 +5,8 @@ type: software
 authors:
   - family-names: "Estrada Vélez"
     given-names: "Sergio Andrés"
-version: 0.1.0
-date-released: 2026-10-06
+version: 2.0.0
+date-released: 2026-10-08
 url: "https://charlightning.org"
 repository-code: "https://github.com/sergioesv/charlightning"
 license: GPL-3.0
