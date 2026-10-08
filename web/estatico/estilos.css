@@ -670,3 +670,33 @@ details.proyecto[open] { background: #fafbfd; }
 #resultado .huella { word-break: break-all; font-size: 11px; }
 .veredicto-no { color: #dc2626; }
 .veredicto-si { color: #16a34a; }
+
+/* La ventanita «cargando» */
+#espera {
+  position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center;
+  background: rgba(16, 36, 84, .38); padding: 16px;
+}
+#espera .ventana {
+  width: min(380px, 100%); background: var(--beige-xp); border: 1px solid #0831d9;
+  border-radius: 8px 8px 0 0; box-shadow: 3px 4px 14px rgba(0, 0, 0, .5);
+}
+#espera .titulo {
+  background: linear-gradient(#4f8ff5, #0a4bd6 55%, #0831d9); color: #fff; font-weight: bold;
+  padding: 4px 9px; border-radius: 7px 7px 0 0; text-shadow: 1px 1px 0 rgba(0, 0, 0, .35);
+}
+#espera .cuerpo { padding: 16px 18px 12px; }
+#espera #espera-texto { margin: 0 0 12px; font-weight: bold; }
+#espera .barra {
+  position: relative; height: 16px; border: 1px solid #686868; background: #fff;
+  border-radius: 3px; overflow: hidden;
+}
+#espera .barra::before {
+  content: ""; position: absolute; top: 2px; bottom: 2px; left: -80px; width: 80px;
+  background: repeating-linear-gradient(90deg, #37d437 0 8px, transparent 8px 10px);
+  animation: espera-pasa 1.5s linear infinite;
+}
+#espera .pequeno { margin: 8px 0 0; }
+@keyframes espera-pasa { to { left: 100%; } }
+@media (prefers-reduced-motion: reduce) {
+  #espera .barra::before { animation: none; left: 0; width: 100%; opacity: .6; }
+}

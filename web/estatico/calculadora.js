@@ -85,6 +85,30 @@ function huella(texto) {
   return `${texto.length}-${(h >>> 0).toString(36)}`;
 }
 
+// La ventanita «cargando»: avisa que algo está pasando mientras el servidor trabaja, y cuenta
+// los segundos para que se vea que no se quedó pegado.
+const espera = {
+  inicio: 0,
+  reloj: null,
+  mostrar(texto) {
+    $("espera-texto").textContent = texto;
+    $("espera-tiempo").textContent = "";
+    $("espera").hidden = false;
+    document.body.setAttribute("aria-busy", "true");
+    this.inicio = Date.now();
+    clearInterval(this.reloj);
+    this.reloj = setInterval(() => {
+      const s = Math.floor((Date.now() - this.inicio) / 1000);
+      $("espera-tiempo").textContent = s >= 3 ? `Van ${s} s…` : "";
+    }, 500);
+  },
+  ocultar() {
+    clearInterval(this.reloj);
+    $("espera").hidden = true;
+    document.body.removeAttribute("aria-busy");
+  },
+};
+
 const postJson = (url, datos) => pedir(url, {
   method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(datos),
 });
@@ -414,8 +438,8 @@ class Calculadora {
     $("archivo").addEventListener("change", (e) => this.abrirArchivo(e.target));
     $("b-guardar").addEventListener("click", () => this.trabajar("b-guardar", () => this.guardar()));
     $("b-calcular").addEventListener("click", () => this.trabajar("b-calcular", () => this.calcular()));
-    $("b-informe").addEventListener("click", () => this.trabajar("b-informe", () => this.informe()));
-    $("b-desglose").addEventListener("click", () => this.trabajar("b-desglose", () => this.deDondeViene()));
+    $("b-informe").addEventListener("click", () => this.trabajar("b-informe", () => this.informe(), "Generando el informe…"));
+    $("b-desglose").addEventListener("click", () => this.trabajar("b-desglose", () => this.deDondeViene(), "Probando cada medida de protección…"));
     // Los ejemplos del Anexo E están en el menú de la izquierda: aquí se abren sin recargar.
     document.querySelectorAll("a[data-ejemplo]").forEach((a) => a.addEventListener("click", (e) => {
       e.preventDefault();
@@ -521,12 +545,14 @@ class Calculadora {
     return elegidos.length ? elegidos : [1];
   }
 
-  async trabajar(id, accion) {
+  // `mensaje`: si se da, sale la ventanita «cargando» mientras dure la acción.
+  async trabajar(id, accion, mensaje = "") {
     if (this.ocupado) return;
     this.ocupado = true;
     const boton = id ? $(id) : null;
     if (boton) boton.disabled = true;
     document.body.classList.add("trabajando");
+    if (mensaje) espera.mostrar(mensaje);
     try {
       await accion();
     } catch (error) {
@@ -536,6 +562,7 @@ class Calculadora {
       this.ocupado = false;
       if (boton) boton.disabled = false;
       document.body.classList.remove("trabajando");
+      espera.ocultar();
     }
   }
 
