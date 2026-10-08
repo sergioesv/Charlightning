@@ -23,6 +23,7 @@ from web.contacto import Buzon, MensajeInvalido
 from web.contador import Contador, ruta_por_omision
 from web.estaticos import EstaticosVersionados
 from web.limite import Limite
+from web.verificaciones import ID_VALIDO, desde_entorno
 
 MAX_BYTES = 200_000                  # un caso real pesa unos pocos kB
 CARPETA_ESTATICA = Path(__file__).resolve().parent / "estatico"
@@ -68,6 +69,7 @@ async def _cache(request: Request, siguiente):
 
 contador = Contador(ruta_por_omision())
 buzon = Buzon.desde_entorno(ruta_por_omision().parent)
+verificaciones = desde_entorno(ruta_por_omision().parent)
 
 # Al arrancar se anota cuánto hay guardado: sirve para saber que el volumen sigue ahí.
 _mensajes = ruta_por_omision().parent / "mensajes.jsonl"
@@ -153,13 +155,34 @@ async def informe(request: Request, medidas: bool = True):
 
     def hacer():
         with _un_informe_a_la_vez:
-            return servicio.informe_pdf(datos["caso"], proyecto, buscar_medidas=medidas)
+            return servicio.informe_pdf(datos["caso"], proyecto, buscar_medidas=medidas,
+                                        verificaciones=verificaciones)
 
-    contenido, avisos = await run_in_threadpool(hacer)
-    return Response(contenido, media_type="application/pdf", headers={
-        "Content-Disposition": 'attachment; filename="Memoria de calculo.pdf"',
-        "X-Avisos": str(len(avisos)),
-    })
+    contenido, avisos, registro = await run_in_threadpool(hacer)
+    cabeceras = {"Content-Disposition": 'attachment; filename="Memoria de calculo.pdf"',
+                 "X-Avisos": str(len(avisos))}
+    if registro is not None:
+        cabeceras["X-Registro"] = registro.id
+    return Response(contenido, media_type="application/pdf", headers=cabeceras)
+
+
+@app.get("/api/verificar/{id_}")
+async def verificar(id_: str, request: Request):
+    """Lo que quedó registrado de una memoria: el QR del PDF lleva aquí."""
+    _revisar_limite(limite_calculo, request)
+    id_ = id_.strip().upper()
+    if not ID_VALIDO.match(id_):
+        raise HTTPException(400, "Un código de memoria se ve así: CHL-2026-7F3A9C.")
+    try:
+        registro = await run_in_threadpool(verificaciones.buscar, id_)
+    except Exception as error:
+        raise HTTPException(503, "No se pudo consultar el registro; intente en un momento.") from error
+    if registro is None:
+        raise HTTPException(404, "No hay ninguna memoria registrada con ese código.")
+    return {"id": registro.id, "created_at": registro.created_at,
+            "coordinates": registro.coordinates, "risk_r1": registro.risk_r1,
+            "verdict": registro.verdict, "data_hash": registro.data_hash,
+            "huella": registro.impreso().huella, "engine_version": registro.engine_version}
 
 
 @app.get("/api/esquema")
@@ -240,4 +263,14 @@ def validacion():
 
 
 # Las páginas (index.html, calculadora.html, ...) van al final para no tapar /api.
-app.mount("/", EstaticosVersionados(directory=CARPETA_ESTATICA, html=True), name="estatico")
+estaticos = EstaticosVersionados(directory=CARPETA_ESTATICA, html=True)
+
+
+@app.get("/verify")
+@app.get("/verify/{id_}")
+async def pagina_de_verificacion(request: Request, id_: str = ""):
+    """La página a la que lleva el QR; el código se lee de la dirección en el navegador."""
+    return await estaticos.get_response("verify.html", request.scope)
+
+
+app.mount("/", estaticos, name="estatico")

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verificar una memoria de cálculo — Charlightning</title>
+<meta name="description" content="Compruebe que una memoria de cálculo de riesgo por rayos fue generada con el motor Charlightning y qué resultados registró.">
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://charlightning.org/verify">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Charlightning">
+<meta property="og:locale" content="es_CO">
+<meta property="og:title" content="Verificar una memoria de cálculo — Charlightning">
+<meta property="og:description" content="Compruebe que una memoria de cálculo de riesgo por rayos fue generada con el motor Charlightning y qué resultados registró.">
+<meta property="og:url" content="https://charlightning.org/verify">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%9A%A1%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/estilos.css">
+</head>
+<body>
+<div id="pagina">
+<div id="cabecera">
+  <a class="titulo" href="/">&#9889; Charlightning</a>
+  <div class="lema">Análisis de riesgo por descargas atmosféricas &middot; NTC 4552-2:2023 / IEC 62305-2</div>
+</div>
+<div id="barra"><span class="fecha">Ultima actualizacion: 01/10/2026 &middot; version 0.1.0</span><span class="letrero"><span>&iexcl;&iexcl;NUEVO!! Ya puede calcular el riesgo desde el navegador &middot; Ejemplos del Anexo E en el men&uacute; &middot; Software libre para ingenieros electrisistas &middot; Firme el libro de visitas (proximamente)</span></span></div>
+<div id="cuerpo">
+<div id="menu">
+ <div class="seccion principal">
+  <div class="menu-titulo">Menú</div>
+  <ul>
+    <li><a href="/">Calculadora</a></li>
+    <li><a class="servicios" href="/servicios.html">Servicios</a></li>
+    <li><a href="/validacion.html">Validación</a></li>
+    <li><a href="/ng-colombia.html">DDT en Colombia</a></li>
+    <li><a href="/citar.html">Cómo citar</a></li>
+    <li><a href="/acerca.html">Acerca de</a></li>
+    <li><a href="/contacto.html">Contacto</a></li>
+    <li><a class="apoyar" href="/apoyar.html">Apoyar el proyecto</a></li>
+  </ul>
+ </div>
+ <div class="seccion ejemplos">
+  <div class="menu-titulo">Ejemplos de la norma</div>
+  <ul>
+    <li><a href="/?ejemplo=casa_rural" data-ejemplo="casa_rural">E.2 Casa rural</a></li>
+    <li><a href="/?ejemplo=E3_oficinas" data-ejemplo="E3_oficinas">E.3 Oficinas</a></li>
+    <li><a href="/?ejemplo=E4_hospital" data-ejemplo="E4_hospital">E.4 Hospital</a></li>
+    <li><a href="/?ejemplo=E5_apartamentos" data-ejemplo="E5_apartamentos">E.5 Apartamentos</a></li>
+  </ul>
+ </div>
+ <div class="seccion enlaces">
+  <div class="menu-titulo">Enlases</div>
+  <ul>
+    <li><a href="https://github.com/sergioesv/charlightning" target="_blank" rel="noopener">Código fuente</a></li>
+    <li><a href="https://github.com/sergioesv/charlightning/issues" target="_blank" rel="noopener">Reportar un error</a></li>
+    <li><a href="https://ghrc.nsstc.nasa.gov/" target="_blank" rel="noopener">NASA GHRC</a></li>
+  </ul>
+ </div>
+ <div class="seccion visitas">
+  <div class="menu-titulo">Visitas</div>
+  <div class="contador">Usted es el visitante n.&ordm;<br>
+    <span id="contador" class="odometro" aria-label="contador de visitas"><span>-</span><span>-</span><span>-</span><span>-</span><span>-</span><span>-</span><span>-</span></span>
+  </div>
+ </div>
+ <div class="seccion insignias">
+  <a class="b88 linux" href="https://www.kernel.org/" target="_blank" rel="noopener" title="Linux"><b>&#128039;</b><i>LINUX<small>powered</small></i></a>
+  <a class="b88 gnu" href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener" title="GNU GPL v3"><b>GNU</b><i>GPL v3<small>software libre</small></i></a>
+  <a class="b88 python" href="https://www.python.org/" target="_blank" rel="noopener" title="Python"><b>Py</b><i>PYTHON<small>powered</small></i></a>
+  <a class="b88 debian" href="https://www.debian.org/" target="_blank" rel="noopener" title="Debian"><b>@</b><i>debian<small>GNU/Linux</small></i></a>
+  <a class="b88 firefox" href="https://www.mozilla.org/firefox/" target="_blank" rel="noopener" title="Firefox"><b>&#129418;</b><i>Get<small>Firefox!</small></i></a>
+  <a class="b88 w3c" href="https://validator.w3.org/" target="_blank" rel="noopener" title="W3C"><b>W3C</b><i>HTML<small>v&aacute;lido</small></i></a>
+ </div>
+</div>
+<main>
+<div class="publicidad" id="laura" hidden><button type="button" class="cerrar" aria-label="Cerrar">x</button><a href="#">&#128152; &iexcl;&iexcl;Laura te quiere conocer!!</a></div>
+<h1>Verificar una memoria de cálculo</h1>
+<p class="subtitulo">Cada memoria generada en charlightning.org lleva un código y un QR. Aquí se
+comprueba que ese código existe y qué resultados quedaron registrados.</p>
+
+<form id="buscar" class="tarjeta" autocomplete="off">
+  <h2>Código de la memoria</h2>
+  <p><input id="codigo" type="text" size="22" maxlength="20" placeholder="CHL-2026-7F3A9C"
+     aria-label="Código de la memoria" spellcheck="false">
+  <button type="submit">Verificar</button></p>
+</form>
+
+<div id="resultado" class="tarjeta" hidden aria-live="polite"></div>
+
+<h2>Qué confirma y qué no</h2>
+<ul>
+  <li><b>Confirma</b> que el motor de Charlightning generó una memoria con ese código, en esa
+  fecha, con ese veredicto y ese R<sub>1</sub>. Compare esos valores con los del PDF: si
+  difieren, el documento no coincide con lo que se registró.</li>
+  <li>La <b>huella</b> identifica los datos de entrada: dos memorias con los mismos datos tienen
+  la misma huella, y cambiar un solo dato la cambia.</li>
+  <li><b>No confirma</b> que los datos de entrada correspondan a la instalación real, ni la
+  identidad, la matrícula o la competencia de quien firma. Eso sigue siendo responsabilidad del
+  profesional.</li>
+  <li>Solo se guarda el código, la fecha, las coordenadas redondeadas a 0,01° (unos 1,1 km), R<sub>1</sub>,
+  el veredicto y la huella. No se guardan nombres de proyectos, clientes ni proyectistas.</li>
+  <li>Las memorias del programa de escritorio no se registran aquí.</li>
+</ul>
+</main>
+</div>
+<div id="pie">
+  Charlightning &copy; 2022&ndash;2026 Sergio Andrés Estrada Vélez &middot; Licencia GPL-3.0<br>
+  Herramienta de apoyo al diseño: no reemplaza el criterio ni la firma del ingeniero responsable.<br>
+  <span class="resolucion">Se ve mejor a 1024&times;768 con Internet Explorer 6 o Firefox 1.5</span>
+</div>
+</div>
+<script src="/contador.js" defer></script>
+<script src="/laura.js" defer></script>
+<script type="module" src="/verify.js"></script>
+</body>
+</html>

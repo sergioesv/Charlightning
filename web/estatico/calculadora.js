@@ -97,6 +97,7 @@ class DatosProyecto {
     this.campos = {
       Proyecto: new CampoTexto(contenedor, "Proyecto:", {obligatorio: false, ancho: 40}),
       "Diseñador": new CampoTexto(contenedor, "Diseñador:", {obligatorio: false}),
+      "Matrícula profesional": new CampoTexto(contenedor, "Matrícula profesional:", {obligatorio: false}),
       "Dirección": new CampoTexto(contenedor, "Dirección:", {obligatorio: false}),
       "Teléfono": new CampoTexto(contenedor, "Teléfono:", {obligatorio: false}),
     };

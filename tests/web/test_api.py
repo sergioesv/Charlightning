@@ -2,6 +2,7 @@
 La página web: la API responde lo mismo que el motor y rechaza lo que no sirve.
 """
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -11,8 +12,10 @@ pytest.importorskip("httpx")
 
 from fastapi.testclient import TestClient
 
+from calculate_risk.informe.verificacion import Registro
 from web import api, servicio
 from web.limite import Limite
+from web.verificaciones import ArchivoVerificaciones, SupabaseVerificaciones, desde_entorno
 
 CASA_RURAL = json.loads(Path("casos/casa_rural.json").read_text(encoding="utf-8"))
 
@@ -153,6 +156,90 @@ def test_informe_pdf(cliente):
     assert respuesta.status_code == 200
     assert respuesta.headers["content-type"] == "application/pdf"
     assert respuesta.content.startswith(b"%PDF")
+
+
+@pytest.fixture
+def con_registro(cliente, monkeypatch, tmp_path):
+    """El cliente con un archivo de verificaciones propio de la prueba."""
+    almacen = ArchivoVerificaciones(tmp_path / "verificaciones.jsonl")
+    monkeypatch.setattr(api, "verificaciones", almacen)
+    return cliente, almacen
+
+
+def test_el_informe_queda_registrado_y_se_puede_verificar(con_registro):
+    cliente, almacen = con_registro
+    respuesta = cliente.post("/api/informe?medidas=false",
+                             json={"caso": CASA_RURAL, "proyecto": {"Proyecto": "Secreto S.A."}})
+    codigo = respuesta.headers["x-registro"]
+    assert re.fullmatch(r"CHL-\d{4}-[0-9A-F]{6}", codigo)
+    datos = cliente.get(f"/api/verificar/{codigo.lower()}").json()
+    assert datos["id"] == codigo and datos["verdict"] == "NO CUMPLE"
+    assert datos["huella"] == datos["data_hash"][:10].upper()
+    assert "Secreto" not in json.dumps(datos) and "Secreto" not in almacen.archivo.read_text()
+
+
+def test_un_codigo_que_no_existe_o_mal_escrito(con_registro):
+    cliente, _ = con_registro
+    assert cliente.get("/api/verificar/CHL-2026-AAAAAA").status_code == 404
+    assert cliente.get("/api/verificar/hola").status_code == 400
+    assert cliente.get("/api/verificar/CHL-2026-AAAAAA' or 1=1").status_code in (400, 404)
+
+
+def test_si_no_se_puede_registrar_el_pdf_sale_sin_codigo(cliente, monkeypatch):
+    class Roto:
+        def guardar(self, registro):
+            raise OSError("sin disco")
+    monkeypatch.setattr(api, "verificaciones", Roto())
+    respuesta = cliente.post("/api/informe?medidas=false", json={"caso": CASA_RURAL})
+    assert respuesta.status_code == 200 and "x-registro" not in respuesta.headers
+    assert respuesta.headers["x-avisos"] != "0"
+
+
+def test_la_pagina_de_verificacion_se_sirve_con_o_sin_codigo(cliente):
+    for ruta in ("/verify", "/verify/CHL-2026-AAAAAA"):
+        respuesta = cliente.get(ruta)
+        assert respuesta.status_code == 200 and "Verificar una memoria" in respuesta.text
+        assert 'content="noindex"' in respuesta.text
+
+
+def test_el_almacen_de_archivo_guarda_y_encuentra(tmp_path):
+    almacen = ArchivoVerificaciones(tmp_path / "v.jsonl")
+    registro = Registro(id="CHL-2026-ABCDEF", created_at="2026-10-08T12:00:00+00:00",
+                        coordinates="", risk_r1=1e-4, verdict="CUMPLE", data_hash="ab" * 32)
+    almacen.guardar(registro)
+    assert almacen.buscar("CHL-2026-ABCDEF") == registro
+    assert almacen.buscar("CHL-2026-000000") is None
+    assert almacen.buscar("../../etc/passwd") is None
+
+
+def test_el_almacen_de_supabase_pide_lo_que_debe(monkeypatch):
+    pedidos = []
+    almacen = SupabaseVerificaciones("https://x.supabase.co/", "clave-de-servicio")
+    fila = {"id": "CHL-2026-ABCDEF", "created_at": "2026-10-08T12:00:00+00:00", "coordinates": "",
+            "risk_r1": 1e-4, "verdict": "CUMPLE", "data_hash": "ab" * 32, "engine_version": "1.0"}
+
+    def pedir(peticion):
+        pedidos.append(peticion)
+        return json.dumps([fila]).encode() if peticion.get_method() == "GET" else b""
+    monkeypatch.setattr(almacen, "_pedir", pedir)
+    almacen.guardar(Registro(**fila))
+    assert almacen.buscar("CHL-2026-ABCDEF").verdict == "CUMPLE"
+    guardar, buscar = pedidos
+    assert guardar.full_url == "https://x.supabase.co/rest/v1/verifications"
+    assert guardar.get_header("Apikey") == "clave-de-servicio"
+    assert json.loads(guardar.data)["id"] == "CHL-2026-ABCDEF"
+    assert "id=eq.CHL-2026-ABCDEF" in buscar.full_url
+    assert almacen.buscar("x") is None and len(pedidos) == 2     # un código inválido no llega a la base
+
+
+def test_se_usa_supabase_solo_si_hay_sus_dos_variables(monkeypatch, tmp_path):
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    monkeypatch.delenv("SUPABASE_SERVICE_KEY", raising=False)
+    assert isinstance(desde_entorno(tmp_path), ArchivoVerificaciones)
+    monkeypatch.setenv("SUPABASE_URL", "https://x.supabase.co")
+    assert isinstance(desde_entorno(tmp_path), ArchivoVerificaciones)
+    monkeypatch.setenv("SUPABASE_SERVICE_KEY", "clave")
+    assert isinstance(desde_entorno(tmp_path), SupabaseVerificaciones)
 
 
 def test_informe_sin_caso(cliente):

@@ -7,6 +7,7 @@ export const AYUDAS = {
   // --- Datos del proyecto ---
   "Proyecto:": "Nombre del proyecto u obra. Sale en la portada de la memoria de cálculo.",
   "Diseñador:": "Quien firma el estudio. Sale como autor del informe.",
+  "Matrícula profesional:": "Número de su matrícula profesional (COPNIA, CONTE u otra). Sale en el cuadro de firma del informe.",
   "Dirección:": "Dónde queda la estructura. Solo para el informe.",
   "Teléfono:": "Contacto del diseñador. Solo para el informe.",
 

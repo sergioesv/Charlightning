@@ -160,19 +160,35 @@ def densidad_en(lat: float, lon: float, fraccion_nube_tierra: float = None) -> d
     return datos
 
 
-def informe_pdf(datos: dict, proyecto: dict = None, buscar_medidas: bool = True) -> tuple:
-    """(bytes del PDF, avisos). El PDF se arma en una carpeta temporal que se borra."""
-    from calculate_risk.informe import generar     # matplotlib y reportlab solo aquí
+def informe_pdf(datos: dict, proyecto: dict = None, buscar_medidas: bool = True,
+                verificaciones=None) -> tuple:
+    """(bytes del PDF, avisos, registro). El PDF se arma en una carpeta temporal que se borra.
+
+    Con `verificaciones` (ver web/verificaciones.py) la memoria se registra ANTES de
+    dibujarla y el PDF sale con su código y su QR. Si no se pudo registrar, sale sin ellos
+    y el aviso lo dice: un QR que no se pudiera verificar sería peor que no tenerlo.
+    `registro` es el que quedó guardado (o None).
+    """
+    from calculate_risk.informe import generar, verificacion     # matplotlib y reportlab solo aquí
 
     por_caso = leer_casos(datos)
     resultados, avisos = _evaluar_casos(por_caso)
     proyecto = {str(k)[:40]: str(v)[:1000] for k, v in (proyecto or {}).items()}
+    registro = None
+    if verificaciones is not None:
+        candidato = verificacion.registro_de(por_caso, resultados)
+        try:
+            verificaciones.guardar(candidato)
+            registro = candidato
+        except Exception as error:       # base caída, volumen lleno...
+            avisos.append("No se pudo registrar la memoria para verificarla en línea, así que "
+                          f"el PDF sale sin código QR ({type(error).__name__}).")
     with tempfile.TemporaryDirectory(prefix="charlightning_web_") as carpeta:
         informe = generar.generar_informe(carpeta, por_caso, resultados,
                                           proyecto=proyecto, fecha=date.today(),
-                                          buscar_medidas=buscar_medidas)
+                                          buscar_medidas=buscar_medidas, verificacion=registro)
         contenido = Path(informe.ruta).read_bytes()
-    return contenido, avisos + list(informe.avisos)
+    return contenido, avisos + list(informe.avisos), registro
 
 
 # ---------------------------------------------------------------------------

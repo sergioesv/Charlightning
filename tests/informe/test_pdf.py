@@ -141,12 +141,18 @@ def test_siempre_hay_portada_y_luego_el_cuerpo(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_un_caracter_que_la_fuente_no_trae_se_sustituye_y_se_avisa(tmp_path):
-    doc = _documento([d.Parrafo("N<sub>G</sub> ≈ 2,6 y Σ")])
+    doc = _documento([d.Parrafo("N<sub>G</sub> ≈ 2,6 y A → B")])
 
     resultado = pdf.dibujar(doc, str(tmp_path / "u.pdf"))
 
     assert any("≈" in a and "~" in a for a in resultado.advertencias)
-    assert any("Σ" in a for a in resultado.advertencias)
+    assert any("→" in a and "->" in a for a in resultado.advertencias)
+
+
+def test_las_letras_griegas_si_las_trae_la_fuente_incrustada(tmp_path):
+    resultado = pdf.dibujar(_documento([d.Parrafo("Σ, π y Ω")]), str(tmp_path / "g.pdf"))
+
+    assert resultado.advertencias == []
 
 
 def test_un_caracter_sin_sustituto_sale_como_interrogacion_y_se_avisa(tmp_path):

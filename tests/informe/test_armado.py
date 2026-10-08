@@ -202,18 +202,19 @@ def test_las_referencias_de_la_nasa_solo_salen_si_se_uso_la_nasa(caso):
 # Veredicto, medidas y conclusión salen de los números
 # ---------------------------------------------------------------------------
 
-def test_el_recuadro_es_naranja_si_no_cumple(caso):
+def test_el_recuadro_es_rojo_si_no_cumple(caso):
     recuadros = [b for b in _armar(caso).bloques if isinstance(b, d.Recuadro)]
     assert len(recuadros) == 1 and recuadros[0].cumple is False
-    assert "NO CUMPLE" in recuadros[0].texto
+    assert "NO CUMPLE" in recuadros[0].etiqueta
+    assert "R<sub>1</sub>" in recuadros[0].texto and "&gt;" in recuadros[0].texto
 
 
-def test_el_recuadro_es_azul_si_cumple(caso):
+def test_el_recuadro_es_verde_si_cumple(caso):
     from dataclasses import replace
     protegido = {**caso, "zonas": [replace(z, n_z=0.001) for z in caso["zonas"]]}
     documento = _armar(protegido)
     recuadro = next(b for b in documento.bloques if isinstance(b, d.Recuadro))
-    assert recuadro.cumple is True
+    assert recuadro.cumple is True and recuadro.etiqueta == "CUMPLE"
     assert "cumple" in _texto(documento)
 
 

@@ -147,7 +147,8 @@ def dibujar_figuras(carpeta, casos, por_tipo, tipo, ficha, soluciones, proyecto,
 
 def generar_informe(carpeta, casos: dict, por_tipo: dict, proyecto: dict = None,
                     nombre: str = "Memoria de calculo", tipo: int = None, precios=None,
-                    fecha=None, buscar_medidas: bool = True, avance=None) -> Informe:
+                    fecha=None, buscar_medidas: bool = True, avance=None,
+                    verificacion=None) -> Informe:
     """Escribe <carpeta>/<nombre>.pdf y devuelve qué salió y qué no.
 
     casos, por_tipo: lo que devuelven EditorCaso.casos_por_tipo() y EditorCaso.evaluar().
@@ -156,6 +157,8 @@ def generar_informe(carpeta, casos: dict, por_tipo: dict, proyecto: dict = None,
     buscar_medidas: False para no explorar el catálogo (el informe dice que no se buscaron).
     avance: una función que recibe un texto corto en cada etapa, para que la pantalla
         pueda decir «Buscando medidas…» mientras trabaja.
+    verificacion: el `Registro` (verificacion.py) de una memoria ya guardada en el servidor;
+        el PDF trae su QR y su código. None, como en el programa de escritorio, sale sin ellos.
     """
     avance = avance or _nada
     proyecto = proyecto or {}
@@ -184,7 +187,7 @@ def generar_informe(carpeta, casos: dict, por_tipo: dict, proyecto: dict = None,
         avance("Componiendo el PDF…")
         documento = armado.armar(casos, por_tipo, proyecto=proyecto, ficha=ficha,
                                  soluciones=soluciones, figuras=figuras, tipo=tipo,
-                                 fecha=fecha)
+                                 fecha=fecha, verificacion=verificacion)
         resultado = pdf.dibujar(documento, str(ruta))
 
     return Informe(ruta=resultado.ruta, paginas=resultado.paginas,

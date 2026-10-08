@@ -34,6 +34,7 @@ Abrir <http://localhost:8000>. La documentación de la API queda en `/api/docs`.
 | `GET /api/ejemplos`, `/api/ejemplos/{nombre}` | los casos de `casos/` |
 | `GET /api/validacion` | los ejemplos del Anexo E evaluados en vivo frente a la norma |
 | `GET /api/salud` | para el chequeo de Railway |
+| `GET /api/verificar/{id}` | lo que quedó registrado de una memoria (el QR del PDF lleva a la página `/verify/{id}`) |
 
 Si el caso trae `"emplazamiento": {"modo": "coordenadas", ...}`, el servidor
 recalcula N_G desde las coordenadas: el número siempre corresponde a la fuente
@@ -75,7 +76,37 @@ Variables opcionales (Settings → Variables):
 `web/estatico/img/qr-breb.png`: el QR de Nequi Negocios,
 recortado de la captura de la app. La llave va escrita en `apoyar.html`.
 
-## Supabase (siguiente fase)
+## Verificación de memorias (Supabase)
 
-No se usa todavía. Cuando haga falta (cuentas, casos guardados, estadísticas),
-entra como otra implementación detrás de `servicio.py`, sin tocar el motor.
+Cada PDF que genera la web se registra ANTES de dibujarlo (`web/verificaciones.py`) con lo
+mínimo: código, fecha, coordenadas redondeadas a 0,01°, R1, veredicto y la huella de los
+datos. Ningún nombre de proyecto, cliente ni proyectista. El PDF lleva el código y un QR a
+`https://charlightning.org/verify/<código>`.
+
+Mientras no haya Supabase configurado, los registros van a un archivo en el volumen
+(`/data/verificaciones.jsonl`). Para usar Supabase:
+
+1. En el panel de Supabase, **SQL Editor**, ejecutar:
+
+```sql
+create table if not exists public.verifications (
+  id             text primary key,
+  created_at     timestamptz      not null,
+  coordinates    text             not null default '',
+  risk_r1        double precision,
+  verdict        text             not null check (verdict in ('CUMPLE', 'NO CUMPLE')),
+  data_hash      text             not null,
+  engine_version text             not null default '1.0'
+);
+alter table public.verifications enable row level security;
+-- Sin políticas: el navegador no puede leer ni escribir. Solo el servidor, con la clave de servicio.
+```
+
+2. En Railway (Variables del servicio) agregar `SUPABASE_URL` (Project Settings → API → Project
+   URL) y `SUPABASE_SERVICE_KEY` (la clave `service_role`). Esa clave da acceso total: va solo
+   en las variables del servidor, nunca en el código, en el navegador ni en un chat.
+3. Al volver a publicar, los registros nuevos van a la tabla. Los del archivo no se migran solos.
+
+Si el registro falla (base caída), el PDF sale sin código ni QR y lo avisa: un QR que no se
+pudiera verificar sería peor que no tenerlo. Las memorias del programa de escritorio no se
+registran y salen sin QR.

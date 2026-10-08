@@ -3,6 +3,7 @@
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /verify/
 
 User-agent: GPTBot
 User-agent: OAI-SearchBot
@@ -17,5 +18,6 @@ User-agent: Applebot-Extended
 User-agent: Bingbot
 Allow: /
 Disallow: /api/
+Disallow: /verify/
 
 Sitemap: https://charlightning.org/sitemap.xml

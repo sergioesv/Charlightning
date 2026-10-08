@@ -19,6 +19,7 @@ from dataclasses import fields, is_dataclass
 
 from calculate_risk.informe import documento as d
 from calculate_risk.informe.documento import escapar
+from calculate_risk.informe.verificacion import VERSION_MOTOR
 from calculate_risk.norma import etiquetas, medidas, perdidas, probabilidades, riesgos, tablas
 
 NOMBRES_COMPONENTES = {
@@ -55,6 +56,15 @@ MESES = ("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto
          "septiembre", "octubre", "noviembre", "diciembre")
 
 MEDIDAS_QUE_SE_MUESTRAN = 10
+
+# La marca lleva ™ (marca de hecho). Cuando se registre ante la SIC se cambia por «®».
+MARCA = "™"
+AUTORIA = ("Algoritmo parametrizado conforme a la NTC 4552-2 por el Ing. Sergio Andrés Estrada "
+           "Vélez — Creador de Charlightning.org. Garantiza el rigor matemático del motor, "
+           "verificado contra los ejemplos resueltos del Anexo E de la norma.")
+DECLARACION = ("El profesional firmante declara que los datos de entrada de esta memoria "
+               "corresponden a la instalación o al diseño evaluado y responde por su veracidad. "
+               "Charlightning solo realiza el cálculo con los datos suministrados.")
 
 
 # ---------------------------------------------------------------------------
@@ -715,34 +725,42 @@ def _medidas(tipo, soluciones, figura, numero_de_figura, base, caso=None, forma=
     return bloques
 
 
+def _etiqueta(incumplen) -> str:
+    return "NO CUMPLE · REQUIERE MEDIDAS DE PROTECCIÓN (SIPRA)" if incumplen else "CUMPLE"
+
+
+def _resumen_del_veredicto(por_tipo, tipos):
+    """(riesgos que no cumplen, la comparación escrita). Es el texto del recuadro del
+    veredicto, el mismo en la portada y en el numeral 6."""
+    incumplen = [t for t in tipos if not por_tipo[t]["cumple"]]
+    if not incumplen:
+        return incumplen, (f"Los riesgos {_lista_de_riesgos(tipos)} son iguales o menores "
+                           "que su riesgo tolerable.")
+    primero = por_tipo[incumplen[0]]
+    texto = (f"R<sub>{incumplen[0]}</sub> = {cientifico(primero['total'])} &gt; "
+             f"R<sub>T</sub> = {cientifico(primero['R_T'])}")
+    if len(incumplen) > 1:
+        texto += f" ({_lista_de_riesgos(incumplen)})"
+    return incumplen, texto + " — se requieren medidas de protección"
+
+
 def _veredicto(por_tipo, tipos, soluciones, figuras_veredicto, casos=None, forma="solo_porcentaje"):
     """soluciones y figuras_veredicto: {riesgo: ...}. Cada riesgo que no cumple tiene su
     sección de medidas; si no se buscaron, se dice."""
     filas = [["Riesgo", "Calculado", "Tolerable", "Veredicto"]]
-    incumplen = []
     for t in tipos:
         r = por_tipo[t]
-        if not r["cumple"]:
-            incumplen.append(t)
         filas.append([NOMBRES_RIESGOS[t], cientifico(r["total"]), cientifico(r["R_T"]),
                       "Cumple" if r["cumple"] else "<b>No cumple</b>"])
 
+    incumplen, resumen = _resumen_del_veredicto(por_tipo, tipos)
     if incumplen:
-        primero = por_tipo[incumplen[0]]
-        detalle = (f"R<sub>{incumplen[0]}</sub> = {cientifico(primero['total'])} &gt; "
-                   f"R<sub>T</sub> = {cientifico(primero['R_T'])}")
-        resumen = f"{detalle} · NO CUMPLE"
-        if len(incumplen) > 1:
-            resumen += f" ({_lista_de_riesgos(incumplen)})"
-        resumen += " — se requieren medidas de protección (numeral 5, Figura 1)."
-    else:
-        resumen = (f"Los riesgos {_lista_de_riesgos(tipos)} son iguales o menores que su "
-                   "riesgo tolerable · CUMPLE.")
+        resumen += " (numeral 5, Figura 1)."
 
     bloques = [d.Titulo("6. Veredicto y medidas de protección"),
                d.Tabla(filas, anchos=(90, 28, 28, 20), derecha=(1, 2)),
                d.Espacio(3),
-               d.Recuadro(resumen, cumple=not incumplen)]
+               d.Recuadro(resumen, cumple=not incumplen, etiqueta=_etiqueta(incumplen))]
 
     numero_de_figura = 4
     for t in tipos:
@@ -783,7 +801,7 @@ def _frase_de_riesgo(por_tipo, t, soluciones):
     return frase + "."
 
 
-def _conclusion(por_tipo, tipos, soluciones, proyecto):
+def _conclusion(por_tipo, tipos, soluciones, proyecto, verificacion=None):
     incumplen = [t for t in tipos if not por_tipo[t]["cumple"]]
     if not incumplen:
         principal = (f"La estructura evaluada <b>cumple</b> el criterio de riesgo tolerable de "
@@ -792,13 +810,17 @@ def _conclusion(por_tipo, tipos, soluciones, proyecto):
         principal = (f"La estructura evaluada <b>no cumple</b> el criterio de riesgo tolerable "
                      f"de la NTC 4552-2:2023 para {_lista_de_riesgos(incumplen)}.")
 
-    quien = escapar((proyecto or {}).get("Diseñador", "") or "Diseñador")
+    proyecto = proyecto or {}
+    sello = f"Charlightning v{VERSION_MOTOR}"
+    if verificacion is not None:
+        impreso = verificacion.impreso()
+        sello += f"<br/>Registro {impreso.id}<br/>Huella {impreso.huella}<br/>charlightning.org/verify"
     return (
         [d.Titulo("7. Conclusión y firma"), d.Parrafo(principal)]
         + [d.Parrafo(_frase_de_riesgo(por_tipo, t, soluciones)) for t in incumplen]
-        + [d.Espacio(14),
-           d.Tabla([["_" * 34, "", "_" * 34],
-                    [quien, "", "Revisó"]], anchos=(70, 26, 70), cabecera=False)]
+        + [d.Firma(proyectista=escapar(proyecto.get("Diseñador", "")),
+                   matricula=escapar(proyecto.get("Matrícula profesional", "")),
+                   declaracion=DECLARACION, autoria=AUTORIA, sello=sello)]
     )
 
 
@@ -834,7 +856,8 @@ def _referencias(usa_nasa, usa_mapa):
 
 def armar(casos: dict, por_tipo: dict, proyecto: dict = None, ficha=None,
           soluciones=None, figuras: dict = None, tipo: int = None,
-          fecha=None, medidas_como: str = "solo_porcentaje") -> d.Documento:
+          fecha=None, medidas_como: str = "solo_porcentaje",
+          verificacion=None) -> d.Documento:
     """El informe completo como Documento.
 
     casos: {tipo: {"estructura", "lineas", "zonas", "N_G", "emplazamiento"}}, lo que
@@ -852,6 +875,8 @@ def armar(casos: dict, por_tipo: dict, proyecto: dict = None, ficha=None,
     medidas_como: la tabla de medidas. Por omisión "solo_porcentaje" (medidas y % que
         reduce); también "completa" (además el R resultante) y "con_factor" (además el
         factor que cambia cada combinación).
+    verificacion: el `Registro` de verificacion.py, si la memoria quedó registrada en el
+        servidor; trae el QR y el código en la portada y en el pie. None = sin ellos.
     """
     tipos = sorted(por_tipo)
     tipo = tipos[0] if tipo is None else tipo
@@ -860,16 +885,18 @@ def armar(casos: dict, por_tipo: dict, proyecto: dict = None, ficha=None,
     emplazamiento = caso.get("emplazamiento")
     proyecto = proyecto or {}
 
-    portada = []
+    incumplen, resumen = _resumen_del_veredicto(por_tipo, tipos)
+    portada = [d.Espacio(2)]
+    portada += _tabla_del_proyecto(proyecto, _coordenadas_del(emplazamiento))
+    portada += [d.Espacio(4), d.Recuadro(resumen, cumple=not incumplen,
+                                         etiqueta=_etiqueta(incumplen))]
     if figuras.get("mapa"):
         portada.append(d.Figura(
-            figuras["mapa"], 150,
+            figuras["mapa"], 112,
             "Figura 1. Densidad de descargas a tierra alrededor del sitio (climatología "
             "satelital LIS/OTD de la NASA) y su ubicación en el país."))
-    portada += [d.Espacio(2)]
-    portada += _tabla_del_proyecto(proyecto, _coordenadas_del(emplazamiento))
     if fecha is not None:
-        portada += [d.Espacio(6), d.Parrafo(fecha_larga(fecha), "nota")]
+        portada += [d.Parrafo(fecha_larga(fecha), "nota")]
 
     nombre = str(proyecto.get("Proyecto", "")).strip()
     bloques = [d.Contenido()]
@@ -880,7 +907,7 @@ def armar(casos: dict, por_tipo: dict, proyecto: dict = None, ficha=None,
     soluciones = _por_riesgo(soluciones, tipo)
     bloques += _veredicto(por_tipo, tipos, soluciones,
                           _por_riesgo(figuras.get("veredicto"), tipo), casos, medidas_como)
-    bloques += _conclusion(por_tipo, tipos, soluciones, proyecto)
+    bloques += _conclusion(por_tipo, tipos, soluciones, proyecto, verificacion)
     bloques += _referencias(
         usa_nasa=emplazamiento is not None and emplazamiento.modo == "coordenadas",
         usa_mapa=bool(figuras.get("mapa")))
@@ -891,11 +918,14 @@ def armar(casos: dict, por_tipo: dict, proyecto: dict = None, ficha=None,
                   "Parte 2: Evaluación del riesgo",
         sobretitulo="Memoria de cálculo",
         autor=str(proyecto.get("Diseñador", "")),
-        encabezado_izq="Memoria de cálculo del riesgo por rayos · NTC 4552-2:2023",
+        credito=(f"<b>Desarrollado en el motor Charlightning{MARCA}</b><br/>"
+                 "Autor del motor y algoritmo: <b>Ing. Sergio Andrés Estrada Vélez</b><br/>"
+                 "charlightning.org"),
+        encabezado_izq=f"Charlightning{MARCA} | Motor de cálculo desarrollado por el "
+                       "Ing. Sergio A. Estrada Vélez",
         encabezado_der=nombre,
-        pie="Generado por Charlightning",
-        pie_portada="Charlightning · motor de cálculo verificado contra los ejemplos del "
-                    "Anexo E de la norma",
+        pie=f"Memoria de Cálculo NTC 4552-2 | Charlightning v{VERSION_MOTOR} | charlightning.org",
+        verificacion=verificacion.impreso() if verificacion is not None else None,
         portada=portada,
         bloques=bloques,
     )

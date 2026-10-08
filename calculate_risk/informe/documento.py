@@ -56,7 +56,8 @@ class Tabla:
     """Filas de texto con marcado. La primera fila es la cabecera si `cabecera`.
 
     `anchos` son pesos relativos (se reparten el ancho de la página); `derecha` son
-    los índices de las columnas alineadas a la derecha (las numéricas).
+    los índices de las columnas alineadas a la derecha (las numéricas). Se dibuja al estilo
+    «booktabs»: solo líneas horizontales.
     """
     filas: list
     anchos: tuple = None
@@ -85,9 +86,23 @@ class Figura:
 
 @dataclass
 class Recuadro:
-    """El veredicto: azul si cumple, naranja si no (no verde/rojo: daltonismo)."""
+    """El veredicto: borde y fondo rojos si no cumple, verdes si cumple. El color nunca
+    va solo: la `etiqueta` (por omisión «CUMPLE» / «NO CUMPLE») dice lo mismo en palabras."""
     texto: str
     cumple: bool
+    etiqueta: str = ""
+
+
+@dataclass
+class Firma:
+    """El cajetín de cierre, en dos columnas: a la izquierda quien firma el proyecto
+    (nombre y matrícula si se dieron; si no, quedan en blanco para llenar a mano) y a la
+    derecha la autoría del motor, con el texto fijo que da `autoria`."""
+    proyectista: str = ""
+    matricula: str = ""
+    declaracion: str = ""
+    autoria: str = ""
+    sello: str = ""            # líneas de texto plano bajo la autoría (registro, huella...)
 
 
 @dataclass
@@ -107,6 +122,14 @@ class Contenido:
 
 
 @dataclass
+class Verificacion:
+    """Lo que el PDF imprime para poder comprobar la memoria en línea."""
+    id: str            # CHL-2026-7F3A9C
+    url: str           # https://charlightning.org/verify/CHL-2026-7F3A9C
+    huella: str        # los primeros caracteres de la huella de los datos
+
+
+@dataclass
 class Documento:
     """Título, subtítulo y sobretítulo llevan marcado; el encabezado, el pie y el autor
     son texto plano (se dibujan sin composición): NO se escapan."""
@@ -118,6 +141,8 @@ class Documento:
     encabezado_der: str = ""
     pie: str = ""
     pie_portada: str = ""
+    credito: str = ""                               # autoría del motor, bajo el título (marcado)
+    verificacion: Verificacion = None               # None = sin QR (programa de escritorio)
     portada: list = field(default_factory=list)     # bloques bajo el título de la portada
     bloques: list = field(default_factory=list)     # el cuerpo, desde la página 2
 

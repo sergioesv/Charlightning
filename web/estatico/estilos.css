@@ -661,3 +661,12 @@ details.proyecto summary { padding: 2px 0; }
 details.proyecto summary::before { content: "\1F4CB  "; }
 details.proyecto summary .sin-llenar { color: var(--suave); font-weight: normal; font-style: italic; }
 details.proyecto[open] { background: #fafbfd; }
+
+/* Verificación de memorias */
+#resultado table { border-collapse: collapse; width: 100%; }
+#resultado th { text-align: left; font-weight: normal; color: var(--suave); width: 38%; padding: 3px 6px 3px 0; vertical-align: top; }
+#resultado td { padding: 3px 0; }
+#resultado .codigo { font-family: Consolas, "Courier New", monospace; }
+#resultado .huella { word-break: break-all; font-size: 11px; }
+.veredicto-no { color: #dc2626; }
+.veredicto-si { color: #16a34a; }
