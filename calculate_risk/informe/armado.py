@@ -160,11 +160,13 @@ def _lista_de_riesgos(tipos) -> str:
 # Portada
 # ---------------------------------------------------------------------------
 
-def _tabla_del_proyecto(proyecto, coordenadas=None):
+def _tabla_del_proyecto(proyecto, coordenadas=None, fecha=None):
     filas = [[f"<b>{escapar(k)}</b>", escapar(v)]
              for k, v in (proyecto or {}).items() if str(v).strip()]
     if coordenadas:
         filas.append(["<b>Coordenadas</b>", coordenadas])
+    if fecha is not None:
+        filas.append(["<b>Fecha</b>", fecha_larga(fecha)])
     if not filas:
         return []
     return [d.Tabla(filas, anchos=(38, 128), cabecera=False)]
@@ -894,23 +896,21 @@ def armar(casos: dict, por_tipo: dict, proyecto: dict = None, ficha=None,
     incumplen, resumen = _resumen_del_veredicto(por_tipo, tipos)
     portada = [d.Espacio(2)]
     portada += _tabla_del_proyecto({k: v for k, v in proyecto.items() if k in EN_LA_PORTADA},
-                                   _coordenadas_del(emplazamiento))
+                                   _coordenadas_del(emplazamiento), fecha)
     portada += [d.Espacio(4), d.Recuadro(resumen, cumple=not incumplen,
                                          etiqueta=_etiqueta(incumplen))]
     if figuras.get("mapa"):
         portada.append(d.Figura(
-            figuras["mapa"], 105,
+            figuras["mapa"], 106 if len(str(proyecto.get("Proyecto", ""))) <= 70 else 92,
             "Figura 1. Densidad de descargas a tierra alrededor del sitio (climatología "
             "satelital LIS/OTD de la NASA) y su ubicación en el país."))
-    if fecha is not None:
-        portada += [d.Parrafo(fecha_larga(fecha), "nota")]
 
     nombre = str(proyecto.get("Proyecto", "")).strip()
     bloques = [d.Contenido()]
     resto = {k: v for k, v in proyecto.items() if k not in EN_LA_PORTADA}
     if any(str(v).strip() for v in resto.values()):
         bloques += [d.Titulo("Datos del proyecto", 2)] + _tabla_del_proyecto(resto)
-    bloques += _alcance(tipos) + _terminos() + [d.Salto()]
+    bloques += _alcance(tipos) + _terminos()
     bloques += _emplazamiento(emplazamiento, caso["N_G"], ficha)
     bloques += _datos(caso, figuras.get("area"))
     bloques += _calculo(por_tipo, tipos, tipo, figuras.get("aporte"))

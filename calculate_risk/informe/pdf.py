@@ -100,15 +100,18 @@ MARGEN = 22 * mm
 ANCHO_UTIL = ANCHO_PAGINA - 2 * MARGEN
 DPI_FORMULA = 600
 LADO_QR_PIE = 9.5 * mm
+LADO_QR_PORTADA = 31 * mm
+RESERVA_QR_PORTADA = 40 * mm      # lo que el QR de la portada le quita al marco de la primera hoja
+FILAS_SIN_PARTIR = 14
 
 CUERPO = ParagraphStyle("cuerpo", fontName=SERIF, fontSize=10, leading=13.6,
                         alignment=TA_JUSTIFY, spaceAfter=5, textColor=TINTA)
 NOTA = ParagraphStyle("nota", fontName=SERIF_I, fontSize=8.5, leading=11,
                       textColor=GRIS, spaceAfter=3, alignment=TA_JUSTIFY)
 SECCION = ParagraphStyle("seccion", fontName=SERIF_N, fontSize=12.5, leading=16,
-                         spaceBefore=12, spaceAfter=5, textColor=TINTA)
+                         spaceBefore=12, spaceAfter=5, textColor=TINTA, keepWithNext=1)
 SUBSECCION = ParagraphStyle("subseccion", fontName=SERIF_NI, fontSize=10.5, leading=13.5,
-                            spaceBefore=7, spaceAfter=3, textColor=TINTA)
+                            spaceBefore=7, spaceAfter=3, textColor=TINTA, keepWithNext=1)
 PIE_FIGURA = ParagraphStyle("pie_figura", fontName=SERIF, fontSize=8.8, leading=11.5,
                             textColor=GRIS, alignment=TA_CENTER, spaceBefore=3, spaceAfter=10)
 AVISO = ParagraphStyle("aviso", fontName=SERIF_I, fontSize=9, leading=12,
@@ -344,7 +347,16 @@ def _flujo(bloques, paginas, advertencias, secciones):
         elif isinstance(bloque, d.Formula):
             flujo += [_formula(bloque, advertencias), Spacer(1, 3)]
         elif isinstance(bloque, d.Tabla):
-            flujo += [_tabla(bloque, advertencias), Spacer(1, 6)]
+            tabla = _tabla(bloque, advertencias)
+            if len(bloque.filas) <= FILAS_SIN_PARTIR:
+                # Una tabla corta no se parte entre dos páginas, y su subtítulo va con ella.
+                grupo = []
+                while flujo and isinstance(flujo[-1], _Encabezado) and len(grupo) < 2:
+                    grupo.insert(0, flujo.pop())
+                flujo.append(KeepTogether(grupo + [tabla]))
+            else:
+                flujo.append(tabla)
+            flujo.append(Spacer(1, 6))
         elif isinstance(bloque, d.Figura):
             flujo += _figura(bloque, advertencias)
         elif isinstance(bloque, d.Recuadro):
@@ -392,12 +404,35 @@ def _portada(documento, advertencias):
 # Páginas
 # ---------------------------------------------------------------------------
 
+def _qr_de_la_portada(lienzo, verificacion, dibujo):
+    """El QR grande de la primera hoja, fijo abajo: así no lo corre el contenido del proyecto
+    y queda lejos del pie, donde suelen ir sellos y anotaciones."""
+    y = 25 * mm
+    lienzo.setStrokeColor(LINEA)
+    lienzo.setLineWidth(0.6)
+    lienzo.rect(MARGEN, y, ANCHO_UTIL, LADO_QR_PORTADA + 6 * mm, stroke=1, fill=0)
+    renderPDF.draw(dibujo, lienzo, MARGEN + 3 * mm, y + 3 * mm)
+    x = MARGEN + LADO_QR_PORTADA + 9 * mm
+    arriba = y + LADO_QR_PORTADA + 6 * mm
+    lienzo.setFillColor(TINTA)
+    lienzo.setFont(SERIF_N, 10)
+    lienzo.drawString(x, arriba - 9 * mm, "Comprobar el registro de esta memoria")
+    lienzo.setFont(SERIF, 9)
+    lienzo.setFillColor(GRIS)
+    lienzo.drawString(x, arriba - 15 * mm, "Escanee el código o ingrese en charlightning.org/verify")
+    lienzo.setFont(MONO, 8.4)
+    lienzo.drawString(x, arriba - 22 * mm, f"Registro {verificacion.id}")
+    lienzo.drawString(x, arriba - 27 * mm, f"Huella de datos {verificacion.huella}")
+
+
 def _marcos(documento, total, advertencias):
     izq = _legible(documento.encabezado_izq, advertencias)
     der = _legible(documento.encabezado_der, advertencias)
     pie = _legible(documento.pie, advertencias)
     qr_pie = (_dibujo_qr(documento.verificacion.url, LADO_QR_PIE)
               if documento.verificacion is not None else None)
+    qr_portada = (_dibujo_qr(documento.verificacion.url, LADO_QR_PORTADA)
+                  if documento.verificacion is not None else None)
 
     def pagina(lienzo, doc):
         lienzo.saveState()
@@ -420,6 +455,8 @@ def _marcos(documento, total, advertencias):
         lienzo.drawRightString(derecho, 14.5 * mm, f"Página {doc.page} de {total}")
         if qr_pie is not None:
             renderPDF.draw(qr_pie, lienzo, MARGEN + ANCHO_UTIL - LADO_QR_PIE, 9.5 * mm)
+        if qr_portada is not None and doc.page == 1:
+            _qr_de_la_portada(lienzo, documento.verificacion, qr_portada)
         lienzo.restoreState()
 
     return pagina
@@ -434,9 +471,11 @@ def _componer(documento, destino, paginas, total):
                      author=_legible(documento.autor, advertencias))
     en_pagina = _marcos(documento, total, advertencias)
     marco = dict(leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
+    reserva = RESERVA_QR_PORTADA if documento.verificacion is not None else 0
     plantillas = [
         PageTemplate(id="portada", onPage=en_pagina, frames=[Frame(
-            MARGEN, 25 * mm, ANCHO_UTIL, ALTO_PAGINA - 49 * mm, id="p", **marco)]),
+            MARGEN, 25 * mm + reserva, ANCHO_UTIL, ALTO_PAGINA - 49 * mm - reserva,
+            id="p", **marco)]),
         PageTemplate(id="normal", onPage=en_pagina, frames=[Frame(
             doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id="n")]),
     ]

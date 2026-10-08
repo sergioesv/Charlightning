@@ -114,6 +114,25 @@ def test_la_portada_cabe_en_una_hoja_aunque_el_proyecto_sea_grande(datos, tmp_pa
     assert primera.startswith("1.")
 
 
+@pytest.mark.parametrize("proyecto", [
+    {"Proyecto": "Obra", "Diseñador": "Ana", "Dirección": "Calle 1", "Descripción": "Algo breve"},
+    {"Proyecto": "Edificio de oficinas Torre Norte, fase 2, sede principal y bloque de parqueaderos",
+     "Diseñador": "Ing. María Fernanda Rodríguez Gómez", "Dirección": "Carrera 45 # 12-34 " * 4,
+     "Descripción": "Edificio de doce pisos con sótano. " * 12}])
+def test_la_portada_con_el_mapa_y_el_qr_cabe_en_una_hoja(datos, tmp_path, proyecto):
+    pytest.importorskip("netCDF4")
+    from calculate_risk.informe import figuras
+    mapa = figuras.mapa_del_sitio(6.25, -75.56, "Obra", str(tmp_path / "mapa.png"))
+    por_caso, por_tipo = datos
+    emplazamiento = Emplazamiento(modo="coordenadas", lat=6.25, lon=-75.56)
+    por_caso = {1: {**por_caso[1], "emplazamiento": emplazamiento}}
+    documento = armado.armar(por_caso, por_tipo, proyecto=proyecto, figuras={"mapa": mapa},
+                             fecha=AHORA.date(), verificacion=verificacion.registro_de(
+                                 por_caso, por_tipo, AHORA))
+    resultado = pdf.dibujar(documento, str(tmp_path / "portada.pdf"))
+    assert resultado.secciones[0][1] == 2          # el contenido abre la página 2: la portada es una hoja
+
+
 def test_el_pdf_con_verificacion_sale_sin_advertencias(datos, tmp_path):
     documento = _armar(datos, verificacion=verificacion.registro_de(*datos, AHORA))
     resultado = pdf.dibujar(documento, str(tmp_path / "memoria.pdf"))
