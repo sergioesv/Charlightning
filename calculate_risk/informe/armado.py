@@ -884,7 +884,7 @@ def armar(casos: dict, por_tipo: dict, proyecto: dict = None, ficha=None,
         reduce); también "completa" (además el R resultante) y "con_factor" (además el
         factor que cambia cada combinación).
     verificacion: el `Registro` de verificacion.py, si la memoria quedó registrada en el
-        servidor; trae el QR y el código en la portada y en el pie. None = sin ellos.
+        servidor; trae el QR y el código en la portada. None = sin ellos.
     """
     tipos = sorted(por_tipo)
     tipo = tipos[0] if tipo is None else tipo

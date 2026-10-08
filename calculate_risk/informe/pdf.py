@@ -3,7 +3,7 @@ Paso 59: el dibujante PDF. Toma un `Documento` y escribe el archivo con reportla
 
 Estilo académico sobrio (informe técnico / paper): Carta, serif incrustada (STIX Two), tablas
 al estilo «booktabs» (solo líneas horizontales), un recuadro de veredicto y, si el documento
-trae `verificacion`, un QR en la portada y en el pie de cada página. Todo en Python: no
+trae `verificacion`, un QR grande en la portada. Todo en Python: no
 hace falta instalar LaTeX ni un navegador.
 
 No hace ninguna cuenta ni conoce la norma: solo compone. Tres cosas que cuidan al lector:
@@ -99,7 +99,6 @@ ANCHO_PAGINA, ALTO_PAGINA = PAGINA
 MARGEN = 22 * mm
 ANCHO_UTIL = ANCHO_PAGINA - 2 * MARGEN
 DPI_FORMULA = 600
-LADO_QR_PIE = 9.5 * mm
 LADO_QR_PORTADA = 31 * mm
 RESERVA_QR_PORTADA = 40 * mm      # lo que el QR de la portada le quita al marco de la primera hoja
 FILAS_SIN_PARTIR = 14
@@ -429,8 +428,6 @@ def _marcos(documento, total, advertencias):
     izq = _legible(documento.encabezado_izq, advertencias)
     der = _legible(documento.encabezado_der, advertencias)
     pie = _legible(documento.pie, advertencias)
-    qr_pie = (_dibujo_qr(documento.verificacion.url, LADO_QR_PIE)
-              if documento.verificacion is not None else None)
     qr_portada = (_dibujo_qr(documento.verificacion.url, LADO_QR_PORTADA)
                   if documento.verificacion is not None else None)
 
@@ -450,11 +447,8 @@ def _marcos(documento, total, advertencias):
         lienzo.line(MARGEN, 20 * mm, MARGEN + ANCHO_UTIL, 20 * mm)
         lienzo.setFont(SERIF, 8)
         lienzo.drawString(MARGEN, 14.5 * mm, pie)
-        derecho = MARGEN + ANCHO_UTIL - (LADO_QR_PIE + 3 * mm if qr_pie is not None else 0)
         lienzo.setFillColor(TINTA)
-        lienzo.drawRightString(derecho, 14.5 * mm, f"Página {doc.page} de {total}")
-        if qr_pie is not None:
-            renderPDF.draw(qr_pie, lienzo, MARGEN + ANCHO_UTIL - LADO_QR_PIE, 9.5 * mm)
+        lienzo.drawRightString(MARGEN + ANCHO_UTIL, 14.5 * mm, f"Página {doc.page} de {total}")
         if qr_portada is not None and doc.page == 1:
             _qr_de_la_portada(lienzo, documento.verificacion, qr_portada)
         lienzo.restoreState()
