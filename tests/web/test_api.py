@@ -254,10 +254,16 @@ def test_limite_de_peticiones(cliente, monkeypatch):
 
 
 def test_las_paginas_se_sirven(cliente):
-    for pagina in ("/", "/calculadora.html", "/acerca.html", "/validacion.html", "/citar.html",
+    for pagina in ("/", "/calculadora.html", "/acerca.html", "/validacion.html",
                    "/apoyar.html", "/contacto.html", "/servicios.html", "/estilos.css", "/calculadora.js", "/campos.js",
                    "/formularios.js", "/ng-colombia.html", "/analisis-riesgo-rayos-retie.html", "/robots.txt", "/sitemap.xml", "/llms.txt"):
         assert cliente.get(pagina).status_code == 200, pagina
+
+
+def test_la_direccion_vieja_de_como_citar_redirige(cliente):
+    respuesta = cliente.get("/citar.html", follow_redirects=False)
+    assert respuesta.status_code == 301 and respuesta.headers["location"] == "/acerca.html#citar"
+    assert 'id="citar"' in cliente.get("/acerca.html").text
 
 
 def test_el_sitemap_trae_cada_pagina_con_su_canonica(cliente):

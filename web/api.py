@@ -16,7 +16,7 @@ os.environ.setdefault("MPLBACKEND", "Agg")      # el servidor no tiene pantalla
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 from calculate_risk.version import VERSION
 from web import servicio
@@ -264,6 +264,13 @@ def validacion():
 
 # Las páginas (index.html, calculadora.html, ...) van al final para no tapar /api.
 estaticos = EstaticosVersionados(directory=CARPETA_ESTATICA, html=True)
+
+
+@app.get("/citar.html")
+@app.get("/citar")
+async def citar_antiguo():
+    """«Cómo citar» ahora es una sección de «Acerca de»; la dirección vieja sigue funcionando."""
+    return RedirectResponse("/acerca.html#citar", status_code=301)
 
 
 @app.get("/verify")

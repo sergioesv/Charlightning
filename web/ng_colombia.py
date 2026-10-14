@@ -145,12 +145,12 @@ def _json_ld(filas) -> str:
 def generar():
     filas = tabla()
     ficha = filas[0][5]
-    plantilla = (CARPETA / "citar.html").read_text(encoding="utf-8")
+    plantilla = (CARPETA / "acerca.html").read_text(encoding="utf-8")
     pagina = re.sub(r"<title>[^<]*</title>", f"<title>{TITULO}</title>", plantilla)
     pagina = re.sub(r'<meta name="description" content="[^"]*">',
                     f'<meta name="description" content="{DESCRIPCION}">', pagina)
-    # Los metadatos que trae la plantilla (canónica, Open Graph) son de «Cómo citar».
-    pagina = pagina.replace("https://charlightning.org/citar.html", "https://charlightning.org/ng-colombia.html")
+    # Los metadatos que trae la plantilla (canónica, Open Graph) son de «Acerca de».
+    pagina = pagina.replace("https://charlightning.org/acerca.html", "https://charlightning.org/ng-colombia.html")
     pagina = re.sub(r'<meta property="og:title" content="[^"]*">',
                     f'<meta property="og:title" content="{TITULO}">', pagina)
     pagina = re.sub(r'<meta property="og:description" content="[^"]*">',
