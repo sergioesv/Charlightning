@@ -486,14 +486,6 @@ button.grande:active { filter: brightness(0.92); }
 #cabecera .lema { position: relative; left: 1px; top: 2px; }
 .tarjeta:nth-of-type(3) { position: relative; top: 3px; }
 
-.en-construccion {
-  margin: 12px 0;
-  padding: 6px 10px;
-  border: 2px dashed #000;
-  background: repeating-linear-gradient(45deg, #ffffff 0 10px, #e9e9e9 10px 20px);
-  font-weight: bold;
-  text-align: center;
-}
 
 /* «Apoyar el proyecto»: verde fosforescente parpadeando, sobre negro para que se lea. */
 #menu li a.apoyar,
