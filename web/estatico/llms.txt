@@ -11,6 +11,7 @@ Los satélites LIS/OTD de la NASA cuentan todos los destellos (intranube y nube-
 ## Páginas
 
 - [Calculadora](https://charlightning.org/): estructura, zonas y líneas; R1 (vida humana), R2 (servicio público), R3 (patrimonio cultural), R4 (valor económico); medidas de protección sugeridas.
+- [Análisis de riesgos por descargas eléctricas atmosféricas (RETIE)](https://charlightning.org/analisis-riesgo-rayos-retie.html): qué dice el RETIE (Resolución 40284 de 2026, Libro 3, numeral 3.3.1.1), quién lo elabora y cómo se hace con la NTC 4552-2.
 - [DDT en Colombia](https://charlightning.org/ng-colombia.html): densidad de descargas a tierra (DDT o N_G, rayos/km² año) de las capitales y principales ciudades de Colombia, con los destellos totales de la NASA y la discusión de la fracción nube-tierra.
 - [Validación](https://charlightning.org/validacion.html): los ejemplos del Anexo E de la NTC 4552-2 / IEC 62305-2 calculados con el motor y comparados con la norma.
 - [Servicios](https://charlightning.org/servicios.html): estudios de riesgo por rayos y revisión de estudios.

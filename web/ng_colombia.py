@@ -112,7 +112,7 @@ def preguntas(filas) -> list:
          "Es la densidad de descargas a tierra: el número de rayos nube-tierra por kilómetro "
          "cuadrado por año en un sitio. La NTC 4552 la llama N_G y en Colombia se conoce también "
          "como DDT. Es el dato de partida del análisis de riesgo por rayos de la NTC 4552-2:2023 "
-         "(IEC 62305-2) que exige el RETIE."),
+         "(IEC 62305-2), que el RETIE incluye en el diseño detallado de las instalaciones."),
         ("¿Cuál es la DDT de Bogotá?",
          f"Con la climatología LIS/OTD de la NASA y una fracción nube-tierra de 0,25, unos "
          f"{_coma(bogota[4], 1)} rayos/km² año en el centro de la ciudad; con la fracción de "
@@ -165,7 +165,8 @@ def generar():
     cuerpo = f"""<h1>{TITULO}</h1>
 <p class="subtitulo">Cuántos rayos caen a tierra por km² al año en las capitales y en otras
 ciudades de Colombia. Es el dato de partida del análisis de riesgo por rayos de la
-NTC 4552-2:2023 (IEC 62305-2) que exige el RETIE.</p>
+NTC 4552-2:2023 (IEC 62305-2), que el RETIE incluye en el diseño detallado de las instalaciones
+(<a href="/analisis-riesgo-rayos-retie.html">qué dice el RETIE</a>).</p>
 
 <p>Colombia está entre los países con más actividad de rayos del mundo, y varía mucho de una
 región a otra: en esta tabla la DDT va de unos {_coma(baja[4], 1)} rayos/km² año en {baja[0]} a

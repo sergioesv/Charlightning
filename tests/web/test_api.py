@@ -256,7 +256,7 @@ def test_limite_de_peticiones(cliente, monkeypatch):
 def test_las_paginas_se_sirven(cliente):
     for pagina in ("/", "/calculadora.html", "/acerca.html", "/validacion.html", "/citar.html",
                    "/apoyar.html", "/contacto.html", "/servicios.html", "/estilos.css", "/calculadora.js", "/campos.js",
-                   "/formularios.js", "/ng-colombia.html", "/robots.txt", "/sitemap.xml", "/llms.txt"):
+                   "/formularios.js", "/ng-colombia.html", "/analisis-riesgo-rayos-retie.html", "/robots.txt", "/sitemap.xml", "/llms.txt"):
         assert cliente.get(pagina).status_code == 200, pagina
 
 

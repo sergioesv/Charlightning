@@ -729,7 +729,7 @@ def _medidas(tipo, soluciones, figura, numero_de_figura, base, caso=None, forma=
 
 
 def _etiqueta(incumplen) -> str:
-    return "NO CUMPLE · REQUIERE MEDIDAS DE PROTECCIÓN (SIPRA)" if incumplen else "CUMPLE"
+    return "NO CUMPLE · REQUIERE MEDIDAS DE PROTECCIÓN" if incumplen else "CUMPLE"
 
 
 def _resumen_del_veredicto(por_tipo, tipos):

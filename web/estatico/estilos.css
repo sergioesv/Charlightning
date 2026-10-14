@@ -700,3 +700,7 @@ details.proyecto[open] { background: #fafbfd; }
 @media (prefers-reduced-motion: reduce) {
   #espera .barra::before { animation: none; left: 0; width: 100%; opacity: .6; }
 }
+
+/* Cita textual de una norma */
+blockquote.cita { margin: 10px 0 14px; padding: 8px 14px; border-left: 4px solid var(--azul); background: var(--azul-claro); }
+blockquote.cita p { margin: 6px 0; }
