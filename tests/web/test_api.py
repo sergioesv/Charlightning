@@ -256,8 +256,16 @@ def test_limite_de_peticiones(cliente, monkeypatch):
 def test_las_paginas_se_sirven(cliente):
     for pagina in ("/", "/calculadora.html", "/acerca.html", "/validacion.html",
                    "/apoyar.html", "/contacto.html", "/servicios.html", "/estilos.css", "/calculadora.js", "/campos.js",
-                   "/formularios.js", "/ng-colombia.html", "/analisis-riesgo-rayos-retie.html", "/robots.txt", "/sitemap.xml", "/llms.txt"):
+                   "/formularios.js", "/ng-colombia.html", "/analisis-riesgo-rayos-retie.html", "/ciudades.json", "/robots.txt", "/sitemap.xml", "/llms.txt"):
         assert cliente.get(pagina).status_code == 200, pagina
+
+
+def test_las_ciudades_del_selector_son_las_de_la_tabla_de_ddt(cliente):
+    ciudades = cliente.get("/ciudades.json").json()
+    assert len(ciudades) >= 30 and {"ciudad", "depto", "lat", "lon"} <= set(ciudades[0])
+    assert all(-5 <= c["lat"] <= 13 and -82 <= c["lon"] <= -66 for c in ciudades)   # dentro de Colombia
+    pagina = cliente.get("/ng-colombia.html").text
+    assert all(f"lat={c['lat']}&amp;lon={c['lon']}" in pagina for c in ciudades)
 
 
 def test_la_direccion_vieja_de_como_citar_redirige(cliente):

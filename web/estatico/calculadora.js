@@ -440,6 +440,13 @@ class Calculadora {
     $("b-calcular").addEventListener("click", () => this.trabajar("b-calcular", () => this.calcular()));
     $("b-informe").addEventListener("click", () => this.trabajar("b-informe", () => this.informe(), "Generando el informe…"));
     $("b-desglose").addEventListener("click", () => this.trabajar("b-desglose", () => this.deDondeViene(), "Probando cada medida de protección…"));
+    $("b-ejemplo").addEventListener("click", () => this.pedirEjemplo("casa_rural", true));
+    // La guía de tres pasos: cada paso lleva a su parte de la pantalla.
+    document.querySelectorAll("#guia li").forEach((li, i) => {
+      const ir = () => this.destinoDelPaso(i)?.scrollIntoView({behavior: "smooth", block: "center"});
+      li.addEventListener("click", ir);
+      li.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ir(); } });
+    });
     // Los ejemplos del Anexo E están en el menú de la izquierda: aquí se abren sin recargar.
     document.querySelectorAll("a[data-ejemplo]").forEach((a) => a.addEventListener("click", (e) => {
       e.preventDefault();
@@ -452,6 +459,7 @@ class Calculadora {
       document.querySelectorAll('input[name="tipo"]').forEach((c) =>
         c.addEventListener(evento, () => this.resultados.marcarObsoleto()));
       $("calculadora").addEventListener(evento, () => this.guardarBorradorLuego());
+      $("calculadora").addEventListener(evento, () => this.guiar());
     }
     // Al salir de la página (otro enlace, recargar) se guarda lo último.
     document.querySelectorAll('input[name="tipo"]').forEach((c) =>
@@ -459,6 +467,7 @@ class Calculadora {
     window.addEventListener("pagehide", () => this.guardarBorrador());
     this.recuperarBorrador();
     this.marcarRiesgos();
+    this.guiar();
     // Desde «N_G en Colombia» llegan las coordenadas de una ciudad: /?lat=6.244&lon=-75.581
     const parametros = new URLSearchParams(location.search);
     if (parametros.has("lat") && parametros.has("lon")) {
@@ -485,10 +494,46 @@ class Calculadora {
   }
 
   // Abrir un ejemplo reemplaza lo escrito: se pregunta antes si hay algo.
-  pedirEjemplo(archivo) {
+  pedirEjemplo(archivo, calcular = false) {
     if (tieneDatos(this.editor.foto()) &&
         !confirm("Abrir el ejemplo reemplaza el caso que está escribiendo.\n¿Seguir?")) return;
-    this.trabajar(null, () => this.abrirEjemplo(archivo));
+    this.trabajar(null, async () => {
+      await this.abrirEjemplo(archivo);
+      if (!calcular) return;
+      await this.calcular();
+      decir("Este es un ejemplo resuelto de la norma. Cambie los datos por los de su caso y vuelva a calcular.");
+    });
+  }
+
+  // --- la guía de primeros pasos --------------------------------------------------------
+
+  // Qué parte de la pantalla corresponde a cada paso.
+  destinoDelPaso(i) {
+    return [this.editor.emplazamiento.raiz, $("editor").querySelector(".principales"),
+            $("b-calcular")][i];
+  }
+
+  // Marca los pasos que ya están hechos y resalta el que sigue (y su parte de la pantalla).
+  actualizarGuia() {
+    const f = this.editor.foto();
+    const hechos = [
+      this.editor.emplazamiento.N_G.entrada.value.trim() !== "",
+      ["L", "W", "H"].every((c) => (f.estructura?.[c] ?? "") !== "") && (f.zonas || []).length > 0,
+      Boolean(this.ultimo) && !this.resultados.obsoleto,
+    ];
+    const actual = hechos.indexOf(false);          // -1 si ya está todo
+    document.querySelectorAll("#guia li").forEach((li, i) => {
+      li.classList.toggle("hecho", hechos[i]);
+      li.classList.toggle("actual", i === actual);
+      if (i === actual) li.setAttribute("aria-current", "step"); else li.removeAttribute("aria-current");
+    });
+    document.querySelectorAll(".guiado").forEach((e) => e.classList.remove("guiado"));
+    if (actual >= 0) this.destinoDelPaso(actual)?.classList.add("guiado");
+  }
+
+  guiar() {
+    cancelAnimationFrame(this.cuadroGuia);
+    this.cuadroGuia = requestAnimationFrame(() => this.actualizarGuia());
   }
 
   // --- borrador --------------------------------------------------------------
@@ -581,6 +626,7 @@ class Calculadora {
     this.resultados.mostrar(datos);
     $("panel-desglose").hidden = true;
     this.ultimo = {caso, datos};
+    this.guiar();
     decir("Listo.");
     $("panel-resultados").scrollIntoView({behavior: "smooth", block: "start"});
     return this.ultimo;
@@ -600,6 +646,7 @@ class Calculadora {
     $("panel-desglose").hidden = true;
     this.ultimo = null;
     this.guardarBorrador();
+    this.guiar();
     decir("Caso nuevo.");
   }
 
@@ -622,6 +669,7 @@ class Calculadora {
     } finally {
       this.guardarBorrador();
     }
+    this.guiar();
     decir(`Caso «${nombre}» abierto.`);
   }
 

@@ -801,6 +801,7 @@ export class PanelEmplazamiento {
     m.append(this.marcoCoordenadas);
     this.lat = new CampoNumero(this.marcoCoordenadas, "Latitud", {unidad: "°", minimo: -90, maximo: 90});
     this.lon = new CampoNumero(this.marcoCoordenadas, "Longitud", {unidad: "°", minimo: -180, maximo: 180});
+    this._atajos();
     this.fraccion = new CampoNumero(this.marcoCoordenadas, "Fracción nube-tierra",
                                     {valor: D("Emplazamiento").fraccion_nube_tierra, positivo: true, maximo: 1});
     this.botonBuscar = document.createElement("button");
@@ -818,6 +819,71 @@ export class PanelEmplazamiento {
     this.aviso.className = "aviso-ng";
     m.append(this.aviso);
     this.limpiar();
+  }
+
+  // Dos ayudas para no tener que buscar las coordenadas: la ubicación del aparato y una ciudad.
+  _atajos() {
+    const caja = document.createElement("div");
+    caja.className = "atajos";
+    if ("geolocation" in navigator) {
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.textContent = "\u{1F4CD} Usar mi ubicación";
+      boton.title = "Rellena latitud y longitud con donde está ahora este aparato";
+      boton.addEventListener("click", () => this._miUbicacion(boton));
+      caja.append(boton, " ");
+    }
+    const lista = document.createElement("select");
+    lista.setAttribute("aria-label", "Elegir una ciudad");
+    lista.append(new Option("o elija una ciudad…", ""));
+    lista.addEventListener("change", () => {
+      const ciudad = this.ciudades?.[Number(lista.value)];
+      if (!ciudad) return;
+      this._irA(ciudad.lat, ciudad.lon);
+      lista.value = "";
+    });
+    // La lista se pide al abrirla por primera vez: así no pesa si nadie la usa.
+    lista.addEventListener("focus", () => this._cargarCiudades(lista), {once: true});
+    lista.addEventListener("pointerdown", () => this._cargarCiudades(lista), {once: true});
+    caja.append(lista);
+    const nota = document.createElement("p");
+    nota.className = "pequeno";
+    nota.textContent = "Para otro sitio: en Google Maps, toque y mantenga el punto; las coordenadas salen arriba.";
+    caja.append(nota);
+    this.lon.fila.after(caja);
+  }
+
+  async _cargarCiudades(lista) {
+    if (this.ciudades) return;
+    try {
+      this.ciudades = await (await fetch("/ciudades.json")).json();
+    } catch {
+      this.ciudades = [];
+    }
+    this.ciudades.forEach((c, i) => lista.append(new Option(`${c.ciudad} (${c.depto})`, String(i))));
+  }
+
+  _irA(lat, lon) {
+    this.ponerModo("coordenadas");
+    this.lat.poner(String(Number(Number(lat).toFixed(5))));
+    this.lon.poner(String(Number(Number(lon).toFixed(5))));
+    this.N_G.poner("");
+    this.buscar();
+  }
+
+  _miUbicacion(boton) {
+    this.decir("Buscando su ubicación…");
+    boton.disabled = true;
+    navigator.geolocation.getCurrentPosition(
+      (posicion) => {
+        boton.disabled = false;
+        this._irA(posicion.coords.latitude, posicion.coords.longitude);
+      },
+      () => {
+        boton.disabled = false;
+        this.decir("No se pudo obtener la ubicación (¿negó el permiso?). Escriba las coordenadas o elija una ciudad.");
+      },
+      {enableHighAccuracy: false, timeout: 15000, maximumAge: 600000});
   }
 
   modo() {

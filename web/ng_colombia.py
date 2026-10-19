@@ -11,6 +11,7 @@ más cercana. Para un proyecto se deben usar las coordenadas exactas del sitio.
 import json
 import math
 import re
+import unicodedata
 from pathlib import Path
 
 from calculate_risk.norma import densidad
@@ -232,6 +233,12 @@ cálculo, o un valor de una red local de detección con su fuente.</p>
     pagina = re.sub(r'(<main>\n<div class="publicidad".*?</div>\n).*?</main>',
                     lambda m: m.group(1) + cuerpo + "</main>", pagina, flags=re.S)
     (CARPETA / "ng-colombia.html").write_text(pagina, encoding="utf-8")
+    # Las mismas ciudades, para el selector de coordenadas de la calculadora.
+    sin_tildes = lambda t: unicodedata.normalize("NFD", t).encode("ascii", "ignore").decode()
+    ciudades = [{"ciudad": c, "depto": dep, "lat": lat, "lon": lon}
+                for c, dep, lat, lon, _, _ in sorted(filas, key=lambda f: sin_tildes(f[0]))]
+    (CARPETA / "ciudades.json").write_text(
+        json.dumps(ciudades, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     return filas
 
 

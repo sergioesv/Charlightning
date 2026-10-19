@@ -696,3 +696,40 @@ details.proyecto[open] { background: #fafbfd; }
 /* Cita textual de una norma */
 blockquote.cita { margin: 10px 0 14px; padding: 8px 14px; border-left: 4px solid var(--azul); background: var(--azul-claro); }
 blockquote.cita p { margin: 6px 0; }
+
+/* La guía de primeros pasos: tres pasos que se marcan solos y resaltan el que sigue. */
+.guia { margin: 0 0 10px; }
+.guia ol { display: flex; gap: 6px; list-style: none; margin: 0 0 6px; padding: 0; }
+.guia li {
+  flex: 1; padding: 6px 8px; border: 1px solid var(--borde); border-radius: 3px; background: var(--beige-xp);
+  color: var(--suave); cursor: pointer; line-height: 1.25;
+}
+.guia li b {
+  display: inline-block; min-width: 18px; padding: 0 4px; margin-right: 3px; text-align: center;
+  border-radius: 9px; background: #fff; border: 1px solid var(--borde); color: var(--azul);
+}
+.guia li small { display: block; font-size: 10px; margin-left: 25px; }
+.guia li.actual { color: var(--texto); border-color: #0a4bd6; background: var(--seleccion-xp); font-weight: bold; box-shadow: 0 0 0 2px #7aa8f0; }
+.guia li.actual b { background: #0a4bd6; border-color: #0a4bd6; color: #fff; }
+.guia li.hecho { color: var(--texto); background: #eaf5ea; border-color: var(--verde-xp); }
+.guia li.hecho b { background: var(--verde-xp); border-color: var(--verde-xp); color: #fff; }
+.guia li.hecho b::before { content: "\2713"; }
+.guia li.hecho b { font-size: 0; }
+.guia li.hecho b::before { font-size: 12px; }
+.guia .primeros { margin: 0; }
+#b-ejemplo { font-weight: bold; }
+@media (max-width: 640px) {
+  .guia ol { gap: 4px; }
+  .guia li { padding: 5px 5px; font-size: 11px; }
+  .guia li small { display: none; }
+  .guia li b { display: block; width: 18px; margin: 0 0 2px; }
+}
+
+/* La parte de la pantalla que toca llenar ahora */
+.guiado { animation: guiado-late 1.8s ease-in-out infinite; }
+@keyframes guiado-late { 0%, 100% { box-shadow: 0 0 0 2px rgba(58, 128, 243, .15); } 50% { box-shadow: 0 0 0 4px rgba(58, 128, 243, .75); } }
+@media (prefers-reduced-motion: reduce) { .guiado { animation: none; box-shadow: 0 0 0 3px rgba(58, 128, 243, .7); } }
+
+/* Atajos de coordenadas */
+.atajos { margin: 2px 0 6px 0; }
+.atajos p { margin: 3px 0 0; }
