@@ -307,7 +307,7 @@ fieldset fieldset { background: #fff; }
 .campo select { width: 100%; max-width: 420px; }
 .campo .unidad { color: var(--suave); font-size: 11px; }
 .campo.en-error > label { color: var(--error); font-weight: bold; }
-.campo.en-error input, .campo.en-error select { border-color: var(--error); }
+.campo.en-error input, .campo.en-error select { border-color: var(--error); background: #fff1f1; }
 
 .radios { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 2px 0 6px; }
 .radios label { display: inline; font-weight: normal; margin: 0; }
@@ -722,6 +722,7 @@ blockquote.cita p { margin: 6px 0; }
   .guia ol { gap: 4px; }
   .guia li { padding: 5px 5px; font-size: 11px; }
   .guia li small { display: none; }
+  .guia li small.falta-texto { display: block; margin-left: 0; }
   .guia li b { display: block; width: 18px; margin: 0 0 2px; }
 }
 
@@ -733,3 +734,13 @@ blockquote.cita p { margin: 6px 0; }
 /* Atajos de coordenadas */
 .atajos { margin: 2px 0 6px 0; }
 .atajos p { margin: 3px 0 0; }
+
+/* Lo que falta del paso actual, en rojo */
+.campo.falta > label { color: #c00; font-weight: bold; }
+.campo.falta input, .campo.falta select {
+  border-color: #dc2626; background: #fff1f1; box-shadow: 0 0 0 2px rgba(220, 38, 38, .35);
+}
+button.falta { border-color: #dc2626 !important; color: #c00; animation: falta-late 1.4s ease-in-out infinite; }
+@keyframes falta-late { 0%, 100% { box-shadow: 0 0 0 2px rgba(220, 38, 38, .2); } 50% { box-shadow: 0 0 0 4px rgba(220, 38, 38, .8); } }
+.guia li small.falta-texto { color: #c00; font-weight: bold; }
+@media (prefers-reduced-motion: reduce) { button.falta { animation: none; box-shadow: 0 0 0 3px rgba(220, 38, 38, .7); } }

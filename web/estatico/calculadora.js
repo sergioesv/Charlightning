@@ -513,6 +513,33 @@ class Calculadora {
             $("b-calcular")][i];
   }
 
+  // Lo que le falta al paso que toca: [{el, texto}], el elemento a poner en rojo y cómo se llama.
+  faltasDelPaso(paso) {
+    const falta = [];
+    const vacio = (elemento) => !(elemento?.value ?? "").trim();
+    if (paso === 0) {
+      const e = this.editor.emplazamiento;
+      if (e.modo() === "coordenadas") {
+        if (vacio(e.lat.entrada)) falta.push({el: e.lat.fila, texto: "latitud"});
+        if (vacio(e.lon.entrada)) falta.push({el: e.lon.fila, texto: "longitud"});
+        if (!falta.length && vacio(e.N_G.entrada)) falta.push({el: e.botonBuscar, texto: "pulse Buscar"});
+      } else {
+        if (vacio(e.fuente.fila.querySelector("input"))) falta.push({el: e.fuente.fila, texto: "fuente de N_G"});
+        if (vacio(e.N_G.entrada)) falta.push({el: e.N_G.fila, texto: "N_G"});
+      }
+    } else if (paso === 1) {
+      const filas = [...$("editor").querySelector(".pestanas-panel").querySelectorAll(".campo")];
+      for (const rotulo of ["Longitud (L)", "Ancho (W)", "Altura (H)", "Localización (C_D)"]) {
+        const fila = filas.find((f) => f.querySelector("label")?.textContent.trim() === rotulo);
+        if (fila && vacio(fila.querySelector("input, select"))) falta.push({el: fila, texto: rotulo});
+      }
+      if (!this.editor.zonas.formularios.length) {
+        falta.push({el: $("editor").querySelectorAll(".pestanas-barra button")[1], texto: "al menos 1 zona"});
+      }
+    }
+    return falta;
+  }
+
   // Marca los pasos que ya están hechos y resalta el que sigue (y su parte de la pantalla).
   actualizarGuia() {
     const f = this.editor.foto();
@@ -529,6 +556,33 @@ class Calculadora {
     });
     document.querySelectorAll(".guiado").forEach((e) => e.classList.remove("guiado"));
     if (actual >= 0) this.destinoDelPaso(actual)?.classList.add("guiado");
+    // En rojo, lo que falta del paso actual: en la guía y en el propio formulario.
+    document.querySelectorAll(".falta").forEach((e) => e.classList.remove("falta"));
+    document.querySelectorAll("#guia small").forEach((s) => {
+      s.textContent = s.dataset.normal ??= s.textContent;
+      s.classList.remove("falta-texto");
+    });
+    const faltas = actual >= 0 && actual < 2 ? this.faltasDelPaso(actual) : [];
+    faltas.forEach((f) => f.el?.classList.add("falta"));
+    if (faltas.length) {
+      const s = document.querySelectorAll("#guia li")[actual].querySelector("small");
+      s.textContent = `Falta: ${faltas.map((f) => f.texto).join(", ")}`;
+      s.classList.add("falta-texto");
+    }
+  }
+
+  // Lleva la pantalla al primer campo en rojo, para que se vea qué hay que llenar.
+  irAlPrimerError() {
+    const fila = document.querySelector(".campo.en-error");
+    if (!fila) return;
+    const panel = fila.closest(".pestanas-panel");          // si está en otra pestaña, se abre
+    if (panel) {
+      const botones = [...panel.parentElement.querySelectorAll(":scope > .pestanas-barra > button")];
+      const paneles = [...panel.parentElement.querySelectorAll(":scope > .pestanas-panel")];
+      botones[paneles.indexOf(panel)]?.click();
+    }
+    fila.scrollIntoView({behavior: "smooth", block: "center"});
+    fila.querySelector("input, select")?.focus({preventScroll: true});
   }
 
   guiar() {
@@ -619,6 +673,7 @@ class Calculadora {
     } catch (error) {
       this.resultados.limpiar();
       this.ultimo = null;
+      this.irAlPrimerError();
       throw new DatoFaltante(`Faltan datos:\n\n${error.message}`);
     }
     const datos = await (await postJson("/api/evaluar", caso)).json();
