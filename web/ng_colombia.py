@@ -99,9 +99,8 @@ def html_de_tabla(filas) -> str:
 
 
 TITULO = "DDT en Colombia: densidad de descargas a tierra (N_G) por ciudad"
-DESCRIPCION = ("Densidad de descargas a tierra DDT o N_G (rayos/km² año) de las capitales y "
-               "principales ciudades de Colombia, con la fracción nube-tierra discutida, para el "
-               "análisis de riesgo por rayos según la NTC 4552-2 y el RETIE. Datos NASA LIS/OTD.")
+DESCRIPCION = ("Densidad de descargas a tierra (DDT o N_G, rayos/km² año) de las principales "
+               "ciudades de Colombia, para el análisis de riesgo por rayos (NTC 4552-2, RETIE).")
 
 
 def preguntas(filas) -> list:
