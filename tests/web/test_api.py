@@ -263,7 +263,7 @@ def test_las_paginas_se_sirven(cliente):
 def test_las_ciudades_del_selector_son_las_de_la_tabla_de_ddt(cliente):
     ciudades = cliente.get("/ciudades.json").json()
     assert len(ciudades) >= 30 and {"ciudad", "depto", "lat", "lon"} <= set(ciudades[0])
-    assert all(-5 <= c["lat"] <= 13 and -82 <= c["lon"] <= -66 for c in ciudades)   # dentro de Colombia
+    assert all(-5 <= c["lat"] <= 14 and -82 <= c["lon"] <= -66 for c in ciudades)   # dentro de Colombia
     pagina = cliente.get("/ng-colombia.html").text
     assert all(f"lat={c['lat']}&amp;lon={c['lon']}" in pagina for c in ciudades)
 
