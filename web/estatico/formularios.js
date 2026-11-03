@@ -7,6 +7,7 @@
 // de la norma escrito a mano. Todos tienen leer() y poner(); los que van en una lista,
 // además nombre() y raiz (el elemento que se muestra u oculta).
 
+import {registrar} from "./eventos.js";
 import {CampoLista, CampoNumero, CampoSiNo, CampoTabla, CampoTexto, DatoFaltante,
         filasDe, fotoDe, juntar, ponerFotoEn, recoger} from "./campos.js";
 
@@ -839,6 +840,7 @@ export class PanelEmplazamiento {
     lista.addEventListener("change", () => {
       const ciudad = this.ciudades?.[Number(lista.value)];
       if (!ciudad) return;
+      registrar("ciudad");
       this._irA(ciudad.lat, ciudad.lon);
       lista.value = "";
     });
@@ -877,6 +879,7 @@ export class PanelEmplazamiento {
     navigator.geolocation.getCurrentPosition(
       (posicion) => {
         boton.disabled = false;
+        registrar("ubicacion");
         this._irA(posicion.coords.latitude, posicion.coords.longitude);
       },
       () => {
@@ -925,6 +928,7 @@ export class PanelEmplazamiento {
 
   // Busca N_G en la climatología de la NASA y lo deja en la casilla.
   async buscar() {
+    registrar("buscar");
     let v;
     try {
       v = this._coordenadas();

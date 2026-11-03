@@ -22,6 +22,7 @@ from calculate_risk.version import VERSION
 from web import servicio
 from web.contacto import Buzon, MensajeInvalido
 from web.contador import Contador, ruta_por_omision
+from web.eventos import Eventos, ruta_por_omision as ruta_eventos
 from web.estaticos import EstaticosVersionados
 from web.limite import Limite
 from web.verificaciones import ID_VALIDO, desde_entorno
@@ -68,6 +69,7 @@ async def _cache(request: Request, siguiente):
     return respuesta
 
 contador = Contador(ruta_por_omision())
+eventos = Eventos(ruta_eventos())
 buzon = Buzon.desde_entorno(ruta_por_omision().parent)
 verificaciones = desde_entorno(ruta_por_omision().parent)
 
@@ -218,6 +220,24 @@ def visita_nueva(request: Request):
     """Una visita más (la página la manda una vez por sesión del navegador)."""
     _revisar_limite(limite_calculo, request)
     return {"visitas": contador.sumar()}
+
+
+@app.post("/api/evento")
+async def evento(request: Request):
+    """Un paso de la calculadora ({"paso": "calcular"}); sin datos personales, ver web/eventos.py."""
+    _revisar_limite(limite_calculo, request)
+    try:
+        paso = (json.loads((await request.body())[:200]) or {}).get("paso", "")
+    except (ValueError, AttributeError):
+        paso = ""
+    eventos.anotar(str(paso), _cliente(request), request.headers.get("user-agent", ""))
+    return Response(status_code=204)
+
+
+@app.get("/api/embudo")
+def embudo():
+    """Cuánta gente hizo cada paso, por día (solo cifras agregadas)."""
+    return eventos.resumen()
 
 
 @app.post("/api/contacto")

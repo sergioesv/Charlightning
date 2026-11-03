@@ -3,6 +3,7 @@
 // (en el servidor) y muestra lo que vuelve. Aquí no se calcula ningún riesgo.
 
 import {CampoTexto, DatoFaltante, fotoDe, juntar, ponerFotoEn} from "./campos.js";
+import {registrar} from "./eventos.js";
 import {FormularioEstructura, FormularioLinea, FormularioZona, LISTA_DE_LINEAS, ListaDeFormularios,
         PanelEmplazamiento, configurar, conocerLineas, pestanas} from "./formularios.js";
 
@@ -495,6 +496,7 @@ class Calculadora {
 
   // Abrir un ejemplo reemplaza lo escrito: se pregunta antes si hay algo.
   pedirEjemplo(archivo, calcular = false) {
+    registrar("ejemplo");
     if (tieneDatos(this.editor.foto()) &&
         !confirm("Abrir el ejemplo reemplaza el caso que está escribiendo.\n¿Seguir?")) return;
     this.trabajar(null, async () => {
@@ -666,6 +668,7 @@ class Calculadora {
   }
 
   async calcular() {
+    registrar("calcular");
     decir("Calculando…");
     let caso;
     try {
@@ -764,6 +767,7 @@ class Calculadora {
 
   // Recalcula ANTES de escribir: el informe no puede mezclar datos nuevos con riesgos viejos.
   async informe() {
+    registrar("informe");
     const {caso} = await this.alDia();
     decir("Generando el informe: buscando medidas de protección y dibujando las figuras…");
     const respuesta = await postJson("/api/informe", {caso, proyecto: this.proyecto.leer()});

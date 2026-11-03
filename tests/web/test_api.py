@@ -14,6 +14,7 @@ from fastapi.testclient import TestClient
 
 from calculate_risk.informe.verificacion import Registro
 from web import api, servicio
+from web.eventos import Eventos
 from web.limite import Limite
 from web.verificaciones import ArchivoVerificaciones, SupabaseVerificaciones, desde_entorno
 
@@ -21,10 +22,11 @@ CASA_RURAL = json.loads(Path("casos/casa_rural.json").read_text(encoding="utf-8"
 
 
 @pytest.fixture
-def cliente(monkeypatch):
+def cliente(monkeypatch, tmp_path):
     # Límites nuevos en cada prueba, para que no se estorben entre ellas.
     monkeypatch.setattr(api, "limite_calculo", Limite(1000, 60))
     monkeypatch.setattr(api, "limite_informe", Limite(1000, 60))
+    monkeypatch.setattr(api, "eventos", Eventos(tmp_path / "eventos.jsonl", sal="x"))
     return TestClient(api.app)
 
 
@@ -382,3 +384,18 @@ def test_los_datos_del_proyecto_vuelven_al_abrir(cliente):
     assert cliente.post("/api/evaluar", json=caso).status_code == 200
     assert cliente.post("/api/abrir", json=caso).json()["proyecto"]["Proyecto"] == "Bodega 4"
     assert cliente.post("/api/abrir", json=CASA_RURAL).json()["proyecto"] is None
+
+
+def test_los_pasos_se_cuentan_por_visitante_sin_guardar_la_ip(cliente, tmp_path):
+    for paso in ("ejemplo", "calcular", "calcular"):
+        assert cliente.post("/api/evento", json={"paso": paso}).status_code == 204
+    assert cliente.post("/api/evento", json={"paso": "cualquier cosa"}).status_code == 204
+    assert cliente.post("/api/evento", content=b"no es json").status_code == 204
+    resumen = cliente.get("/api/embudo").json()
+    assert resumen["visitantes_por_paso"]["calcular"] == 1
+    assert resumen["visitantes_por_paso"]["ejemplo"] == 1
+    assert resumen["visitantes_por_paso"]["informe"] == 0
+    (dia,) = resumen["dias"].values()
+    assert dia["calcular"] == {"visitantes": 1, "veces": 2}
+    crudo = (tmp_path / "eventos.jsonl").read_text(encoding="utf-8")
+    assert "testclient" not in crudo and "cualquier" not in crudo
